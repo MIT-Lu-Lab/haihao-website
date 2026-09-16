@@ -1,0 +1,34 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHeading from '../components/PageHeading.astro';
+import { people, categories } from '../data/people';
+---
+<Layout title="People">
+  <PageHeading title="People"><p>Students, postdoctoral researchers, and alumni.</p></PageHeading>
+  <div class="people-page">
+    {[false, true].map(alumni => (
+      <section class="people-section" aria-labelledby={alumni ? 'alumni' : 'current-members'}>
+        <h2 id={alumni ? 'alumni' : 'current-members'}>{alumni ? 'Alumni' : 'Current members'}</h2>
+        {categories.filter(category => people.some(person => person.alumni === alumni && person.category === category)).map(category => (
+          <div class="people-category">
+            <h3>{category}</h3>
+            <ul class="people-list">
+              {people.filter(person => person.alumni === alumni && person.category === category).map(person => (
+                <li class="person">
+                  <h4>{person.name}</h4>
+                  <p>{person.affiliation}</p>
+                  {person.note && <p class="person-note">{person.note}</p>}
+                  {person.destination && <p class="person-destination"><span aria-hidden="true">→</span> {person.destination}</p>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </section>
+    ))}
+    <section class="people-category support-contact" aria-labelledby="support-staff">
+      <h3 id="support-staff">Administrative support</h3>
+      <div class="person"><h4>Kelsey Gintzler</h4><a href="mailto:klgintz@mit.edu">klgintz@mit.edu</a></div>
+    </section>
+  </div>
+</Layout>

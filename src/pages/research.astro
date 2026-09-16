@@ -1,0 +1,49 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHeading from '../components/PageHeading.astro';
+import Arrow from '../components/Arrow.astro';
+---
+<Layout title="Research">
+  <PageHeading title="Research"><p>Advancing the mathematical and computational frontiers of large-scale optimization.</p></PageHeading>
+  <div class="research-page prose">
+    <p>My research connects optimization theory, computation, and data science. I am particularly interested in developing algorithms with rigorous guarantees that can address the challenges of real-world decision-making.</p>
+    <div class="research-directions">
+    <section id="scalable-optimization" class="content-section">
+      <h2>First-order methods &amp; scalable solvers</h2>
+      <p>I develop first-order optimization methods and computational tools for large-scale mathematical programming. This work brings together theoretical analysis and algorithm design for modern computing architectures, including GPUs and distributed systems.</p>
+      <p>Problems of interest include linear, quadratic, semidefinite, and nonlinear programming.</p>
+      <p>The PDLP algorithm I co-developed has been adopted by optimization solvers and technology companies including Google, NVIDIA, Gurobi, COPT, HiGHS, Knitro, and FICO Xpress.</p>
+      <a class="text-link" href="/software/">Explore software <Arrow /></a>
+    </section>
+    <section id="resource-allocation" class="content-section">
+      <h2>Data-driven resource allocation</h2>
+      <p>I design algorithms with provable performance guarantees for allocating scarce resources under uncertainty. A particular focus is online advertising, including budget pacing and online allocation.</p>
+      <p>Algorithms from this work have been deployed at Google and eBay to improve the efficiency and robustness of resource allocation.</p>
+      <a class="text-link" href="/publications/">Browse publications <Arrow /></a>
+    </section>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .research-page {
+    padding-bottom: var(--space-page);
+  }
+
+  .research-directions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-section);
+    margin-top: var(--space-section);
+  }
+
+  .research-directions .content-section {
+    margin-top: 0;
+  }
+
+  @media (max-width: 760px) {
+    .research-directions {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

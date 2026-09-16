@@ -1,0 +1,12 @@
+---
+import { navigation } from '../data/site';
+interface Props { mobile?: boolean }
+const { mobile = false } = Astro.props;
+---
+<nav aria-label={mobile ? 'Mobile navigation' : 'Main navigation'} class:list={['navigation', { 'mobile-navigation': mobile }]}>
+  {navigation.map(({ label, href }) => (
+    <a href={href} aria-current={Astro.url.pathname === href ? 'page' : undefined}>
+      {label}{label === 'CV' && <span class="external-mark" aria-hidden="true">↗</span>}
+    </a>
+  ))}
+</nav>

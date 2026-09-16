@@ -1,0 +1,44 @@
+---
+import Navigation from '../components/Navigation.astro';
+import { profile } from '../data/site';
+import '../styles/global.css';
+
+interface Props { title?: string; description?: string }
+const {
+  title,
+  description = 'Haihao Lu, Assistant Professor of Operations Research and Statistics at MIT Sloan. Research in large-scale optimization, computation, and data-driven decision-making.',
+} = Astro.props;
+const pageTitle = title ? `${title} · Haihao Lu` : 'Haihao Lu · MIT Sloan';
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#750014" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{pageTitle}</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <div class="header-inner container">
+        <a class="wordmark" href="/" aria-label="Haihao Lu, home">Haihao Lu<span class="wordmark-dot">.</span></a>
+        <div class="desktop-navigation"><Navigation /></div>
+        <details class="mobile-menu">
+          <summary>Menu <span aria-hidden="true">☰</span></summary>
+          <Navigation mobile />
+        </details>
+      </div>
+    </header>
+    <main id="main" class="container" tabindex="-1"><slot /></main>
+    <footer class="site-footer container">
+      <span>© {new Date().getFullYear()} Haihao Lu</span>
+      <a href={profile.faculty}>MIT Sloan School of Management <span aria-hidden="true">↗</span></a>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,80 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHeading from '../components/PageHeading.astro';
+import publications from '../data/publications.json';
+import { profile } from '../data/site';
+
+const years = [...new Set(publications.map(p => p.year))].sort((a, b) => b - a);
+const groups = years.map(year => ({ label: String(year), id: `year-${year}`, papers: publications.filter(p => p.year === year).sort((a, b) => Number(a.status === 'preprint') - Number(b.status === 'preprint')) }));
+---
+<Layout title="Publications" description="Publications and working papers by Haihao Lu in optimization, computation, and data-driven decision-making.">
+  <PageHeading title="Publications">
+    <p>Journal articles, conference papers, and working papers.<br />You can also find my work on <a href={profile.scholar}>Google Scholar <span aria-hidden="true">↗</span></a>.</p>
+  </PageHeading>
+  <form class="publication-tools" role="search" hidden>
+    <div class="search-field">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg>
+      <label class="sr-only" for="publication-search">Search publications by title, author, or venue</label>
+      <input type="search" id="publication-search" placeholder="Search title, author, or venue" autocomplete="off" />
+    </div>
+    <label class="sr-only" for="publication-status">Publication status</label>
+    <select id="publication-status"><option value="all">All publications</option><option value="published">Published &amp; accepted</option><option value="preprint">Working papers</option></select>
+    <span id="publication-count" class="publication-count" role="status" aria-live="polite">{publications.length} papers</span>
+  </form>
+  <div class="publication-layout">
+    <aside class="year-navigation" aria-label="Publication years">
+      <p class="eyebrow">Browse by year</p>
+      <nav aria-label="Jump to publication year">{groups.map(group => <a href={`#${group.id}`} data-year-link={group.id}>{group.label}</a>)}</nav>
+    </aside>
+    <div class="publication-list">
+      {groups.map(group => (
+        <section id={group.id} class="publication-year" data-publication-group>
+          <h2>{group.label}</h2>
+          <ol>
+            {group.papers.map(paper => (
+              <li class="publication" data-publication data-status={paper.status} data-search={`${paper.title} ${paper.authors} ${paper.venue}`}>
+                <h3>{paper.links[0] ? <a href={paper.links[0].url}>{paper.title}</a> : paper.title}</h3>
+                <p class="publication-authors">{paper.authors}</p>
+                <p class="publication-venue">{paper.venue}{paper.status === 'preprint' && <span class="paper-status">Preprint</span>}</p>
+                {paper.links.length > 0 && <div class="paper-links">{paper.links.map(link => <a href={link.url}>{link.label === 'arXiv Preprint' ? 'arXiv' : link.label} <span aria-hidden="true">↗</span></a>)}</div>}
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))}
+      <p class="empty-results" hidden>No publications match your search. Try another title, author, or publication status.</p>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>('.publication-tools')!;
+  const search = document.querySelector<HTMLInputElement>('#publication-search')!;
+  const status = document.querySelector<HTMLSelectElement>('#publication-status')!;
+  const papers = [...document.querySelectorAll<HTMLElement>('[data-publication]')];
+  const groups = [...document.querySelectorAll<HTMLElement>('[data-publication-group]')];
+  const count = document.querySelector<HTMLElement>('#publication-count')!;
+  const empty = document.querySelector<HTMLElement>('.empty-results')!;
+  const normalize = (text: string) => text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+  function filter() {
+    const terms = normalize(search.value.trim()).split(/\s+/).filter(Boolean);
+    let visible = 0;
+    papers.forEach(paper => {
+      const matchesStatus = status.value === 'all' || (status.value === 'published' ? paper.dataset.status !== 'preprint' : paper.dataset.status === 'preprint');
+      const matchesSearch = terms.every(term => normalize(paper.dataset.search ?? '').includes(term));
+      paper.hidden = !(matchesStatus && matchesSearch);
+      if (!paper.hidden) visible++;
+    });
+    groups.forEach(group => {
+      group.hidden = !group.querySelector('[data-publication]:not([hidden])');
+      document.querySelector<HTMLElement>(`[data-year-link="${group.id}"]`)!.hidden = group.hidden;
+    });
+    count.textContent = `${visible} ${visible === 1 ? 'paper' : 'papers'}`;
+    empty.hidden = visible !== 0;
+  }
+  form.hidden = false;
+  form.addEventListener('submit', event => event.preventDefault());
+  search.addEventListener('input', filter);
+  status.addEventListener('change', filter);
+  filter();
+</script>
