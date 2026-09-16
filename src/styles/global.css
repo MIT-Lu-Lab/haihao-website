@@ -123,6 +123,7 @@ address { font-style: normal; color: var(--muted); margin-top: 11px; line-height
 .publication h3 a { color: var(--ink); }
 .publication h3 a:hover { color: var(--red); }
 .publication-authors { font-size: var(--text-ui); color: var(--muted); line-height: var(--leading-body); margin-bottom: 4px; }
+.publication-authors strong { font-weight: 600; color: var(--ink); }
 .publication-venue { font-size: var(--text-ui); font-style: italic; margin-bottom: var(--space-xs); }
 .paper-status { display: inline-block; font-size: var(--text-label); font-style: normal; margin-left: 12px; color: var(--muted); background: var(--soft); padding: 1px 7px; border: 1px solid var(--line); }
 .paper-links { display: flex; flex-wrap: wrap; gap: 20px; font-size: var(--text-meta); }

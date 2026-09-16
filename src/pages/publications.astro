@@ -1,7 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import PageHeading from '../components/PageHeading.astro';
-import publications from '../data/publications.json';
+import { publications } from '../data/publications';
 import { profile } from '../data/site';
 
 const years = [...new Set(publications.map(p => p.year))].sort((a, b) => b - a);
@@ -9,7 +9,7 @@ const groups = years.map(year => ({ label: String(year), id: `year-${year}`, pap
 ---
 <Layout title="Publications" description="Publications and working papers by Haihao Lu in optimization, computation, and data-driven decision-making.">
   <PageHeading title="Publications">
-    <p>Journal articles, conference papers, and working papers.<br />You can also find my work on <a href={profile.scholar}>Google Scholar <span aria-hidden="true">↗</span></a>.</p>
+    <p>Journal articles, conference papers, and papers under review.<br />You can also find my work on <a href={profile.scholar}>Google Scholar <span aria-hidden="true">↗</span></a>.</p>
   </PageHeading>
   <form class="publication-tools" role="search" hidden>
     <div class="search-field">
@@ -18,7 +18,7 @@ const groups = years.map(year => ({ label: String(year), id: `year-${year}`, pap
       <input type="search" id="publication-search" placeholder="Search title, author, or venue" autocomplete="off" />
     </div>
     <label class="sr-only" for="publication-status">Publication status</label>
-    <select id="publication-status"><option value="all">All publications</option><option value="published">Published &amp; accepted</option><option value="preprint">Working papers</option></select>
+    <select id="publication-status"><option value="all">All publications</option><option value="published">Published &amp; accepted</option><option value="preprint">Under review</option></select>
     <span id="publication-count" class="publication-count" role="status" aria-live="polite">{publications.length} papers</span>
   </form>
   <div class="publication-layout">
@@ -32,11 +32,15 @@ const groups = years.map(year => ({ label: String(year), id: `year-${year}`, pap
           <h2>{group.label}</h2>
           <ol>
             {group.papers.map(paper => (
-              <li class="publication" data-publication data-status={paper.status} data-search={`${paper.title} ${paper.authors} ${paper.venue}`}>
+              <li class="publication" data-publication data-status={paper.status} data-search={`${paper.title} ${paper.authors.map(a => a.name).join(' ')} ${paper.venue}`}>
                 <h3>{paper.links[0] ? <a href={paper.links[0].url}>{paper.title}</a> : paper.title}</h3>
-                <p class="publication-authors">{paper.authors}</p>
-                <p class="publication-venue">{paper.venue}{paper.status === 'preprint' && <span class="paper-status">Preprint</span>}</p>
-                {paper.links.length > 0 && <div class="paper-links">{paper.links.map(link => <a href={link.url}>{link.label === 'arXiv Preprint' ? 'arXiv' : link.label} <span aria-hidden="true">↗</span></a>)}</div>}
+                <p class="publication-authors">{paper.authors.map((author, index) => (
+                  <>{index > 0 && ', '}{author.isSelf ? <strong>{author.name}</strong> : author.name}</>
+                ))}</p>
+                <p class="publication-venue">{paper.status === 'preprint'
+                  ? <span class="paper-status">{paper.venue}</span>
+                  : paper.venue}</p>
+                {paper.links.length > 0 && <div class="paper-links">{paper.links.map(link => <a href={link.url}>{link.label} <span aria-hidden="true">↗</span></a>)}</div>}
               </li>
             ))}
           </ol>
