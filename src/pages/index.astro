@@ -1,22 +1,24 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Arrow from '../components/Arrow.astro';
+import { awards } from '../data/awards';
 import { profile } from '../data/site';
+import ExternalLink from '../components/ExternalLink.astro';
 ---
 <Layout>
   <div class="home-grid">
     <aside class="profile-sidebar" aria-label="Profile and contact information">
       <img class="portrait" src="/images/haihao-lu.webp" alt="Haihao Lu" width="360" height="360" fetchpriority="high" />
       <div class="profile-details">
-        <a class="affiliation" href="https://mitsloan.mit.edu/">MIT Sloan School<br class="desktop-break" /> of Management</a>
+        <ExternalLink class="affiliation" href="https://mitsloan.mit.edu/" mark={false}>MIT Sloan School<br class="desktop-break" /> of Management</ExternalLink>
         <p class="institution">Massachusetts Institute<br class="desktop-break" /> of Technology</p>
         <div class="contact-details">
           <a href={`mailto:${profile.email}`}>{profile.email}</a>
           <address>100 Main Street, E62-585<br />Cambridge, MA 02142</address>
         </div>
         <div class="profile-links">
-          <a href={profile.scholar}>Google Scholar <span aria-hidden="true">↗</span></a>
-          <a href={profile.cv}>Curriculum vitae <span class="file-label">PDF</span></a>
+          <ExternalLink href={profile.scholar}>Google Scholar</ExternalLink>
+          <ExternalLink href={profile.cv} mark={false}>Curriculum vitae <span class="file-label">PDF</span></ExternalLink>
         </div>
       </div>
     </aside>
@@ -25,7 +27,7 @@ import { profile } from '../data/site';
       <h1>Haihao Lu</h1>
       <p class="position">Cecil and Ida Green Career Development Assistant Professor<br />Assistant Professor of Operations Research &amp; Statistics</p>
       <div class="biography prose">
-        <p>I am an Assistant Professor at the <a href="https://mitsloan.mit.edu/">MIT Sloan School of Management</a>. My research lies at the intersection of optimization, computation, and data science, with a focus on the mathematical and computational foundations of large-scale optimization.</p>
+        <p>I am an Assistant Professor at the <ExternalLink href="https://mitsloan.mit.edu/" mark={false}>MIT Sloan School of Management</ExternalLink>. My research lies at the intersection of optimization, computation, and data science, with a focus on the mathematical and computational foundations of large-scale optimization.</p>
         <p>I develop algorithms and computational tools motivated by real-world problems, connecting optimization theory with practical applications. Before joining MIT, I was an Assistant Professor at the University of Chicago Booth School of Business and a faculty researcher at Google Research. I received my PhD in Mathematics and Operations Research from MIT in 2019.</p>
       </div>
       <section class="home-research" aria-labelledby="research-heading">
@@ -42,11 +44,11 @@ import { profile } from '../data/site';
         </div>
       </section>
       <section class="recognition" aria-labelledby="recognition-heading">
-        <h2 id="recognition-heading">Selected honors</h2>
+        <h2 id="recognition-heading">Awards</h2>
         <ul>
-          <li><span class="honor-year">2026</span><span>Sloan Research Fellowship</span></li>
-          <li><span class="honor-year">2024</span><span>COIN-OR Cup</span></li>
-          <li><span class="honor-year">2024</span><span>Beale–Orchard-Hays Prize</span></li>
+          {awards.map(award => (
+            <li><span class="honor-year">{award.year}</span><span>{award.title}</span></li>
+          ))}
         </ul>
       </section>
     </div>

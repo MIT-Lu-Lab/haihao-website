@@ -1,7 +1,8 @@
 ---
 import Navigation from '../components/Navigation.astro';
-import { profile } from '../data/site';
+import { allowSearchEngines, profile } from '../data/site';
 import '../styles/global.css';
+import ExternalLink from '../components/ExternalLink.astro';
 
 interface Props { title?: string; description?: string }
 const {
@@ -17,6 +18,7 @@ const pageTitle = title ? `${title} · Haihao Lu` : 'Haihao Lu · MIT Sloan';
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <meta name="theme-color" content="#750014" />
+    {!allowSearchEngines && <meta name="robots" content="noindex, nofollow" />}
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
@@ -38,7 +40,7 @@ const pageTitle = title ? `${title} · Haihao Lu` : 'Haihao Lu · MIT Sloan';
     <main id="main" class="container" tabindex="-1"><slot /></main>
     <footer class="site-footer container">
       <span>© {new Date().getFullYear()} Haihao Lu</span>
-      <a href={profile.faculty}>MIT Sloan School of Management <span aria-hidden="true">↗</span></a>
+      <ExternalLink href={profile.faculty}>MIT Sloan School of Management</ExternalLink>
     </footer>
   </body>
 </html>

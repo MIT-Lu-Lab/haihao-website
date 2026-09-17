@@ -2,6 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import PageHeading from '../components/PageHeading.astro';
 import { people, categories } from '../data/people';
+import ExternalLink from '../components/ExternalLink.astro';
 ---
 <Layout title="People">
   <PageHeading title="People"><p>Students, postdoctoral researchers, and alumni.</p></PageHeading>
@@ -15,10 +16,14 @@ import { people, categories } from '../data/people';
             <ul class="people-list">
               {people.filter(person => person.alumni === alumni && person.category === category).map(person => (
                 <li class="person">
-                  <h4>{person.name}</h4>
-                  <p>{person.affiliation}</p>
-                  {person.note && <p class="person-note">{person.note}</p>}
-                  {person.destination && <p class="person-destination"><span aria-hidden="true">→</span> {person.destination}</p>}
+                  <h4>{person.link
+                    ? <ExternalLink href={person.link} mark={false}>{person.name}</ExternalLink>
+                    : person.name}</h4>
+                  <p class="person-detail">
+                    {person.affiliation}
+                    {person.note && <span class="person-note"> · {person.note}</span>}
+                    {person.destination && <span class="person-destination"> <span aria-hidden="true">→</span> {person.destination}</span>}
+                  </p>
                 </li>
               ))}
             </ul>

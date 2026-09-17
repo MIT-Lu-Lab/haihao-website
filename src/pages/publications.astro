@@ -3,13 +3,14 @@ import Layout from '../layouts/Layout.astro';
 import PageHeading from '../components/PageHeading.astro';
 import { publications } from '../data/publications';
 import { profile } from '../data/site';
+import ExternalLink from '../components/ExternalLink.astro';
 
 const years = [...new Set(publications.map(p => p.year))].sort((a, b) => b - a);
 const groups = years.map(year => ({ label: String(year), id: `year-${year}`, papers: publications.filter(p => p.year === year).sort((a, b) => Number(a.status === 'preprint') - Number(b.status === 'preprint')) }));
 ---
 <Layout title="Publications" description="Publications and working papers by Haihao Lu in optimization, computation, and data-driven decision-making.">
   <PageHeading title="Publications">
-    <p>Journal articles, conference papers, and papers under review.<br />You can also find my work on <a href={profile.scholar}>Google Scholar <span aria-hidden="true">↗</span></a>.</p>
+    <p>Journal articles, conference papers, and papers under review.<br />You can also find my work on <ExternalLink href={profile.scholar}>Google Scholar</ExternalLink>.</p>
   </PageHeading>
   <form class="publication-tools" role="search" hidden>
     <div class="search-field">
@@ -33,14 +34,14 @@ const groups = years.map(year => ({ label: String(year), id: `year-${year}`, pap
           <ol>
             {group.papers.map(paper => (
               <li class="publication" data-publication data-status={paper.status} data-search={`${paper.title} ${paper.authors.map(a => a.name).join(' ')} ${paper.venue}`}>
-                <h3>{paper.links[0] ? <a href={paper.links[0].url}>{paper.title}</a> : paper.title}</h3>
+                <h3>{paper.links[0] ? <ExternalLink href={paper.links[0].url} mark={false}>{paper.title}</ExternalLink> : paper.title}</h3>
                 <p class="publication-authors">{paper.authors.map((author, index) => (
                   <>{index > 0 && ', '}{author.isSelf ? <strong>{author.name}</strong> : author.name}</>
                 ))}</p>
                 <p class="publication-venue">{paper.status === 'preprint'
                   ? <span class="paper-status">{paper.venue}</span>
                   : paper.venue}</p>
-                {paper.links.length > 0 && <div class="paper-links">{paper.links.map(link => <a href={link.url}>{link.label} <span aria-hidden="true">↗</span></a>)}</div>}
+                {paper.links.length > 0 && <div class="paper-links">{paper.links.map(link => <ExternalLink href={link.url}>{link.label}</ExternalLink>)}</div>}
               </li>
             ))}
           </ol>

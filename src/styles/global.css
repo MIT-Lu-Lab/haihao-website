@@ -140,13 +140,16 @@ address { font-style: normal; color: var(--muted); margin-top: 11px; line-height
 .people-page { padding-bottom: 80px; }
 .people-section > h2 { color: var(--red); margin-bottom: 32px; }
 .people-section + .people-section { margin-top: 64px; }
+/* Category beside its group, then one row per person: three aligned columns that
+   read across. The abbreviated affiliations leave room for all of them. */
 .people-category { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 48px; padding-top: 28px; border-top: 1px solid var(--line); margin-top: 32px; }
 .people-category > h3 { font-size: var(--text-subheading); margin-bottom: 0; }
-.people-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px 40px; }
-.person h4 { font-size: var(--text-body); font-weight: 600; margin: 0 0 var(--space-xs); line-height: 1.5; }
-.person p { font-size: var(--text-ui); line-height: 1.75; color: var(--muted); margin-bottom: 4px; }
-.person .person-note { font-size: var(--text-ui); }
-.person .person-destination { color: var(--ink); margin-top: 10px; }
+/* One row per person: names align into a column, everything else reads across. */
+.people-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr; gap: 14px; }
+.person { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: var(--space-md); align-items: baseline; }
+.person h4 { font-size: var(--text-body); font-weight: 600; margin: 0; line-height: 1.6; }
+.person p { font-size: var(--text-ui); line-height: 1.6; color: var(--muted); margin: 0; }
+.person .person-destination { color: var(--ink); }
 .support-contact { margin-top: 64px; font-size: var(--text-ui); }
 .skip-link { position: fixed; top: -100px; left: 20px; background: white; border: 2px solid var(--red); padding: 8px 16px; z-index: 100; }
 .skip-link:focus { top: 12px; }
@@ -172,7 +175,7 @@ address { font-style: normal; color: var(--muted); margin-top: 11px; line-height
   .mobile-navigation a[aria-current]::after { display: none; }
   .mobile-navigation a[aria-current] { font-weight: 700; }
   .people-category { grid-template-columns: 200px minmax(0, 1fr); gap: 28px; }
-  .people-list { grid-template-columns: 1fr; }
+  .person { grid-template-columns: 160px minmax(0, 1fr); }
 }
 @media (max-width: 760px) {
   :root { --text-display: 2.5rem; --text-title: 2rem; --text-body: 1rem; }
@@ -202,6 +205,7 @@ address { font-style: normal; color: var(--muted); margin-top: 11px; line-height
   .year-navigation nav { flex-direction: row; flex-wrap: wrap; gap: 8px 20px; }
   .year-navigation .eyebrow { margin-bottom: 10px; }
   .people-category { grid-template-columns: 1fr; gap: 22px; }
+  .person { grid-template-columns: 1fr; gap: 2px; }
 }
 @media (max-width: 420px) {
   .profile-sidebar { grid-template-columns: 112px minmax(0, 1fr); gap: 20px; }
