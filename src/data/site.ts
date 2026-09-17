@@ -12,6 +12,7 @@ export const profile = {
   scholar: 'https://scholar.google.com/citations?user=DnRJBwUAAAAJ&hl=en',
   faculty: 'https://mitsloan.mit.edu/faculty/directory/haihao-lu',
   cv: 'https://mitsloan.mit.edu/shared/ods/documents/?DocumentID=14396&doc=1',
+  assistant: { name: 'Kelsey Gintzler', email: 'klgintz@mit.edu' },
 };
 
 /** A link that leaves the site, and so opens in a new tab. */
