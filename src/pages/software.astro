@@ -8,38 +8,46 @@ import ExternalLink from '../components/ExternalLink.astro';
   <PageHeading title="Software">
     <p>Open-source solvers and libraries for large-scale optimization.</p>
   </PageHeading>
-  <div class="software-page">
-    <div class="software-list">
-      {software.map(project => (
-        <section class="content-section">
-          <h2>{project.name}</h2>
-          <p>{project.description}</p>
-          <ExternalLink class="text-link" href={project.repo}>GitHub</ExternalLink>
-        </section>
-      ))}
-    </div>
-  </div>
+  <ul class="software-list">
+    {software.map(project => (
+      <li>
+        <ExternalLink class="software-name" href={project.repo} mark={false}>{project.name}</ExternalLink>
+        <span class="software-description">{project.description}</span>
+      </li>
+    ))}
+  </ul>
 </Layout>
 
 <style>
-  .software-page {
-    padding-bottom: var(--space-page);
-  }
-
   .software-list {
+    list-style: none;
+    margin: 0;
+    padding: var(--space-lg) 0 var(--space-page);
+    border-top: 1px solid var(--line);
     display: grid;
-    row-gap: var(--space-xl);
+    row-gap: var(--space-md);
   }
 
-  .software-list .content-section {
-    margin-top: 0;
-    padding-top: var(--space-md);
+  .software-list li {
+    display: grid;
+    grid-template-columns: 140px minmax(0, 1fr);
+    gap: var(--space-md);
+    align-items: baseline;
   }
 
-  .software-list p {
+  .software-list :global(.software-name) {
+    font-weight: 600;
+  }
+
+  .software-description {
     font-size: var(--text-ui);
     color: var(--muted);
-    margin-bottom: var(--space-md);
   }
 
+  @media (max-width: 760px) {
+    .software-list li {
+      grid-template-columns: 1fr;
+      gap: 2px;
+    }
+  }
 </style>
