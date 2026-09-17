@@ -119,8 +119,6 @@ test('code and supplement fields become trailing links', () => {
 });
 
 test('an arXiv DOI is recorded as an eprint, not a second Paper link', () => {
-  // The imported data listed arxiv.org/pdf/X and doi.org/10.48550/arXiv.X as two
-  // separate links to the same preprint; one arXiv link replaces both.
   assert.deepEqual(linksOf('eprint = {2407.19689}, archiveprefix = {arXiv}'), [
     { label: 'arXiv', url: 'https://arxiv.org/abs/2407.19689' },
   ]);

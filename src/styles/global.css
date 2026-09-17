@@ -6,7 +6,6 @@
   --line: #e5e3e0;
   --soft: #f8f7f5;
   --serif: Georgia, 'Times New Roman', serif;
-  /* Role-based type scale. Page components reuse these rather than inventing sizes. */
   --text-display: 3rem;
   --text-brand: 1.75rem;
   --text-title: 2.25rem;
@@ -135,17 +134,12 @@ address { font-style: normal; color: var(--muted); margin-top: 11px; line-height
 .content-section h3 { font-size: var(--text-subheading); }
 .content-section .eyebrow { color: var(--red); }
 .content-section .text-link { font-size: var(--text-ui); }
-.plain-list { padding-left: 24px; font-size: var(--text-body); }
-.plain-list li { margin-bottom: 8px; }
 .placeholder { border-top: 1px solid var(--line); padding-top: 30px; color: var(--muted); font-size: var(--text-body); }
 .people-page { padding-bottom: 80px; }
 .people-section > h2 { color: var(--red); margin-bottom: 32px; }
 .people-section + .people-section { margin-top: 64px; }
-/* Category beside its group, then one row per person: three aligned columns that
-   read across. The abbreviated affiliations leave room for all of them. */
 .people-category { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 48px; padding-top: 28px; border-top: 1px solid var(--line); margin-top: 32px; }
 .people-category > h3 { font-size: var(--text-subheading); margin-bottom: 0; }
-/* One row per person: names align into a column, everything else reads across. */
 .people-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr; gap: 14px; }
 .person { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: var(--space-md); align-items: baseline; }
 .person h4 { font-size: var(--text-body); font-weight: 600; margin: 0; line-height: 1.6; }

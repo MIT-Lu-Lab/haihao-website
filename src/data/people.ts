@@ -1,21 +1,10 @@
-// Migrated from Haihao's faculty Students page on 2026-09-16, and revised on
-// 2026-09-16 to keep that page's abbreviations (MIT ORC, UChicago Booth, CMU
-// Heinz) rather than expanding them. Where the source spells one department two
-// ways — "UChicago Statistics Department" and "UChicago Stats" — it is normalised.
-// Alumni status follows the explicit destination arrows on that page.
 export type Person = {
   name: string;
   category: string;
   affiliation: string;
-  /** Shown under the affiliation, e.g. a co-advisor. */
   note?: string;
-  /** Where an alumnus went next. */
   destination?: string;
   alumni: boolean;
-  /**
-   * Personal or faculty page; the name becomes a link when set. Add one only
-   * after checking it is current — a stale page is worse than no link.
-   */
   link?: string;
 };
 

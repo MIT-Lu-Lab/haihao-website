@@ -1,7 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import PageHeading from '../components/PageHeading.astro';
-import Arrow from '../components/Arrow.astro';
 import { profile } from '../data/site';
 import ExternalLink from '../components/ExternalLink.astro';
 ---
@@ -22,6 +21,6 @@ import ExternalLink from '../components/ExternalLink.astro';
       <h2>Modern Large-Scale Optimization: Theory and Computation</h2>
       <p>BUSN 36919 · Spring 2023</p>
     </section>
-    <ExternalLink class="text-link" href={profile.cv} mark={false}>Full teaching history in my CV <Arrow /></ExternalLink>
+    <ExternalLink class="text-link" href={profile.cv}>Full teaching history in my CV</ExternalLink>
   </div>
 </Layout>

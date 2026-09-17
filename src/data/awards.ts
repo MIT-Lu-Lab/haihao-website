@@ -1,6 +1,3 @@
-// From Haihao's faculty Awards page, read on 2026-09-16, in the order listed there
-// and worded exactly as that page words them:
-// https://mitmgmtfaculty.mit.edu/hlu/awards/
 export type Award = {
   year: number;
   title: string;

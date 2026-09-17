@@ -1,7 +1,3 @@
-// Repositories and descriptions read from GitHub on 2026-09-16. PDOT.jl has no GitHub
-// description; its wording comes from the PDOT paper, arXiv:2407.19689. The MIT-Lu-Lab
-// organisation also holds `CuPDLPx.jl`, `crossover` and `SimplePDLP`, deliberately not
-// listed here.
 export const software = [
   {
     name: 'cuPDLPx',

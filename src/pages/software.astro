@@ -9,7 +9,7 @@ import ExternalLink from '../components/ExternalLink.astro';
     <p>Open-source solvers and libraries for large-scale optimization.</p>
   </PageHeading>
   <div class="software-page">
-    <div class="software-grid">
+    <div class="software-list">
       {software.map(project => (
         <section class="content-section">
           <h2>{project.name}</h2>
@@ -26,28 +26,20 @@ import ExternalLink from '../components/ExternalLink.astro';
     padding-bottom: var(--space-page);
   }
 
-  .software-grid {
+  .software-list {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: var(--space-section);
     row-gap: var(--space-xl);
   }
 
-  /* The grid supplies the vertical rhythm; each entry keeps only its own rule. */
-  .software-grid .content-section {
+  .software-list .content-section {
     margin-top: 0;
     padding-top: var(--space-md);
   }
 
-  .software-grid p {
+  .software-list p {
     font-size: var(--text-ui);
     color: var(--muted);
     margin-bottom: var(--space-md);
   }
 
-  @media (max-width: 760px) {
-    .software-grid {
-      grid-template-columns: 1fr;
-    }
-  }
 </style>

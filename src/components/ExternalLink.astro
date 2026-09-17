@@ -1,7 +1,4 @@
 ---
-// Every link that leaves the site goes through here, so the new-tab behaviour and
-// the ↗ mark that promises it stay in step. `mark` is off where the link already
-// carries its own affordance, such as the PDF label on the CV.
 interface Props { href: string; class?: string; mark?: boolean }
 const { href, class: className, mark = true } = Astro.props;
 ---
