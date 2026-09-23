@@ -1,30 +1,107 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import PageHeading from '../components/PageHeading.astro';
-import Arrow from '../components/Arrow.astro';
+import ExternalLink from '../components/ExternalLink.astro';
 ---
 <Layout title="Research">
-  <PageHeading title="Research"><p>Advancing the mathematical and computational frontiers of large-scale optimization.</p></PageHeading>
+  <PageHeading title="Research"><p>I develop optimization theory, algorithms, and software for large-scale decision-making. My research connects mathematical foundations with practical questions: how to exploit modern computing architectures, explain and improve algorithmic performance, allocate scarce resources under uncertainty, and make data-driven decisions fairer. These questions unite the four research areas below and guide collaborations with industry and public agencies.</p></PageHeading>
   <div class="research-page prose">
-    <p>My research connects optimization theory, computation, and data science. I am particularly interested in developing algorithms with rigorous guarantees that can address the challenges of real-world decision-making.</p>
-    <section id="scalable-optimization" class="content-section">
-      <h2>First-order methods &amp; scalable solvers</h2>
-      <p>I develop first-order optimization methods and computational tools for large-scale mathematical programming. This work brings together theoretical analysis and algorithm design for modern computing architectures, including GPUs and distributed systems.</p>
-      <p>Problems of interest include linear, quadratic, semidefinite, and nonlinear programming.</p>
-      <p>The PDLP algorithm I co-developed has been adopted by optimization solvers and technology companies including Google, NVIDIA, Gurobi, COPT, HiGHS, Knitro, and FICO Xpress.</p>
-      <a class="text-link" href="/software/">Explore software <Arrow /></a>
+    <section id="gpu-optimization" class="content-section">
+      <h2>GPU-accelerated mathematical programming</h2>
+      <p>This research aims to make large-scale mathematical programming faster and more scalable by designing algorithms for modern computing architectures. Linear programming (LP) provides a starting point: simplex and interior-point methods have long dominated practice, but their reliance on sparse matrix factorizations can create computational and memory bottlenecks. The challenge is to exploit GPU parallelism while retaining the accuracy and reliability needed in optimization applications.</p>
+      <p>Our approach combines inexpensive first-order iterations with adaptive restarting, preconditioning, and acceleration. Through a collaboration with researchers at Google that began in 2018, we developed <strong><ExternalLink href="https://github.com/google/or-tools/tree/stable/ortools/pdlp" mark={false}>PDLP</ExternalLink></strong>, a practical LP solver introduced in 2021 and built around primal-dual hybrid gradient (PDHG) [1]. Its core iterations use sparse matrix-vector products and simple vector operations, making the approach well suited to GPUs. This foundation led to <ExternalLink href="https://github.com/jinwen-yang/cuPDLP.jl" mark={false}>cuPDLP.jl</ExternalLink> in 2023, which demonstrated performance comparable to leading commercial solvers on standard benchmarks [2], and <ExternalLink href="https://github.com/MIT-Lu-Lab/cuPDLPx" mark={false}>cuPDLPx</ExternalLink> in 2025, which delivered further substantial speedups [3]. Related work extends these ideas to convex and nonconvex quadratic programming [4, 5], as well as semidefinite programming [6].</p>
+      <p>I believe these advances have helped establish first-order methods as a practical third approach to LP alongside simplex and interior-point methods. PDLP has been <ExternalLink href="https://research.google/blog/scaling-up-linear-programming-with-pdlp/" mark={false}>deployed for routing and traffic engineering in Google's data-center networks</ExternalLink> since May 2023, enabling network-wide optimization with lower resource requirements. NVIDIA also uses cuOpt's PDLP-based LP solver for <ExternalLink href="https://developer.nvidia.com/blog/building-an-ai-agent-for-supply-chain-optimization-with-nvidia-nim-and-cuopt/" mark={false}>supply-chain planning</ExternalLink>, enabling rapid analysis of demand changes and supply disruptions. Implementations of the broader PDLP/PDHG approach are also available in <ExternalLink href="https://github.com/COPT-Public/cuPDLP-C" mark={false}>COPT</ExternalLink>, <ExternalLink href="https://ergo-code.github.io/HiGHS/dev/solvers/" mark={false}>HiGHS</ExternalLink>, <ExternalLink href="https://developer.nvidia.com/blog/accelerate-large-linear-programming-problems-with-nvidia-cuopt/" mark={false}>NVIDIA cuOpt</ExternalLink>, <ExternalLink href="https://support.gurobi.com/hc/en-us/articles/360012237852-Does-Gurobi-support-GPUs" mark={false}>Gurobi</ExternalLink>, <ExternalLink href="https://www.fico.com/blogs/gpu-acceleration-hybrid-gradient-algorithm-fico-xpress" mark={false}>FICO Xpress</ExternalLink>, and <ExternalLink href="https://www.artelys.com/app/docs/knitro/2_userGuide/algorithms.html#linear-lp-algorithms" mark={false}>Artelys Knitro</ExternalLink>.</p>
+      <p>This line of research has been recognized with the <ExternalLink href="https://engineering.jhu.edu/ams/news/diaz-team-awarded-beale-orchard-hays-prize/" mark={false}>2024 Beale-Orchard-Hays Prize</ExternalLink> for PDLP, the <ExternalLink href="https://www.coin-or.org/news/" mark={false}>2024 COIN-OR Cup</ExternalLink> for cuPDLP.jl, and the <ExternalLink href="https://connect.informs.org/computing/awards/ics-prize" mark={false}>2026 INFORMS Computing Society Prize</ExternalLink> for GPU-based linear and convex quadratic optimization. My broader goal is to design optimization algorithms that exploit modern computing architectures, including GPUs and TPUs, to solve problems faster and at substantially larger scales.</p>
+      <h3>Selected papers</h3>
+      <ol class="selected-papers">
+        <li>D. Applegate, M. Díaz, O. Hinder, H. Lu, M. Lubin, B. O'Donoghue, and W. Schudy (2021). <ExternalLink href="https://proceedings.neurips.cc/paper/2021/file/a8fbbd3b11424ce032ba813493d95ad7-Paper.pdf" mark={false}>Practical Large-Scale Linear Programming Using Primal-Dual Hybrid Gradient</ExternalLink>. <em>Advances in Neural Information Processing Systems</em>, 34, 20243–20257.</li>
+        <li>H. Lu and J. Yang (2025). <ExternalLink href="https://doi.org/10.1287/opre.2024.1069" mark={false}>cuPDLP.jl: A GPU Implementation of Restarted Primal-Dual Hybrid Gradient for Linear Programming in Julia</ExternalLink>. <em>Operations Research</em>, 73(6), 3440–3452.</li>
+        <li>H. Lu, Z. Peng, and J. Yang (2025). <ExternalLink href="https://arxiv.org/abs/2507.14051" mark={false}>cuPDLPx: A Further Enhanced GPU-Based First-Order Solver for Linear Programming</ExternalLink>. Working paper.</li>
+        <li>H. Lu and J. Yang (2026). <ExternalLink href="https://doi.org/10.1007/s10107-025-02241-0" mark={false}>A Practical and Optimal First-Order Method for Large-Scale Convex Quadratic Programming</ExternalLink>. <em>Mathematical Programming</em>, 215, 771–808.</li>
+        <li>Z. Chen and H. Lu (2026). <ExternalLink href="https://arxiv.org/abs/2609.19557" mark={false}>PDNQP: A GPU-Based Factorization-Free Method for Large-Scale Nonconvex Quadratic Programming</ExternalLink>. Working paper.</li>
+        <li>L. Ding, H. Lu, and J. Yang (2025). <ExternalLink href="https://arxiv.org/abs/2505.15775" mark={false}>New Understandings and Computation on Augmented Lagrangian Methods for Low-Rank Semidefinite Programming</ExternalLink>. Working paper.</li>
+      </ol>
     </section>
-    <section id="resource-allocation" class="content-section">
-      <h2>Data-driven resource allocation</h2>
-      <p>I design algorithms with provable performance guarantees for allocating scarce resources under uncertainty. A particular focus is online advertising, including budget pacing and online allocation.</p>
-      <p>Algorithms from this work have been deployed at Google and eBay to improve the efficiency and robustness of resource allocation.</p>
-      <a class="text-link" href="/publications/">Browse publications <Arrow /></a>
+    <section id="first-order-theory" class="content-section">
+      <h2>Theoretical foundations of first-order optimization</h2>
+      <p>My theoretical research has two complementary aims: to <strong>explain numerical performance and enhance algorithm design</strong>, and to develop <strong>concise, illuminating theory</strong>. Mathematical insights lead to faster and more reliable methods, while computational observations motivate theory that better captures how algorithms behave in practice.</p>
+      <p>For linear programming, our analysis of sharpness and adaptive restarting yields optimal linear convergence rates within a broad class of primal-dual methods [1]. A refined analysis relates PDHG's convergence to local problem geometry, helping explain its practical behavior [2], while restarted Halpern PDHG provides further acceleration [3]. For infeasible problems, we show how diverging iterates yield certificates of infeasibility [4]. These results provide theoretical foundations and directly guide the design and development of fast, reliable solvers, including PDLP, cuPDLP, and cuPDLPx.</p>
+      <p>This emphasis on conceptual clarity also motivates our work on simple, reusable frameworks. Relative smoothness, relative strong convexity, and relative continuity adapt first-order methods to problem geometry beyond standard Lipschitz assumptions [5, 6]. Our unified proof for the proximal point method (PPM), PDHG, and the alternating direction method of multipliers (ADMM) exposes their common structure [7], while my high-resolution ordinary differential equation (ODE) framework connects continuous-time intuition with discrete algorithm behavior [8]. These frameworks make convergence analysis more transparent and offer insights for algorithm design and teaching. The ODE work received the <ExternalLink href="https://connect.informs.org/optimizationsociety/prizes/young-researchers-prize/2021" mark={false}>2021 INFORMS Optimization Society Young Researchers Prize</ExternalLink>.</p>
+      <h3>Selected papers</h3>
+      <ol class="selected-papers">
+        <li>D. Applegate, O. Hinder, H. Lu, and M. Lubin (2023). <ExternalLink href="https://doi.org/10.1007/s10107-022-01901-9" mark={false}>Faster First-Order Primal-Dual Methods for Linear Programming Using Restarts and Sharpness</ExternalLink>. <em>Mathematical Programming</em>, 201, 133–184.</li>
+        <li>H. Lu and J. Yang (2025). <ExternalLink href="https://doi.org/10.1007/s10107-024-02109-9" mark={false}>On the Geometry and Refined Rate of Primal-Dual Hybrid Gradient for Linear Programming</ExternalLink>. <em>Mathematical Programming</em>, 212, 349–387.</li>
+        <li>H. Lu and J. Yang (2024). <ExternalLink href="https://arxiv.org/abs/2407.16144" mark={false}>Restarted Halpern PDHG for Linear Programming</ExternalLink>. Working paper.</li>
+        <li>D. Applegate, M. Díaz, H. Lu, and M. Lubin (2024). <ExternalLink href="https://doi.org/10.1137/22M1510467" mark={false}>Infeasibility Detection with Primal-Dual Hybrid Gradient for Large-Scale Linear Programming</ExternalLink>. <em>SIAM Journal on Optimization</em>, 34(1), 459–484.</li>
+        <li>H. Lu, R. M. Freund, and Y. Nesterov (2018). <ExternalLink href="https://doi.org/10.1137/16M1099546" mark={false}>Relatively Smooth Convex Optimization by First-Order Methods, and Applications</ExternalLink>. <em>SIAM Journal on Optimization</em>, 28(1), 333–354.</li>
+        <li>H. Lu (2019). <ExternalLink href="https://doi.org/10.1287/ijoo.2018.0008" mark={false}>'Relative Continuity' for Non-Lipschitz Nonsmooth Convex Optimization Using Stochastic (or Deterministic) Mirror Descent</ExternalLink>. <em>INFORMS Journal on Optimization</em>, 1(4), 288–303.</li>
+        <li>H. Lu and J. Yang (2023). <ExternalLink href="https://arxiv.org/abs/2305.02165" mark={false}>On a Unified and Simplified Proof for the Ergodic Convergence Rates of PPM, PDHG and ADMM</ExternalLink>. Working paper.</li>
+        <li>H. Lu (2022). <ExternalLink href="https://doi.org/10.1007/s10107-021-01669-4" mark={false}>An <em>O</em>(<em>s<sup>r</sup></em>)-Resolution ODE Framework for Understanding Discrete-Time Algorithms and Applications to the Linear Convergence of Minimax Problems</ExternalLink>. <em>Mathematical Programming</em>, 194, 1061–1112.</li>
+      </ol>
+    </section>
+    <section id="online-decision-making" class="content-section">
+      <h2>Online decision-making and advertising</h2>
+      <p>Online resource allocation requires decisions before future demand is known. In automated bidding at Google, algorithms must decide within milliseconds how aggressively to bid across successive auctions while satisfying advertisers' budgets and return-on-spend (ROS) constraints. The challenge is to make these decisions efficiently under stochastic, non-stationary, or even adversarial uncertainty.</p>
+      <p>We developed a <strong>dual mirror descent framework</strong> that learns the opportunity cost, or shadow price, of scarce resources from streaming outcomes and uses those prices to guide decisions. By applying online mirror descent to dual variables, it achieves simultaneous “best-of-many-worlds” guarantees across these input models [1]. Further work addresses joint budget and ROS pacing in automated bidding [2, 3] and incorporates fairness and regularized objectives into online allocation [4]. Convolutional mirror descent also connects online convex optimization with dual-based proportional-integral-derivative (PID) control, providing a theoretical foundation for feedback controllers used in practice [5].</p>
+      <p>The framework is deployed globally as a core real-time budget and ROS pacing engine in <strong>Google Ads</strong>, supporting automated bidding across Google Search, Universal App Campaigns, and Demand Gen campaigns. Replacing legacy pacing heuristics with this principled shadow-price update has significantly improved advertiser conversion value at unchanged budgets and increased on-target pacing precision across global auction traffic.</p>
+      <p>This line of research received the <ExternalLink href="https://www.informs.org/Recognizing-Excellence/Community-Prizes/Auctions-and-Market-Design/Michael-H.-Rothkopf-Junior-Researcher-Paper-Prize" mark={false}>2022 INFORMS Michael H. Rothkopf Junior Researcher Paper Prize</ExternalLink> (first place) and the <ExternalLink href="https://www.informs.org/Recognizing-Excellence/Community-Prizes/Revenue-Management-and-Pricing/Section-Prize" mark={false}>2023 INFORMS Revenue Management and Pricing Section Prize</ExternalLink>. Beyond advertising, these methods have potential applications in resource allocation across digital marketplaces, cloud computing, and network traffic engineering.</p>
+      <h3>Selected papers</h3>
+      <ol class="selected-papers">
+        <li>S. R. Balseiro, H. Lu, and V. Mirrokni (2023). <ExternalLink href="https://doi.org/10.1287/opre.2021.2242" mark={false}>The Best of Many Worlds: Dual Mirror Descent for Online Allocation Problems</ExternalLink>. <em>Operations Research</em>, 71(1), 101–119.</li>
+        <li>S. R. Balseiro, K. Bhawalkar, Z. Feng, H. Lu, V. Mirrokni, B. Sivan, and D. Wang (2024). <ExternalLink href="https://proceedings.mlr.press/v235/balseiro24a.html" mark={false}>A Field Guide for Pacing Budget and ROS Constraints</ExternalLink>. <em>Proceedings of the 41st International Conference on Machine Learning (ICML)</em>, PMLR 235, 2607–2638.</li>
+        <li>G. Aggarwal, A. Badanidiyuru, S. R. Balseiro, et al. (2024). <ExternalLink href="https://doi.org/10.1145/3699824.3699838" mark={false}>Auto-Bidding and Auctions in Online Advertising: A Survey</ExternalLink>. <em>ACM SIGecom Exchanges</em>, 22(1), 159–183.</li>
+        <li>S. R. Balseiro, H. Lu, and V. Mirrokni (2025). <ExternalLink href="https://doi.org/10.1287/msom.2022.0212" mark={false}>Regularized Online Allocation Problems: Fairness and Beyond</ExternalLink>. <em>Manufacturing &amp; Service Operations Management</em>, 27(3), 720–735.</li>
+        <li>S. R. Balseiro, H. Lu, V. Mirrokni, and B. Sivan (2026). <ExternalLink href="https://arxiv.org/abs/2202.06152" mark={false}>Analysis of Dual-Based PID Controllers through Convolutional Mirror Descent</ExternalLink>. <em>Operations Research</em>, forthcoming.</li>
+      </ol>
+    </section>
+    <section id="property-taxation" class="content-section">
+      <h2>Addressing regressivity in property taxation</h2>
+      <p>Property-tax regressivity is a consequential computational social science problem: owners of lower-valued homes can pay a higher share of property value in taxes. Systematic errors in automated valuation models can reinforce this inequity [1]. Research documents <ExternalLink href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3800536" mark={false}>widespread regressivity across the United States</ExternalLink>, <ExternalLink href="https://www.minneapolisfed.org/research/institute-working-papers/the-assessment-gap-racial-inequalities-in-property-taxation" mark={false}>racial disparities in property-tax burdens</ExternalLink>, and <ExternalLink href="https://escholarship.org/uc/item/8cr097v2" mark={false}>links between inflated assessments and tax foreclosures in Detroit</ExternalLink>. These findings highlight the stakes for household financial security and social equity, motivating my work on socially responsible machine learning and operations research.</p>
+      <p>In collaboration with the Cook County Assessor's Office (CCAO), we developed a regularization method that targets regressivity during model training [2]. The method has already been <strong>adopted in <ExternalLink href="https://github.com/ccao-data/model-res-avm" mark={false}>CCAO's valuation workflow</ExternalLink></strong>, where its use has substantially reduced measured assessment regressivity while maintaining comparable predictive accuracy. This collaboration brings our research into a public property assessment system serving more than five million residents.</p>
+      <p>The method will be used in future property assessments in Cook County. We are also working to extend its use to other jurisdictions across the United States, with the goal of improving assessment equity at a national scale.</p>
+      <h3>Selected papers</h3>
+      <ol class="selected-papers">
+        <li>O. Candogan, F. Han, and H. Lu (2023). <ExternalLink href="https://arxiv.org/abs/2312.05996" mark={false}>Achieving Fairness and Accuracy in Regressive Property Taxation</ExternalLink>. MIT Sloan Working Paper 7126-23.</li>
+        <li>N. Acevedo, H. Lu, M. Wagner, and T. Sparer. Fair Property Tax: Targeting Regressivity in Machine Learning-Based Valuation. Unpublished manuscript.</li>
+      </ol>
+    </section>
+    <section id="other-research" class="content-section">
+      <h2>Other research I have been working on</h2>
+      <p>Beyond these four core areas, I work with academic and industry collaborators on optimization applications in marketing, finance, energy, and computing infrastructure.</p>
+      <p><strong>Recommendation systems at eBay.</strong> Sponsored recommendations must balance platform revenue with product relevance. With eBay, we developed a ranking method based on linear programming that incorporates these objectives and operational constraints [1]. A 19-day field experiment covering approximately 329 million impressions showed higher revenue while maintaining or improving relevance. The algorithm entered production in January 2023, demonstrating the value of optimization in a large online marketplace.</p>
+      <p><strong>Targeted marketing.</strong> Firms must decide which promotions to offer to which customers while respecting limits on campaign volume and fairness requirements across customer groups. We developed a scalable linear programming approach to optimize these targeting policies under such constraints [2]. Using data from a field experiment with over two million customers, we demonstrate that the method makes large-scale, constrained targeted marketing problems computationally tractable.</p>
+      <p><strong>Portfolio optimization.</strong> Portfolio construction in high-frequency trading requires balancing expected returns, risk, and trading costs across assets and time. We developed FlashFolio, a GPU-accelerated solver for single-period and multi-period portfolio problems with factor-based risk models and transaction costs, including nonlinear market impact [3]. Benchmarks using realistic market inputs show substantial speedups over a commercial solver, making larger and more detailed portfolio models practical.</p>
+      <p><strong>Power systems with GE Vernova — ongoing work.</strong> I am working with GE Vernova to apply scalable optimization methods to power-system decision-making, translating advances in mathematical programming into tools for energy applications.</p>
+      <p><strong>Data-center operations with Google — ongoing work.</strong> I am working with Google on optimization for data-center operations, exploring how scalable methods can improve resource allocation and operational efficiency in large computing facilities.</p>
+      <h3>Selected papers</h3>
+      <ol class="selected-papers">
+        <li>H. Lu, L. Zhang, and Y. Zhu (2025). <ExternalLink href="https://arxiv.org/abs/2403.14862" mark={false}>The Power of Linear Programming in Sponsored Listings Ranking: Evidence from a Large-Scale Field Experiment</ExternalLink>. Working paper.</li>
+        <li>H. Lu, D. Simester, and Y. Zhu (2025). <ExternalLink href="https://doi.org/10.1287/mksc.2023.0640" mark={false}>Optimizing Scalable Targeted Marketing Policies with Constraints</ExternalLink>. <em>Marketing Science</em>, 44(5), 1082–1103.</li>
+        <li>Y. Jiang, H. Lu, Z. Peng, and J. Yang (2026). <ExternalLink href="https://arxiv.org/abs/2604.22625" mark={false}>FlashFolio: A GPU-Accelerated Solver for Portfolio Optimization</ExternalLink>. Working paper.</li>
+      </ol>
     </section>
   </div>
 </Layout>
 
 <style>
   .research-page {
+    max-width: var(--measure-reading);
     padding-bottom: var(--space-page);
+  }
+  .research-page h3 {
+    margin-top: var(--space-xl);
+    margin-bottom: var(--space-sm);
+  }
+  .selected-papers {
+    padding-left: 1.5em;
+    margin: 0;
+    font-size: var(--text-ui);
+    color: var(--muted);
+  }
+  .selected-papers li + li {
+    margin-top: var(--space-sm);
+  }
+  .selected-papers em {
+    color: var(--ink);
   }
 </style>

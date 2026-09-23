@@ -10,10 +10,11 @@ export type Person = {
 
 export const people: Person[] = [
   { name: 'Charlie Liu', category: 'Doctoral students', affiliation: 'MIT ORC', note: 'Co-advised with Rahul Mazumder', alumni: false },
-  { name: 'Nicolas Villena', category: 'Doctoral students', affiliation: 'MIT ORC', alumni: false },
   { name: 'Jacob Dentes', category: 'Doctoral students', affiliation: 'MIT ORC', alumni: false },
-  { name: 'Zedong Peng', category: 'Postdoctoral researchers', affiliation: 'MIT', alumni: false },
+  { name: 'Zedong Peng', category: 'Postdoctoral researchers', affiliation: 'MIT', alumni: false, link: 'https://zedongpeng.github.io/' },
   { name: 'Bo Tang', category: 'Postdoctoral researchers', affiliation: 'MIT', alumni: false },
+  { name: 'Vinit Ranjan', category: 'Postdoctoral researchers', affiliation: 'MIT', alumni: false, link: 'https://vinitranjan1.github.io/' },
+  { name: 'Yuchen Lou', category: 'Postdoctoral researchers', affiliation: 'MIT', alumni: false, link: 'https://yuchenlou.github.io/' },
   { name: 'Luke Fitzgerald', category: 'Undergraduate students', affiliation: 'MIT Math', alumni: false },
   { name: 'Jinwen Yang', category: 'Doctoral students', affiliation: 'UChicago Statistics', destination: 'Assistant Professor, Columbia University', alumni: true, link: 'https://jinwen-yang.github.io/' },
   { name: 'Azam Asl', category: 'Postdoctoral researchers', affiliation: 'UChicago Booth', destination: 'Consulting firm', alumni: true },

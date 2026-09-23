@@ -14,7 +14,7 @@ export const isExternal = (href: string) => /^https?:\/\//.test(href);
 export const navigation = [
   { label: 'Home', href: '/' },
   { label: 'Research', href: '/research/' },
-  { label: 'Value', href: '/value/' },
+  { label: 'Thoughts', href: '/thoughts/' },
   { label: 'Publications', href: '/publications/' },
   { label: 'People', href: '/people/' },
   { label: 'Software', href: '/software/' },
