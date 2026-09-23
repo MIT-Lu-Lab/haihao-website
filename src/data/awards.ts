@@ -4,6 +4,7 @@ export type Award = {
 };
 
 export const awards: Award[] = [
+  { year: 2026, title: 'INFORMS Computing Society Prize' },
   { year: 2026, title: 'Sloan Research Fellowship (in Mathematics)' },
   { year: 2024, title: 'COIN-OR (Computational Infrastructure for Operations Research) Cup winner' },
   { year: 2024, title: 'Beale — Orchard-Hays Prize' },

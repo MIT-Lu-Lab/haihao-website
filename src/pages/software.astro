@@ -3,10 +3,11 @@ import Layout from '../layouts/Layout.astro';
 import PageHeading from '../components/PageHeading.astro';
 import { software } from '../data/software';
 import ExternalLink from '../components/ExternalLink.astro';
+import { profile } from '../data/site';
 ---
 <Layout title="Software" description="Open-source optimization solvers and libraries from Haihao Lu's group at MIT Sloan.">
   <PageHeading title="Software">
-    <p>Open-source solvers and libraries for large-scale optimization.</p>
+    <p>Open-source solvers and libraries for large-scale optimization. More projects from the group are on GitHub at <ExternalLink href={profile.github}>MIT-Lu-Lab</ExternalLink>.</p>
   </PageHeading>
   <ul class="software-list">
     {software.map(project => (

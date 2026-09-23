@@ -5,6 +5,7 @@ export const profile = {
   email: 'haihao@mit.edu',
   scholar: 'https://scholar.google.com/citations?user=DnRJBwUAAAAJ&hl=en',
   faculty: 'https://mitsloan.mit.edu/faculty/directory/haihao-lu',
+  github: 'https://github.com/MIT-Lu-Lab',
   cv: 'https://mitsloan.mit.edu/shared/ods/documents/?DocumentID=14396&doc=1',
   assistant: { name: 'Kelsey Gintzler', email: 'klgintz@mit.edu' },
 };
