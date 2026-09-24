@@ -1,0 +1,112 @@
+---
+interface Props {
+  id: string;
+  title: string;
+}
+
+const { id, title } = Astro.props;
+const content = await Astro.slots.render('default');
+// Include consecutive opening paragraphs, stopping before the selected papers.
+const introduction = content.split(/<h3\b/)[0]
+  .replace(/<\/p>/g, ' ')
+  .replace(/<[^>]*>/g, '')
+  .replace(/\s+/g, ' ')
+  .trim();
+const previewLength = 600;
+const preview = introduction.length > previewLength
+  ? `${introduction.slice(0, previewLength - 1).replace(/\s+\S*$/, '')}…`
+  : introduction;
+---
+
+<section id={id} class="research-section content-section">
+  <details class="research-disclosure">
+    <summary>
+      <h2>{title}</h2>
+      <svg class="toggle-icon" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <path d="m6 9 6 6 6-6" />
+      </svg>
+      <span class="research-preview" set:html={preview} />
+      <span class="toggle-label"><span class="expand-label">Read more</span><span class="collapse-label">Show less</span></span>
+    </summary>
+    <div class="research-content"><Fragment set:html={content} /></div>
+  </details>
+  <slot name="figure" />
+</section>
+
+<style>
+  .research-section {
+    max-width: calc(var(--measure-reading) + 320px + var(--space-section));
+    margin-top: var(--space-xl);
+  }
+  .research-disclosure {
+    min-width: 0;
+    max-width: var(--measure-reading);
+  }
+  summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--space-lg);
+    cursor: pointer;
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  summary h2 {
+    margin-bottom: var(--space-sm);
+  }
+  summary:hover h2 {
+    color: var(--red);
+  }
+  .toggle-icon {
+    color: var(--red);
+    margin-top: 4px;
+  }
+  .research-preview {
+    grid-column: 1 / -1;
+    max-width: var(--measure-reading);
+    color: var(--muted);
+  }
+  .toggle-label {
+    grid-column: 1;
+    margin-top: var(--space-sm);
+    color: var(--red);
+    font-size: var(--text-ui);
+  }
+  .collapse-label,
+  details[open] .expand-label,
+  details[open] .research-preview {
+    display: none;
+  }
+  details[open] .collapse-label {
+    display: inline;
+  }
+  details[open] .toggle-icon {
+    transform: rotate(180deg);
+  }
+  details[open] .toggle-label {
+    margin-top: 0;
+  }
+  .research-content {
+    max-width: var(--measure-reading);
+    margin-top: var(--space-lg);
+  }
+  .research-section:has(> :global(.research-figure)) {
+    display: grid;
+    grid-template-columns: minmax(0, var(--measure-reading)) 320px;
+    gap: var(--space-section);
+    align-items: start;
+  }
+  @media (max-width: 1100px) {
+    .research-section:has(> :global(.research-figure)) {
+      grid-template-columns: minmax(0, 1fr) clamp(220px, 27vw, 290px);
+      gap: var(--space-xl);
+    }
+  }
+  @media (max-width: 760px) {
+    .research-section:has(> :global(.research-figure)) {
+      display: block;
+      max-width: var(--measure-reading);
+    }
+  }
+</style>
