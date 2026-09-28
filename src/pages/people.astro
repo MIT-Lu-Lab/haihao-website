@@ -2,34 +2,42 @@
 import Layout from '../layouts/Layout.astro';
 import PageHeading from '../components/PageHeading.astro';
 import { people, categories } from '../data/people';
+import { profile } from '../data/site';
 import ExternalLink from '../components/ExternalLink.astro';
 ---
 <Layout title="People">
-  <PageHeading title="People"><p>Students, postdoctoral researchers, and alumni.</p></PageHeading>
+  <PageHeading title="People" />
   <div class="people-page">
-    {[false, true].map(alumni => (
-      <section class="people-section" aria-labelledby={alumni ? 'alumni' : 'current-members'}>
-        <h2 id={alumni ? 'alumni' : 'current-members'}>{alumni ? 'Alumni' : 'Current members'}</h2>
-        {categories.filter(category => people.some(person => person.alumni === alumni && person.category === category)).map(category => (
-          <div class="people-category">
-            <h3>{category}</h3>
-            <ul class="people-list">
-              {people.filter(person => person.alumni === alumni && person.category === category).map(person => (
-                <li class="person">
-                  <h4>{person.link
-                    ? <ExternalLink href={person.link} mark={false}>{person.name}</ExternalLink>
-                    : person.name}</h4>
-                  <p class="person-detail">
-                    {person.affiliation}
-                    {person.note && <span class="person-note"> · {person.note}</span>}
-                    {person.destination && <span class="person-destination"> <span aria-hidden="true">→</span> {person.destination}</span>}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </section>
-    ))}
+    <section class="people-section" aria-labelledby="advising-philosophy">
+      <h2 id="advising-philosophy">Advising philosophy</h2>
+      <p class="prose">For people who are interested, see my <ExternalLink href={profile.advisingPhilosophy} mark={false}>advising philosophy</ExternalLink>.</p>
+    </section>
+    <section class="people-section" aria-label="Group members">
+      <p class="page-intro">Students, postdoctoral researchers, and alumni.</p>
+      {[false, true].map(alumni => (
+        <section class="people-section" aria-labelledby={alumni ? 'alumni' : 'current-members'}>
+          <h2 id={alumni ? 'alumni' : 'current-members'}>{alumni ? 'Alumni' : 'Current members'}</h2>
+          {categories.filter(category => people.some(person => person.alumni === alumni && person.category === category)).map(category => (
+            <div class="people-category">
+              <h3>{category}</h3>
+              <ul class="people-list">
+                {people.filter(person => person.alumni === alumni && person.category === category).map(person => (
+                  <li class="person">
+                    <h4>{person.link
+                      ? <ExternalLink href={person.link} mark={false}>{person.name}</ExternalLink>
+                      : person.name}</h4>
+                    <p class="person-detail">
+                      {person.affiliation}
+                      {person.note && <span class="person-note"> · {person.note}</span>}
+                      {person.destination && <span class="person-destination"> <span aria-hidden="true">→</span> {person.destination}</span>}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </section>
+      ))}
+    </section>
   </div>
 </Layout>

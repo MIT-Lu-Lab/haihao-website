@@ -9,6 +9,7 @@ export const profile = {
   faculty: 'https://mitsloan.mit.edu/faculty/directory/haihao-lu',
   github: 'https://github.com/MIT-Lu-Lab',
   cv: sitePath('files/HaihaoLu_CV_Sep_26.pdf'),
+  advisingPhilosophy: sitePath('files/advising_philosophy.pdf'),
   assistant: { name: 'Kelsey Gintzler', email: 'klgintz@mit.edu' },
 };
 

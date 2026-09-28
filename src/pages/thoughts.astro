@@ -1,8 +1,12 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import PageHeading from '../components/PageHeading.astro';
+import ExternalLink from '../components/ExternalLink.astro';
+import { profile } from '../data/site';
 ---
 <Layout title="Thoughts">
   <PageHeading title="Thoughts" />
-  <div class="content-page"><p class="placeholder">Coming soon.</p></div>
+  <div class="content-page prose">
+    <p><ExternalLink href={profile.advisingPhilosophy} mark={false}>Advising philosophy</ExternalLink></p>
+  </div>
 </Layout>
