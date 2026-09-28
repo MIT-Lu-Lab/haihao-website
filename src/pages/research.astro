@@ -3,6 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import PageHeading from '../components/PageHeading.astro';
 import ExternalLink from '../components/ExternalLink.astro';
 import ResearchSection from '../components/ResearchSection.astro';
+import { sitePath } from '../utils/paths';
 ---
 <Layout title="Research">
   <PageHeading title="Research"><p>I develop optimization theory, algorithms, and software for large-scale decision-making. My research connects mathematical foundations with practical questions: how to exploit modern computing architectures, explain and improve algorithmic performance, allocate scarce resources under uncertainty, and make data-driven decisions fairer. These questions unite the four research areas below and guide collaborations with industry and public agencies.</p></PageHeading>
@@ -24,7 +25,7 @@ import ResearchSection from '../components/ResearchSection.astro';
         </ol>
       </div>
       <figure slot="figure" class="research-figure">
-        <video src="/images/research/pdlp-spiral.mp4" poster="/images/research/pdlp-spiral.png" width="720" height="690" muted loop playsinline preload="none" data-autoplay aria-label="Animation: PDHG last iterate, PDHG average iterate, and restarted PDHG converging to the optimal solution"></video>
+        <video src={sitePath('images/research/pdlp-spiral.mp4')} poster={sitePath('images/research/pdlp-spiral.png')} width="720" height="690" muted loop playsinline preload="none" data-autoplay aria-label="Animation: PDHG last iterate, PDHG average iterate, and restarted PDHG converging to the optimal solution"></video>
         <figcaption>PDHG's last iterate spirals slowly toward the optimum and its average moves faster; restarting from the average (green, dashed) gets there fastest. Animation: <ExternalLink href="https://research.google/blog/scaling-up-linear-programming-with-pdlp/" mark={false}>Google Research</ExternalLink>.</figcaption>
       </figure>
     </ResearchSection>
@@ -46,7 +47,7 @@ import ResearchSection from '../components/ResearchSection.astro';
         </ol>
       </div>
       <figure slot="figure" class="research-figure">
-        <img src="/images/research/ode.svg" alt="Gradient descent–ascent iterates spiraling outward from a saddle point, compared with a closed orbit predicted by a low-resolution ODE" width="320" height="240" loading="lazy" />
+        <img src={sitePath('images/research/ode.svg')} alt="Gradient descent–ascent iterates spiraling outward from a saddle point, compared with a closed orbit predicted by a low-resolution ODE" width="320" height="240" loading="lazy" />
         <figcaption>Schematic. On a min–max problem, the low-resolution ODE predicts a closed orbit; a higher-resolution ODE tracks the iterates as they spiral.</figcaption>
       </figure>
     </ResearchSection>
@@ -66,7 +67,7 @@ import ResearchSection from '../components/ResearchSection.astro';
         </ol>
       </div>
       <figure slot="figure" class="research-figure">
-        <img src="/images/research/dual-price.svg" alt="Shadow price learned by dual mirror descent rising and settling near its optimal value" width="320" height="240" loading="lazy" />
+        <img src={sitePath('images/research/dual-price.svg')} alt="Shadow price learned by dual mirror descent rising and settling near its optimal value" width="320" height="240" loading="lazy" />
         <figcaption>Schematic. Dual mirror descent learns the shadow price of a budget from streaming requests and settles near its optimal value.</figcaption>
       </figure>
     </ResearchSection>
@@ -82,7 +83,7 @@ import ResearchSection from '../components/ResearchSection.astro';
         </ol>
       </div>
       <figure slot="figure" class="research-figure">
-        <img src="/images/research/property-tax.svg" alt="Assessment ratio by home value: a standard model declines with value while a regressivity-penalized model stays flat" width="320" height="240" loading="lazy" />
+        <img src={sitePath('images/research/property-tax.svg')} alt="Assessment ratio by home value: a standard model declines with value while a regressivity-penalized model stays flat" width="320" height="240" loading="lazy" />
         <figcaption>Schematic. A standard valuation model over-assesses lower-valued homes; penalizing regressivity during training flattens the ratio.</figcaption>
       </figure>
     </ResearchSection>

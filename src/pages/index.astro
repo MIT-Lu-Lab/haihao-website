@@ -4,11 +4,12 @@ import Arrow from '../components/Arrow.astro';
 import { awards } from '../data/awards';
 import { profile } from '../data/site';
 import ExternalLink from '../components/ExternalLink.astro';
+import { sitePath } from '../utils/paths';
 ---
 <Layout>
   <div class="home-grid">
     <aside class="profile-sidebar" aria-label="Profile and contact information">
-      <img class="portrait" src="/images/haihao-lu.webp" alt="Haihao Lu" width="360" height="360" fetchpriority="high" />
+      <img class="portrait" src={sitePath('images/haihao-lu.webp')} alt="Haihao Lu" width="360" height="360" fetchpriority="high" />
       <div class="profile-details">
         <ExternalLink class="affiliation" href="https://mitsloan.mit.edu/" mark={false}>MIT Sloan School<br class="desktop-break" /> of Management</ExternalLink>
         <p class="institution">Massachusetts Institute<br class="desktop-break" /> of Technology</p>
@@ -33,21 +34,21 @@ import ExternalLink from '../components/ExternalLink.astro';
         <p>Before joining MIT, I was an Assistant Professor at the University of Chicago Booth School of Business and spent one year as a postdoctoral researcher at Google Research. I received my PhD in Mathematics and Operations Research from MIT in 2019.</p>
       </div>
       <section class="home-research" aria-labelledby="research-heading">
-        <div class="section-heading"><h2 id="research-heading">Research interests</h2><a class="text-link" href="/research/">Explore research <Arrow /></a></div>
+        <div class="section-heading"><h2 id="research-heading">Research interests</h2><a class="text-link" href={sitePath('research/')}>Explore research <Arrow /></a></div>
         <div class="research-grid">
-          <a class="research-summary" href="/research/#gpu-optimization">
+          <a class="research-summary" href={sitePath('research/#gpu-optimization')}>
             <h3>GPU-accelerated optimization <Arrow /></h3>
             <p>Algorithms and solvers for large-scale mathematical programming on GPUs and other modern computing architectures.</p>
           </a>
-          <a class="research-summary" href="/research/#first-order-theory">
+          <a class="research-summary" href={sitePath('research/#first-order-theory')}>
             <h3>First-order optimization theory <Arrow /></h3>
             <p>Theory that explains algorithmic performance and guides the design of faster, more reliable first-order methods.</p>
           </a>
-          <a class="research-summary" href="/research/#online-decision-making">
+          <a class="research-summary" href={sitePath('research/#online-decision-making')}>
             <h3>Online decision-making <Arrow /></h3>
             <p>Resource allocation under uncertainty, with applications to automated bidding, budget pacing, and online advertising.</p>
           </a>
-          <a class="research-summary" href="/research/#property-taxation">
+          <a class="research-summary" href={sitePath('research/#property-taxation')}>
             <h3>Fair property taxation <Arrow /></h3>
             <p>Machine learning and optimization methods that reduce regressivity in property assessments while preserving predictive accuracy.</p>
           </a>

@@ -1,3 +1,5 @@
+import { sitePath } from '../utils/paths';
+
 export const allowSearchEngines = false;
 
 export const profile = {
@@ -6,19 +8,19 @@ export const profile = {
   scholar: 'https://scholar.google.com/citations?user=DnRJBwUAAAAJ&hl=en',
   faculty: 'https://mitsloan.mit.edu/faculty/directory/haihao-lu',
   github: 'https://github.com/MIT-Lu-Lab',
-  cv: '/files/HaihaoLu_CV_Sep_26.pdf',
+  cv: sitePath('files/HaihaoLu_CV_Sep_26.pdf'),
   assistant: { name: 'Kelsey Gintzler', email: 'klgintz@mit.edu' },
 };
 
 export const isExternal = (href: string) => /^https?:\/\//.test(href);
 
 export const navigation = [
-  { label: 'Home', href: '/' },
-  { label: 'Research', href: '/research/' },
-  { label: 'Thoughts', href: '/thoughts/' },
-  { label: 'Publications', href: '/publications/' },
-  { label: 'People', href: '/people/' },
-  { label: 'Software', href: '/software/' },
-  { label: 'Teaching', href: '/teaching/' },
+  { label: 'Home', href: sitePath() },
+  { label: 'Research', href: sitePath('research/') },
+  { label: 'Thoughts', href: sitePath('thoughts/') },
+  { label: 'Publications', href: sitePath('publications/') },
+  { label: 'People', href: sitePath('people/') },
+  { label: 'Software', href: sitePath('software/') },
+  { label: 'Teaching', href: sitePath('teaching/') },
   { label: 'CV', href: profile.cv },
 ];
