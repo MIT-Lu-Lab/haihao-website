@@ -95,3 +95,23 @@ test('saved GPU products have consistent bins and shared scales', () => {
     );
   }
 });
+
+test('missing GPU markup reports the component contract error', () => {
+  const part = {
+    setAttribute() {},
+    querySelectorAll: () => [],
+  };
+  const root = {
+    querySelector: (selector) => (selector === '[data-gpu-bus]' ? null : part),
+    querySelectorAll: () => [],
+  };
+  assert.throws(
+    () =>
+      gpuAnimation.initializeGpuFigure(
+        root,
+        products,
+        createFakeBrowser().browser,
+      ),
+    /GpuFigure is missing \[data-gpu-bus\]/,
+  );
+});

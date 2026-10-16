@@ -3,14 +3,9 @@ import test from 'node:test';
 import { createTheoryTimeline } from '../src/lib/research/theory-timeline.ts';
 import { TIMING, DISPLAY_STEPS } from '../src/lib/research/theory-renderer.ts';
 
-const timeline = createTheoryTimeline(
-  [14, 25, 28, 42, 50, 56, 70, 75, 84, 98],
-  DISPLAY_STEPS,
-  TIMING,
-  25,
-);
+const timeline = createTheoryTimeline(DISPLAY_STEPS, TIMING, 25);
 
-// Six independent events; only green at 25 has the longer Average hold.
+// Reset steps shown in the figure; only the averaged reset at 25 holds.
 
 test('only the first averaged reset pauses playback', () => {
   let previousHolds = 0;
@@ -54,11 +49,11 @@ test('explanation holds preserve iterations and the full final hold', () => {
 });
 
 test('a reset at the final displayed step finishes before the end hold', () => {
-  const finalReset = createTheoryTimeline([25], 25, TIMING, 25);
+  const finalReset = createTheoryTimeline(25, TIMING, 25);
   const boundary = 25 * TIMING.step;
   assert.equal(finalReset.sample(boundary).restart.phase, 'before');
   assert.equal(
-    finalReset.sample(boundary + TIMING.firstRestartBefore).restart.phase,
+    finalReset.sample(boundary + TIMING.explanationBefore).restart.phase,
     'after',
   );
   assert.equal(finalReset.sample(finalReset.duration - 1).endHold, 0);
@@ -68,4 +63,18 @@ test('a reset at the final displayed step finishes before the end hold', () => {
     restart: null,
   });
   assert.equal(finalReset.sample(finalReset.duration + 1).endHold, 1);
+});
+
+test('without an explained reset, iteration time never holds', () => {
+  for (const step of [undefined, 0, DISPLAY_STEPS + 1]) {
+    const plain = createTheoryTimeline(DISPLAY_STEPS, TIMING, step);
+    assert.equal(plain.duration, DISPLAY_STEPS * TIMING.step);
+    for (const elapsed of [0, 25 * TIMING.step, plain.duration - 1]) {
+      assert.deepEqual(plain.sample(elapsed), {
+        time: elapsed,
+        endHold: 0,
+        restart: null,
+      });
+    }
+  }
 });

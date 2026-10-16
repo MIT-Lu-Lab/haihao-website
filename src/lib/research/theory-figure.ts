@@ -27,8 +27,8 @@ export function initializeTheoryFigure(
     rows,
     browser.getComputedStyle(root),
   );
+  // Only the first averaged reset pauses, to explain restarting from a mean.
   const timeline = createTheoryTimeline(
-    rows.filter((row) => row.preRestart || row.preHalpern).map((row) => row.k),
     DISPLAY_STEPS,
     TIMING,
     rows.find((row) => row.preRestart)?.k,

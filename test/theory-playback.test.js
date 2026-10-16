@@ -173,18 +173,11 @@ for (const width of [345, 712]) {
       1,
       'repeated notifications must not multiply loops',
     );
-    const restartCount = data.rows.filter(
-      (row) =>
-        (row.preRestart || row.preHalpern) &&
-        row.k > 0 &&
-        row.k <= DISPLAY_STEPS,
-    ).length;
+    const explanationStep = data.rows.find((row) => row.preRestart)?.k;
     const restartHolds =
-      restartCount === 0
-        ? 0
-        : TIMING.firstRestartBefore +
-          TIMING.firstRestartAfter +
-          (restartCount - 1) * (TIMING.restartBefore + TIMING.restartAfter);
+      explanationStep !== undefined && explanationStep <= DISPLAY_STEPS
+        ? TIMING.explanationBefore + TIMING.explanationAfter
+        : 0;
     const cycleDuration =
       DISPLAY_STEPS * TIMING.step + restartHolds + TIMING.endHold;
     const frameInterval = 80;

@@ -45,6 +45,15 @@ const VECTOR_LAYOUT: VectorLayout[] = [
   { key: 'at', phase: 1, delay: 1.35, dimension: 'height' },
 ];
 
+/** Find a part of GpuFigure's own markup, failing loudly if it is missing. */
+function requireElement(root: ParentNode, selector: string): Element {
+  const element = root.querySelector(selector);
+  if (!element) {
+    throw new Error(`GpuFigure is missing ${selector}.`);
+  }
+  return element;
+}
+
 function setOpacity(element: Element, value: number) {
   element.setAttribute('opacity', String(value));
 }
@@ -61,15 +70,13 @@ export function initializeGpuFigure(
   const vectors = VECTOR_LAYOUT.map((layout) => ({
     ...layout,
     bars: root.querySelectorAll(`[data-${layout.key}]`),
-    label: root.querySelector(
-      `[data-vector="${layout.key}"] text`,
-    ) as SVGTextElement,
+    label: requireElement(root, `[data-vector="${layout.key}"] text`),
   }));
-  const flowA = root.querySelector('[data-flow="a"]') as SVGGElement;
-  const flowAT = root.querySelector('[data-flow="at"]') as SVGGElement;
-  const indicators = root.querySelector('[data-gpu-lights]') as SVGGElement;
-  const chips = root.querySelector('[data-gpu-chips]') as SVGGElement;
-  const bus = root.querySelector('[data-gpu-bus]') as SVGGElement;
+  const flowA = requireElement(root, '[data-flow="a"]');
+  const flowAT = requireElement(root, '[data-flow="at"]');
+  const indicators = requireElement(root, '[data-gpu-lights]');
+  const chips = requireElement(root, '[data-gpu-chips]');
+  const bus = requireElement(root, '[data-gpu-bus]');
   const pulses = bus.querySelectorAll('[data-bus-pulse]');
   function render(elapsed: number, reducedMotion: boolean) {
     const index = Math.floor(elapsed / CYCLE_DURATION) % products.frames.length;
