@@ -4,6 +4,7 @@ import PageHeading from '../components/PageHeading.astro';
 import ExternalLink from '../components/ExternalLink.astro';
 import ResearchSection from '../components/ResearchSection.astro';
 import TheoryFigure from '../components/TheoryFigure.astro';
+import GpuFigure from '../components/GpuFigure.astro';
 import { sitePath } from '../utils/paths';
 ---
 <Layout title="Research">
@@ -25,9 +26,13 @@ import { sitePath } from '../utils/paths';
           <li>L. Ding, H. Lu, and J. Yang (2025). <ExternalLink href="https://arxiv.org/abs/2505.15775" mark={false}>New Understandings and Computation on Augmented Lagrangian Methods for Low-Rank Semidefinite Programming</ExternalLink>. Working paper.</li>
         </ol>
       </div>
-      <figure slot="figure" class="research-figure">
-        <video src={sitePath('images/research/pdlp-spiral.mp4')} poster={sitePath('images/research/pdlp-spiral.png')} width="720" height="690" muted loop playsinline preload="none" data-autoplay aria-label="Animation: PDHG last iterate, PDHG average iterate, and restarted PDHG converging to the optimal solution"></video>
-        <figcaption>PDHG's last iterate spirals slowly toward the optimum and its average moves faster; restarting from the average (green, dashed) gets there fastest. Animation: <ExternalLink href="https://research.google/blog/scaling-up-linear-programming-with-pdlp/" mark={false}>Google Research</ExternalLink>.</figcaption>
+      <figure slot="figure" class="research-figure gpu-figure">
+        <GpuFigure />
+        <figcaption>From railway operations to large-scale optimization and GPU computing. The matrix shows the structure of the rail4284 linear program.<span class="theory-sources gpu-sources">
+          <span>Matrix: <ExternalLink href="https://sparse.tamu.edu/Mittelmann/rail4284" mark={false}>SuiteSparse</ExternalLink></span>
+          <span>Photo: <ExternalLink href="https://commons.wikimedia.org/wiki/File:Aerial_view_of_West_Oakland_rail_yards,_December_2022.JPG" mark={false}>Pi.1415926535</ExternalLink> / <ExternalLink href="https://creativecommons.org/licenses/by-sa/4.0/" mark={false}>CC BY-SA 4.0</ExternalLink>; cropped and color-adjusted.</span>
+          <span class="gpu-data-note">Standard-form LP counts; matrix axes scaled independently.</span>
+        </span></figcaption>
       </figure>
     </ResearchSection>
     <ResearchSection id="first-order-theory" title="Theoretical foundations of first-order optimization">
@@ -117,19 +122,6 @@ import { sitePath } from '../utils/paths';
   revealLinkedSection();
   window.addEventListener('hashchange', revealLinkedSection);
 
-  const video = document.querySelector<HTMLVideoElement>('video[data-autoplay]');
-  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  const updateVideo = () => {
-    if (!video) return;
-    if (!reducedMotion.matches) {
-      video.preload = 'auto';
-      video.play().catch(() => {});
-    } else {
-      video.pause();
-    }
-  };
-  reducedMotion.addEventListener('change', updateVideo);
-  updateVideo();
 </script>
 
 <style>
@@ -143,8 +135,7 @@ import { sitePath } from '../utils/paths';
     position: sticky;
     top: 30px;
   }
-  .research-figure img,
-  .research-figure video {
+  .research-figure img {
     display: block;
     width: 100%;
     height: auto;
@@ -160,6 +151,8 @@ import { sitePath } from '../utils/paths';
     margin-top: var(--space-xs);
     font-size: var(--text-label);
   }
+  .gpu-sources { display: grid; gap: 3px; line-height: 1.45; }
+  .gpu-data-note { margin-top: 2px; }
   .research-page h3 {
     margin-top: var(--space-xl);
     margin-bottom: var(--space-sm);
@@ -182,7 +175,8 @@ import { sitePath } from '../utils/paths';
       max-width: 360px;
       margin-top: var(--space-xl);
     }
-    .theory-figure {
+    .theory-figure,
+    .gpu-figure {
       max-width: none;
     }
   }

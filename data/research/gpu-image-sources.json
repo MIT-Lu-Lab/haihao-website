@@ -1,0 +1,12 @@
+{
+  "railwayPhoto": {
+    "file": "public/images/research/railway-oakland.webp",
+    "source": "https://commons.wikimedia.org/wiki/File:Aerial_view_of_West_Oakland_rail_yards,_December_2022.JPG",
+    "author": "Pi.1415926535",
+    "license": "CC BY-SA 4.0",
+    "changes": "CSS crop and saturation/contrast adjustment; this photographic adaptation remains CC BY-SA 4.0.",
+    "context": "West Oakland, illustrative railway setting, not geographic data for rail4284",
+    "encoding": "WebP quality 80, method 6; embedded metadata removed."
+  },
+  "note": "The rail4284 matrix is real; the railway photograph illustrates the application context."
+}
