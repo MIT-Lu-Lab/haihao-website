@@ -298,10 +298,13 @@ export function initializeOnlineFigure(
     set('auction-bid-label', 'opacity', auctionBid * roundOpacity);
     set('price-marker', 'x1', priceX);
     set('price-marker', 'x2', priceX);
-    set('price-marker', 'opacity', market * roundOpacity);
+    // Reveal the fixed-price marker downward before the outcome appears.
+    set('price-marker', 'y1', 94);
+    set('price-marker', 'y2', mix(94, 123, market));
+    set('price-marker', 'opacity', Math.min(1, market * REVEAL_OPACITY_RATE) * roundOpacity);
     element('price-label').textContent = `Price ${round.price.toFixed(2)}`;
-    set('price-label', 'x', labelX(priceX));
-    set('price-label', 'opacity', market * roundOpacity);
+    set('price-tag', 'transform', 'translate(' + labelX(priceX) + ' 0)');
+    set('price-tag', 'opacity', market * roundOpacity);
     // Reveal the current auction outcome only after the comparison resolves.
     // A previous outcome must never accompany the next opportunity's value.
     element('result').textContent = round.win
