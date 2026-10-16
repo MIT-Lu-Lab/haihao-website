@@ -37,7 +37,7 @@ export const TIMING = {
 };
 
 // Text sizes are CSS pixels, independent of the responsive canvas scale.
-const TYPE_SIZE = { title: 18, axis: 13, annotation: 11.5, tick: 11 };
+const TYPE_SIZE = { title: 18, axis: 13, annotation: 12, tick: 12 };
 
 const DURATION = DISPLAY_STEPS * TIMING.step;
 const EXPLANATION_DIMMING = 0.62;
@@ -92,6 +92,7 @@ export function createTheoryRenderer(
     muted: styles.getPropertyValue('--muted').trim(),
     line: styles.getPropertyValue('--line').trim(),
     surface: styles.getPropertyValue('--surface').trim(),
+    soft: styles.getPropertyValue('--soft').trim(),
     font: styles.getPropertyValue('--sans').trim(),
     headingFont: styles.getPropertyValue('--serif').trim(),
   };
@@ -714,48 +715,6 @@ export function createTheoryRenderer(
       }
     }
     context.restore();
-    // Keep the lower event label readable after playback resumes.
-    // This does not extend the shared iteration hold or the upper jump arrow.
-    const currentIteration = playback.done
-      ? playback.step
-      : playback.step - 1 + playback.fraction;
-    const labelStep =
-      restart?.step ?? restartSteps.findLast((k) => k <= currentIteration);
-    const labelAge =
-      labelStep === undefined
-        ? Infinity
-        : (currentIteration - labelStep) * TIMING.step + frame.endHold;
-    const labelOpacity = restart
-      ? ease(clamp(restart.elapsed / TIMING.annotationFadeIn))
-      : 1 -
-        ease(
-          clamp((labelAge - TIMING.restartLabelHold) / TIMING.restartLabelFade),
-        );
-    if (labelStep !== undefined && labelOpacity > 0) {
-      context.save();
-      context.globalAlpha =
-        labelOpacity * loopOpacity * RESTART_GUIDE.activeOpacity;
-      for (const name of restartedMethods) {
-        const bounds = restartBounds(name, labelStep);
-        if (!bounds) {
-          continue;
-        }
-        const labelY =
-          methods[name].restartLabelPosition === 'above'
-            ? bounds.top - 4 / pixelScale
-            : bounds.bottom + 13 / pixelScale;
-        drawLabel(
-          frame,
-          'Restart',
-          iterationX(labelStep),
-          labelY,
-          'center',
-          methods[name].color,
-          TYPE_SIZE.annotation,
-        );
-      }
-      context.restore();
-    }
     drawLabel(
       frame,
       'Iterations',
@@ -811,6 +770,63 @@ export function createTheoryRenderer(
       context.globalAlpha = loopOpacity * methodOpacity(frame, name);
       context.fill();
       context.globalAlpha = 1;
+    }
+
+    // Keep the lower event label readable after playback resumes.
+    // This does not extend the shared iteration hold or the upper jump arrow.
+    const currentIteration = playback.done
+      ? playback.step
+      : playback.step - 1 + playback.fraction;
+    const labelStep =
+      restart?.step ?? restartSteps.findLast((k) => k <= currentIteration);
+    const labelAge =
+      labelStep === undefined
+        ? Infinity
+        : (currentIteration - labelStep) * TIMING.step + frame.endHold;
+    const labelOpacity = restart
+      ? ease(clamp(restart.elapsed / TIMING.annotationFadeIn))
+      : 1 -
+        ease(
+          clamp((labelAge - TIMING.restartLabelHold) / TIMING.restartLabelFade),
+        );
+    if (labelStep !== undefined && labelOpacity > 0) {
+      context.save();
+      context.globalAlpha =
+        labelOpacity * loopOpacity * RESTART_GUIDE.activeOpacity;
+      for (const name of restartedMethods) {
+        const bounds = restartBounds(name, labelStep);
+        if (!bounds) {
+          continue;
+        }
+        const labelY =
+          methods[name].restartLabelPosition === 'above'
+            ? Math.max(bounds.top - 4 / pixelScale, titleY + 24 / pixelScale)
+            : Math.min(
+                bounds.bottom + 13 / pixelScale,
+                bottom - 6 / pixelScale,
+              );
+        // A narrow panel-colored halo separates the annotation from the trace.
+        context.font = `${TYPE_SIZE.annotation / pixelScale}px ${theme.font}`;
+        context.textAlign = 'center';
+        const halfLabel = context.measureText('Restart').width / 2;
+        const labelX = Math.max(
+          left + halfLabel + 4 / pixelScale,
+          Math.min(iterationX(labelStep), right - halfLabel - 4 / pixelScale),
+        );
+        context.strokeStyle = theme.soft;
+        context.lineWidth = 3 / pixelScale;
+        context.strokeText('Restart', labelX, labelY);
+        drawLabel(
+          frame,
+          'Restart',
+          labelX,
+          labelY,
+          'center',
+          methods[name].color,
+          TYPE_SIZE.annotation,
+        );
+      }
+      context.restore();
     }
   }
 

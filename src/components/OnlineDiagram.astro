@@ -22,13 +22,9 @@ const finalState = finalRound.after;
 ---
 
 <div class="online-diagram">
-  <div
-    class="diagram-scroll"
-    role="region"
-    aria-label="Bidding diagram"
-  >
+  <div class="diagram-scroll" role="region" aria-label="Bidding diagram">
     <svg
-      viewBox="0 0 640 432"
+      viewBox="0 0 640 420"
       role="img"
       aria-labelledby={`${id}-title`}
       aria-describedby={`${id}-desc ${id}-current-price`}
@@ -70,7 +66,7 @@ const finalState = finalRound.after;
 
       <!-- The top-row ports share a centreline and identical 28-unit gutters. -->
       <path d="M18 48 H154 L166 60 V160 H18 Z" fill="var(--soft)" />
-      <path d="M194 24 H354 L366 36 V184 H194 Z" fill="var(--red)" />
+      <path d="M194 24 H354 L366 36 V172 H194 Z" fill="var(--red)" />
       <g
         transform="translate(34 62) scale(0.75)"
         class="icon icon-ink"
@@ -118,24 +114,24 @@ const finalState = finalRound.after;
         Bid
       </text>
       <!-- A fixed 0–1 scale for the actual, budget-feasible bid. -->
-      <path d="M238 122 A42 42 0 0 1 322 122" class="dial-track" />
-      <text x="228" y="126" text-anchor="middle" class="dial-scale">
+      <path d="M238 118 A42 42 0 0 1 322 118" class="dial-track" />
+      <text x="228" y="122" text-anchor="middle" class="dial-scale">
         0
       </text>
-      <text x="334" y="126" text-anchor="middle" class="dial-scale">
+      <text x="334" y="122" text-anchor="middle" class="dial-scale">
         1.0
       </text>
-      <text x="214" y="148" class="bid-amount-label">
+      <text x="214" y="140" class="bid-amount-label">
         Bid amount
       </text>
       <g data-part="bid-group">
         <path
-          d="M238 122 A42 42 0 0 1 322 122"
+          d="M238 118 A42 42 0 0 1 322 118"
           class="dial-sweep"
           pathLength="1"
           data-part="bid-sweep"
         />
-        <g transform="translate(280 122)">
+        <g transform="translate(280 118)">
           <g data-part="formed-bid">
             <path d="M-3 0 L0 -1.5 L36 0 L0 1.5 Z" fill="var(--surface)" />
           </g>
@@ -143,234 +139,268 @@ const finalState = finalRound.after;
         </g>
         <text
           x="346"
-          y="148"
+          y="140"
           text-anchor="end"
           class="dial-value"
           data-part="bid-value"
         />
       </g>
-      <text x="280" y="172" text-anchor="middle" class="formula on-dark">
+      <text x="280" y="160" text-anchor="middle" class="formula on-dark">
         value / (1 + μ)
       </text>
       <g class="auction-link">
-      <path d="M372 104 H388" class="wire" marker-end={`url(#${id}-arrow)`} />
-      <path
-        d="M372 104 H388"
-        class="signal signal-tail"
-        opacity="0"
-        pathLength="1"
-        data-part="to-auction-tail"
-      />
-      <path
-        d="M372 104 H388"
-        class="signal"
-        opacity="0"
-        pathLength="1"
-        data-part="to-auction"
-      />
-
+        <path d="M372 104 H388" class="wire" marker-end={`url(#${id}-arrow)`} />
+        <path
+          d="M372 104 H388"
+          class="signal signal-tail"
+          opacity="0"
+          pathLength="1"
+          data-part="to-auction-tail"
+        />
+        <path
+          d="M372 104 H388"
+          class="signal"
+          opacity="0"
+          pathLength="1"
+          data-part="to-auction"
+        />
       </g>
       <g class="auction-module">
-      <path d="M394 24 H610 L622 36 V184 H394 Z" fill="var(--muted)" />
-      <g
-        transform="translate(414 44) scale(0.83)"
-        class="icon icon-white"
-        aria-hidden="true"
-      >
-        <path d="M4 5 L8 1 L19 12 L15 16 Z M10 11 L2 19 M14 23 H25 M16 20 H23 V23" />
-      </g>
-      <text x="444" y="60" class="module-title on-dark">
-        Auction
-      </text>
-      <!-- Bid and competing price share the same fixed 0–1 ruler as Payment. -->
-      <path
-        d={`M${RULER.left} 111 H${RULER.left + RULER.width}`}
-        stroke="var(--surface)"
-        stroke-opacity=".18"
-        stroke-width="2"
-      />
-      <rect
-        x={RULER.left}
-        y="107"
-        height="8"
-        fill="var(--surface)"
-        data-part="bid"
-      />
-      <text
-        y="140"
-        text-anchor="middle"
-        class="auction-readout"
-        data-part="auction-bid-label"
-      />
-      <line
-        y1="94"
-        y2="123"
-        stroke="var(--red)"
-        stroke-width="3"
-        data-part="price-marker"
-      />
-      <g data-part="price-tag" opacity="0">
-          <rect x="-44" y="70" width="88" height="24" rx="4" fill="var(--red)" />
-          <text x="0" y="86.5" text-anchor="middle"
-            class="auction-readout" data-part="price-label" />
+        <path d="M394 24 H610 L622 36 V172 H394 Z" fill="var(--muted)" />
+        <g
+          transform="translate(414 44) scale(0.83)"
+          class="icon icon-white"
+          aria-hidden="true"
+        >
+          <path d="M4 5 L8 1 L19 12 L15 16 Z M10 11 L2 19 M14 23 H25 M16 20 H23 V23" />
         </g>
-      <g data-part="outcome">
+        <text x="444" y="60" class="module-title on-dark">
+          Auction
+        </text>
+        <!-- Bid and competing price share the same fixed 0–1 ruler as Payment. -->
         <path
-          d="M414 162 L419 167 L428 156"
-          class="icon icon-white"
-          data-part="win-check"
+          d={`M${RULER.left} 111 H${RULER.left + RULER.width}`}
+          stroke="var(--surface)"
+          stroke-opacity=".18"
+          stroke-width="2"
         />
-        <path
-          d="M416 157 L425 166 M425 157 L416 166"
-          class="icon icon-white"
-          data-part="loss-cross"
+        <rect
+          x={RULER.left}
+          y="107"
+          height="8"
+          fill="var(--surface)"
+          data-part="bid"
         />
-        <text x="439" y="167" class="label on-dark" data-part="result" />
-      </g>
-
+        <text
+          y="132"
+          text-anchor="middle"
+          class="auction-readout"
+          data-part="auction-bid-label"
+        />
+        <line
+          y1="94"
+          y2="123"
+          stroke="var(--red)"
+          stroke-width="3"
+          data-part="price-marker"
+        />
+        <g data-part="price-tag" opacity="0">
+          <rect
+            x="-44"
+            y="70"
+            width="88"
+            height="24"
+            rx="4"
+            fill="var(--red)"
+          />
+          <text
+            x="0"
+            y="86.5"
+            text-anchor="middle"
+            class="auction-readout"
+            data-part="price-label"
+          />
+        </g>
+        <g data-part="outcome" transform="translate(0 -12)">
+          <path
+            d="M414 162 L419 167 L428 156"
+            class="icon icon-white"
+            data-part="win-check"
+          />
+          <path
+            d="M416 157 L425 166 M425 157 L416 166"
+            class="icon icon-white"
+            data-part="loss-cross"
+          />
+          <text x="439" y="167" class="label on-dark" data-part="result" />
+        </g>
       </g>
 
       <!-- Feedback owns mu; the only external return leads to the next bid. -->
       <g class="payment-link">
-      <path d="M508 190 V226" class="wire" marker-end={`url(#${id}-arrow)`} />
-      <path
-        d="M508 190 V226"
-        class="signal signal-tail"
-        opacity="0"
-        pathLength="1"
-        data-part="to-spend-tail"
-      />
-      <path
-        d="M508 190 V226"
-        class="signal"
-        opacity="0"
-        pathLength="1"
-        data-part="to-spend"
-      />
+        <path d="M508 178 V214" class="wire" marker-end={`url(#${id}-arrow)`} />
+        <path
+          d="M508 178 V214"
+          class="signal signal-tail"
+          opacity="0"
+          pathLength="1"
+          data-part="to-spend-tail"
+        />
+        <path
+          d="M508 178 V214"
+          class="signal"
+          opacity="0"
+          pathLength="1"
+          data-part="to-spend"
+        />
       </g>
       <g class="feedback-module">
-      <path d="M394 232 H610 L622 244 V398 H394 Z" fill="var(--soft)" />
-      <g
-        transform="translate(414 249) scale(0.83)"
-        class="icon icon-ink"
-        aria-hidden="true"
-      >
-        <path d="M8 2 L13 4 L18 2 L17 8 H9 Z M7 8 H19 M8 9 L4 16 C0 24 7 26 13 26 C19 26 26 24 22 16 L18 9 M13 12 V22 M16 14 C11 11 8 16 13 17 C19 18 16 23 10 20" />
-      </g>
-      <text x="444" y="265" class="module-title">
-        Dual update
-      </text>
-      <text x="414" y="297" class="label">
-        Payment
-      </text>
-      <text
-        x="602"
-        y="297"
-        text-anchor="end"
-        class="payment-number"
-        data-part="payment-value"
-      />
-      <path
-        d={`M${RULER.left} 311 H${RULER.left + RULER.width}`}
-        class="rule"
-        stroke-width="6"
-      />
-      <rect
-        x={RULER.left}
-        y="308"
-        height="6"
-        fill="var(--red)"
-        data-part="spend-bar"
-      />
-      <path
-        d={`M${RULER.left + (RULER.width * target) / RULER.maximum} 303 V319`}
-        stroke="var(--muted)"
-        stroke-width="1.3"
-      />
-      <text x="414" y="337" class="small">
-        Budget per auction
-      </text>
-      <text x="602" y="337" text-anchor="end" class="small">
-        {target.toFixed(2)}
-      </text>
-      <text x="414" y="378" class="label">
-        Shadow price μ
-      </text>
-      <g aria-hidden="true">
+        <path d="M394 232 H610 L622 244 V398 H394 Z" fill="var(--soft)" />
         <g
-          clip-path={`url(#${id}-shadow-window)`}
+          transform="translate(414 249) scale(0.83)"
+          class="icon icon-ink"
           aria-hidden="true"
-          class="shadow-reels"
         >
-          <text x="566.5" y={REELS.baseline} text-anchor="middle">
-            .
-          </text>
-          <g data-part="shadow-digit-0">
-            <text x="555" y={REELS.baseline} data-part="shadow-digit-0-front" />
-            <text
-              x="555"
-              y={REELS.baseline + REELS.rowHeight}
-              data-part="shadow-digit-0-back"
-            />
-          </g>
-          <g data-part="shadow-digit-1">
-            <text x="578" y={REELS.baseline} data-part="shadow-digit-1-front" />
-            <text
-              x="578"
-              y={REELS.baseline + REELS.rowHeight}
-              data-part="shadow-digit-1-back"
-            />
-          </g>
-          <g data-part="shadow-digit-2">
-            <text x="594" y={REELS.baseline} data-part="shadow-digit-2-front" />
-            <text
-              x="594"
-              y={REELS.baseline + REELS.rowHeight}
-              data-part="shadow-digit-2-back"
-            />
+          <path d="M8 2 L13 4 L18 2 L17 8 H9 Z M7 8 H19 M8 9 L4 16 C0 24 7 26 13 26 C19 26 26 24 22 16 L18 9 M13 12 V22 M16 14 C11 11 8 16 13 17 C19 18 16 23 10 20" />
+        </g>
+        <text x="444" y="265" class="module-title">
+          Dual update
+        </text>
+        <text x="414" y="297" class="label">
+          Payment
+        </text>
+        <text
+          x="602"
+          y="297"
+          text-anchor="end"
+          class="payment-number"
+          data-part="payment-value"
+        />
+        <path
+          d={`M${RULER.left} 311 H${RULER.left + RULER.width}`}
+          class="rule"
+          stroke-width="6"
+        />
+        <rect
+          x={RULER.left}
+          y="308"
+          height="6"
+          fill="var(--red)"
+          data-part="spend-bar"
+        />
+        <path
+          d={`M${RULER.left + (RULER.width * target) / RULER.maximum} 303 V319`}
+          stroke="var(--muted)"
+          stroke-width="1.3"
+        />
+        <text x="414" y="337" class="small">
+          Budget per auction
+        </text>
+        <text x="602" y="337" text-anchor="end" class="small">
+          {target.toFixed(2)}
+        </text>
+        <text x="414" y="378" class="label">
+          Shadow price μ
+        </text>
+        <g aria-hidden="true">
+          <g
+            clip-path={`url(#${id}-shadow-window)`}
+            aria-hidden="true"
+            class="shadow-reels"
+          >
+            <text x="566.5" y={REELS.baseline} text-anchor="middle">
+              .
+            </text>
+            <g data-part="shadow-digit-0">
+              <text
+                x="555"
+                y={REELS.baseline}
+                data-part="shadow-digit-0-front"
+              />
+              <text
+                x="555"
+                y={REELS.baseline + REELS.rowHeight}
+                data-part="shadow-digit-0-back"
+              />
+            </g>
+            <g data-part="shadow-digit-1">
+              <text
+                x="578"
+                y={REELS.baseline}
+                data-part="shadow-digit-1-front"
+              />
+              <text
+                x="578"
+                y={REELS.baseline + REELS.rowHeight}
+                data-part="shadow-digit-1-back"
+              />
+            </g>
+            <g data-part="shadow-digit-2">
+              <text
+                x="594"
+                y={REELS.baseline}
+                data-part="shadow-digit-2-front"
+              />
+              <text
+                x="594"
+                y={REELS.baseline + REELS.rowHeight}
+                data-part="shadow-digit-2-back"
+              />
+            </g>
           </g>
         </g>
       </g>
-      </g>
       <g class="return-link">
-      <path
-        d="M388 372 H370 Q360 372 360 362 V226 Q360 216 350 216 H290 Q280 216 280 206 V190"
-        class="wire"
-        marker-end={`url(#${id}-arrow)`}
-      />
-      <path
-        d="M388 372 H370 Q360 372 360 362 V226 Q360 216 350 216 H290 Q280 216 280 206 V190"
-        class="signal signal-tail"
-        opacity="0"
-        pathLength="1"
-        data-part="to-bid-tail"
-      />
-      <path
-        d="M388 372 H370 Q360 372 360 362 V226 Q360 216 350 216 H290 Q280 216 280 206 V190"
-        class="signal"
-        opacity="0"
-        pathLength="1"
-        data-part="to-bid"
-      />
-      <g class="return-label">
-      <text x="334" y="289" text-anchor="middle" class="small next-bid-label">
-        <tspan x="334" y="289">Next</tspan>
-        <tspan x="334" y="305">bid</tspan>
-      </text>
-      <text
-        x="334"
-        y="289"
-        text-anchor="middle"
-        class="small next-bid-label next-bid-highlight"
-        opacity="0"
-        aria-hidden="true"
-        data-part="next-bid-highlight"
-      >
-        <tspan x="334" y="289">Next</tspan>
-        <tspan x="334" y="305">bid</tspan>
-      </text>
-
-      </g>
+        <path
+          d="M388 360 H370 Q360 360 360 350 V214 Q360 204 350 204 H290 Q280 204 280 194 V178"
+          class="wire"
+          marker-end={`url(#${id}-arrow)`}
+        />
+        <path
+          d="M388 360 H370 Q360 360 360 350 V214 Q360 204 350 204 H290 Q280 204 280 194 V178"
+          class="signal signal-tail"
+          opacity="0"
+          pathLength="1"
+          data-part="to-bid-tail"
+        />
+        <path
+          d="M388 360 H370 Q360 360 360 350 V214 Q360 204 350 204 H290 Q280 204 280 194 V178"
+          class="signal"
+          opacity="0"
+          pathLength="1"
+          data-part="to-bid"
+        />
+        <g class="return-label">
+          <text
+            x="334"
+            y="289"
+            text-anchor="middle"
+            class="small next-bid-label"
+          >
+            <tspan x="334" y="289">
+              Next
+            </tspan>
+            <tspan x="334" y="305">
+              bid
+            </tspan>
+          </text>
+          <text
+            x="334"
+            y="289"
+            text-anchor="middle"
+            class="small next-bid-label next-bid-highlight"
+            opacity="0"
+            aria-hidden="true"
+            data-part="next-bid-highlight"
+          >
+            <tspan x="334" y="289">
+              Next
+            </tspan>
+            <tspan x="334" y="305">
+              bid
+            </tspan>
+          </text>
+        </g>
       </g>
 
       <!-- The result has room to breathe, alongside rather than inside the loop. -->
@@ -481,7 +511,7 @@ const finalState = finalRound.after;
     fill: var(--muted);
   }
   .next-bid-label {
-    font-size: 13.5px;
+    font-size: 14px;
   }
   .next-bid-highlight {
     fill: var(--red);
@@ -519,8 +549,8 @@ const finalState = finalRound.after;
     font-variant-numeric: tabular-nums;
   }
   .dial-scale {
-    font-size: 11px;
-    opacity: 0.68;
+    font-size: 12px;
+    opacity: 0.8;
   }
   .dial-value {
     font-size: 18px;
@@ -535,10 +565,13 @@ const finalState = finalRound.after;
     font-size: 14px;
     font-variant-numeric: tabular-nums;
   }
-  .auction-readout[data-part="price-label"] {
+  .auction-readout[data-part='price-label'] {
     fill: var(--surface);
-    font-size: 13.5px;
+    font-size: 14px;
     font-weight: 500;
+  }
+  .feedback-module {
+    transform: translateY(-12px);
   }
   .payment-number {
     fill: var(--ink);
@@ -614,28 +647,56 @@ const finalState = finalRound.after;
     stroke-width: 2.5;
   }
   @container (max-width: 420px) {
-    svg { width: 95%; margin-inline: auto; }
-    .auction-module { transform: translate(-256px, 184px); }
-    .feedback-module { transform: translate(-256px, 160px); }
-    .payment-link { transform: translate(-256px, 184px); }
-    .payment-link > path { d: path("M508 190 V202"); }
+    svg {
+      width: 95%;
+      margin-inline: auto;
+    }
+    .formula,
+    .bid-amount-label,
+    .auction-readout,
+    .small {
+      font-size: 15px;
+    }
+    .dial-scale {
+      font-size: 13px;
+    }
+    .auction-module {
+      transform: translate(-256px, 172px);
+    }
+    .feedback-module {
+      transform: translate(-256px, 136px);
+    }
+    .payment-link {
+      transform: translate(-256px, 172px);
+    }
+    .payment-link > path {
+      d: path('M508 178 V190');
+    }
     .auction-link > path {
-      d: path("M252 190 V202");
+      d: path('M252 178 V190');
     }
     .return-link > path {
-      d: path("M132 532 H86 Q76 532 76 522 V180 Q76 170 86 170 H188");
+      d: path('M132 508 H86 Q76 508 76 498 V180 Q76 170 86 170 H188');
     }
-    .return-label { transform: translate(-230px, 80px); }
-    .utility-chart { transform: translate(-18px, 357px) scale(1.2, 1.1); }
+    .return-label {
+      transform: translate(-230px, 80px);
+    }
+    .utility-chart {
+      transform: translate(-18px, 329px) scale(1.2, 1.1);
+    }
   }
 </style>
 <script>
   // Reflow existing animated modules without duplicating simulation state.
-  for (const root of document.querySelectorAll<HTMLElement>('.online-diagram')) {
+  for (const root of document.querySelectorAll<HTMLElement>(
+    '.online-diagram',
+  )) {
     const svg = root.querySelector('svg');
     const resize = new ResizeObserver(([entry]) => {
-      svg?.setAttribute('viewBox', entry.contentRect.width <= 420
-        ? '0 0 384 806' : '0 0 640 432');
+      svg?.setAttribute(
+        'viewBox',
+        entry.contentRect.width <= 420 ? '0 0 384 778' : '0 0 640 420',
+      );
     });
     resize.observe(root);
   }

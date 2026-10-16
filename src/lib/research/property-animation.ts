@@ -140,7 +140,7 @@ export function getPropertyMetrics(
       return [
         key,
         key === 'prb'
-          ? `${value < 0 ? '−' : '+'}${Math.abs(value).toFixed(3)}`
+          ? `${value < 0 ? '−' : ''}${Math.abs(value).toFixed(3)}`
           : value.toFixed(3),
       ];
     }),
@@ -171,6 +171,7 @@ export function initializePropertyFigure(
   const metricElements = METRIC_KEYS.map((key) => ({
     key,
     element: requireElement(`[data-property-metric="${key}"]`),
+    trend: requireElement(`[data-property-trend="${key}"]`),
   }));
 
   return createPlayback(root, browser, (elapsed, reduced) => {
@@ -193,7 +194,15 @@ export function initializePropertyFigure(
     focusArrow.setAttribute('d', currentFocus.arrow);
     focusArrow.setAttribute('opacity', String(currentFocus.arrowOpacity));
     const currentMetrics = getPropertyMetrics(metrics, phase.weights);
-    for (const { element, key } of metricElements) {
+    for (const { element, key, trend } of metricElements) {
+      // Compare displayed precision with the unchanged no-penalty baseline.
+      const current = Number(currentMetrics[key].replace('−', '-'));
+      const baseline = Number(metrics[0][key].toFixed(3));
+      const direction =
+        current > baseline ? 'up' : current < baseline ? 'down' : 'flat';
+      if (trend.getAttribute('data-direction') !== direction) {
+        trend.setAttribute('data-direction', direction);
+      }
       if (element.textContent !== currentMetrics[key]) {
         element.textContent = currentMetrics[key];
       }

@@ -29,7 +29,7 @@ import PropertyFigure from '../components/PropertyFigure.astro';
       </div>
       <figure slot="figure" class="research-figure gpu-figure">
         <GpuFigure />
-        <figcaption>From railway operations to large-scale optimization and GPU computing. The animation illustrates Ax and Aᵀy on the rail4284 matrix, two core operations of GPU-accelerated first-order methods.<span class="theory-sources gpu-sources">
+        <figcaption>GPU-accelerated first-order methods rely on sparse matrix–vector products. The animation shows Ax and Aᵀy on rail4284, a railway set-covering problem. The highlights illustrate the two multiplication directions.<span class="theory-sources gpu-sources">
           <span>Matrix: <ExternalLink href="https://sparse.tamu.edu/Mittelmann/rail4284" mark={false}>SuiteSparse</ExternalLink></span>
           <span>Photo: <ExternalLink href="https://commons.wikimedia.org/wiki/File:Aerial_view_of_West_Oakland_rail_yards,_December_2022.JPG" mark={false}>Pi.1415926535</ExternalLink> / <ExternalLink href="https://creativecommons.org/licenses/by-sa/4.0/" mark={false}>CC BY-SA 4.0</ExternalLink>; cropped and color-adjusted.</span>
         </span></figcaption>
@@ -54,7 +54,7 @@ import PropertyFigure from '../components/PropertyFigure.astro';
       </div>
       <figure slot="figure" class="research-figure theory-figure">
         <TheoryFigure />
-        <figcaption id="comparison-description">PDHG (gray dots) spirals toward the solution. Restarted averaged PDHG (dark gray dashes) periodically restarts from the average of its recent iterates. Restarted reflected Halpern PDHG (burgundy) combines reflected steps with an anchor that is reset at each restart. Hollow markers mark restart locations, and the lower plot shows how the KKT residuals evolve.<span class="theory-sources">Based on <ExternalLink href="https://arxiv.org/abs/2105.12715" mark={false}>Applegate et al.</ExternalLink> and <ExternalLink href="https://arxiv.org/abs/2407.16144" mark={false}>Lu &amp; Yang</ExternalLink>.</span></figcaption>
+        <figcaption id="comparison-description">Restarting reduces the iterations needed to approach the solution in this bilinear example. The trajectories compare PDHG with two restarted methods, with hollow markers showing where each restart occurs. The lower plot shows the resulting reduction in KKT residuals.<span class="theory-sources">Based on <ExternalLink href="https://arxiv.org/abs/2105.12715" mark={false}>Applegate et al.</ExternalLink> and <ExternalLink href="https://arxiv.org/abs/2407.16144" mark={false}>Lu &amp; Yang</ExternalLink>.</span></figcaption>
       </figure>
     </ResearchSection>
     <ResearchSection id="online-decision-making" title="Online decision-making and advertising">

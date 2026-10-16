@@ -90,6 +90,7 @@ for (const width of [345, 712]) {
       '--muted': '#595b61',
       '--line': '#e5e3e0',
       '--surface': '#fff',
+      '--soft': '#f8f7f5',
       '--sans': 'Arial, sans-serif',
       '--serif': 'Georgia, serif',
       '--pdhg': '#377aa5',
@@ -110,6 +111,7 @@ for (const width of [345, 712]) {
       'setTransform',
       'clearRect',
       'fillText',
+      'strokeText',
     ];
     for (const method of drawingMethods) {
       context[method] = (...args) => {
@@ -128,7 +130,7 @@ for (const width of [345, 712]) {
       getContext: () => context,
       getBoundingClientRect: () => ({
         width: canvasWidth,
-        height: (canvasWidth * (canvasWidth < 600 ? 1060 : 840)) / 1000,
+        height: (canvasWidth * (canvasWidth < 600 ? 1140 : 840)) / 1000,
       }),
     };
     const root = {
@@ -162,7 +164,7 @@ for (const width of [345, 712]) {
     assert.ok(context.font.endsWith(theme['--sans']));
     assert.equal(
       canvas.height,
-      Math.round(width * (width < 600 ? 1.06 : 0.84)),
+      Math.round(width * (width < 600 ? 1.14 : 0.84)),
     );
     assert.equal(
       frames.size,
@@ -243,7 +245,7 @@ for (const width of [345, 712]) {
     assert.equal(canvas.width, canvasWidth);
     assert.equal(
       canvas.height,
-      Math.round(canvasWidth * (canvasWidth < 600 ? 1.06 : 0.84)),
+      Math.round(canvasWidth * (canvasWidth < 600 ? 1.14 : 0.84)),
     );
     assert.equal(
       frames.size,

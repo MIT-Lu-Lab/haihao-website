@@ -140,7 +140,7 @@ const { descriptionId = 'comparison-description' } = Astro.props;
     position: relative;
     display: block;
     width: 100%;
-    aspect-ratio: 1000 / 1060;
+    aspect-ratio: 1000 / 1140;
     height: auto;
   }
   .legend {
@@ -151,7 +151,7 @@ const { descriptionId = 'comparison-description' } = Astro.props;
     padding: 0 0 16px;
     list-style: none;
     color: var(--ink);
-    font-size: 12.5px;
+    font-size: 12px;
     line-height: 1.45;
   }
   .legend-item {
@@ -204,7 +204,7 @@ const { descriptionId = 'comparison-description' } = Astro.props;
       top: 0;
       left: 0;
       margin: 0;
-      font-size: clamp(26px, 5.5cqw, 32px);
+      font-size: clamp(28px, 6cqw, 35px);
       line-height: 1.06;
       letter-spacing: -0.035em;
     }
@@ -217,7 +217,7 @@ const { descriptionId = 'comparison-description' } = Astro.props;
     .legend {
       position: absolute;
       top: calc(var(--panel-compact) - 7px);
-      right: 0;
+      right: 12px;
       width: max-content;
       max-width: 50%;
       margin: 0;

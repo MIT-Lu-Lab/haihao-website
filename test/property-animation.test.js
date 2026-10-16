@@ -162,7 +162,7 @@ test('metrics preserve endpoints and follow the transition weights', () => {
   const endpoints = [
     { prd: '1.069', prb: '−0.088', priceR2: '0.893' },
     { prd: '1.049', prb: '−0.045', priceR2: '0.897' },
-    { prd: '1.010', prb: '+0.042', priceR2: '0.889' },
+    { prd: '1.010', prb: '0.042', priceR2: '0.889' },
   ];
   for (const [time, index] of [
     [0, 0],
@@ -185,12 +185,11 @@ test('metrics preserve endpoints and follow the transition weights', () => {
       );
       const formatted =
         key === 'prb'
-          ? `${expected < 0 ? '−' : '+'}${Math.abs(expected).toFixed(3)}`
+          ? `${expected < 0 ? '−' : ''}${Math.abs(expected).toFixed(3)}`
           : expected.toFixed(3);
       assert.equal(display[key], formatted);
     }
-    assert.equal(display.prb.length, 6);
-    assert.match(display.prb, /^[−+]0\.\d{3}$/);
+    assert.match(display.prb, /^−?0\.\d{3}$/);
   }
 });
 
@@ -265,6 +264,9 @@ test('SVG paths, labels and metrics stay synchronized across loops', () => {
       return [key, element];
     }),
   );
+  const trends = Object.fromEntries(
+    metricKeys.map((key) => [key, makeElement()]),
+  );
   const liveCurve = makeElement();
   const difference = makeElement();
   const penaltyValue = makeElement();
@@ -297,6 +299,9 @@ test('SVG paths, labels and metrics stay synchronized across loops', () => {
       '[data-property-focus-value]': focusValue,
       '[data-property-focus-arrow]': focusArrow,
       '[data-property-focus-point]': focusPoint,
+      '[data-property-trend="prd"]': trends.prd,
+      '[data-property-trend="prb"]': trends.prb,
+      '[data-property-trend="priceR2"]': trends.priceR2,
       '[data-property-metric="prd"]': metricElements.prd,
       '[data-property-metric="prb"]': metricElements.prb,
       '[data-property-metric="priceR2"]': metricElements.priceR2,
@@ -307,6 +312,9 @@ test('SVG paths, labels and metrics stay synchronized across loops', () => {
   initializePropertyFigure(root, data, fake.browser);
   assert.equal(penaltyValue.textContent, '0');
   assert.equal(penaltyWrites, 1);
+  for (const trend of Object.values(trends)) {
+    assert.equal(trend.attributes['data-direction'], 'flat');
+  }
   fake.events.visible([{ isIntersecting: true }]);
   fake.tick(0);
   for (const time of [
@@ -327,6 +335,18 @@ test('SVG paths, labels and metrics stay synchronized across loops', () => {
       ]),
     );
     fake.tick(time);
+    // Endpoint expectations are independent of the direction implementation.
+    const endpointDirections = {
+      4200: ['down', 'up', 'up'],
+      13000: ['down', 'up', 'down'],
+      17600: ['flat', 'flat', 'flat'],
+    };
+    if (endpointDirections[time]) {
+      assert.deepEqual(
+        metricKeys.map((key) => trends[key].attributes['data-direction']),
+        endpointDirections[time],
+      );
+    }
     const phase = getPropertyPhase(time);
     const expectedPenalty = { baseline: '0', moderate: '1', strong: '100' }[
       phase.active
@@ -377,6 +397,10 @@ test('SVG paths, labels and metrics stay synchronized across loops', () => {
   assert.equal(metricElements.prb.textContent, '−0.045');
   assert.equal(metricElements.priceR2.textContent, '0.897');
   assert.equal(fake.frames.size, 0);
+  assert.deepEqual(
+    metricKeys.map((key) => trends[key].attributes['data-direction']),
+    ['down', 'up', 'up'],
+  );
 });
 
 test('static pointer and animated focus share geometry', () => {

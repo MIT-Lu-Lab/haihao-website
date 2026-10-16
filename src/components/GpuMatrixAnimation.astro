@@ -37,7 +37,13 @@ const { maskId } = Astro.props;
       </linearGradient>
     </defs>
     <g data-vector="x">
-      <text x="73" y="129" text-anchor="end" class="formula">
+      <text
+        x="71"
+        y="128"
+        dominant-baseline="middle"
+        text-anchor="end"
+        class="formula"
+      >
         x
       </text>
       {Array.from({ length: 96 }, (_, i) => (
@@ -76,7 +82,7 @@ const { maskId } = Astro.props;
       />
     </g>
     <g data-vector="a">
-      <text x="567" y="255" class="formula">
+      <text x="569" y="260" dominant-baseline="middle" class="formula">
         Ax
       </text>
       {Array.from({ length: 72 }, (_, i) => (
@@ -91,7 +97,7 @@ const { maskId } = Astro.props;
       ))}
     </g>
     <g data-vector="y">
-      <text x="57" y="135" text-anchor="middle" class="formula">
+      <text x="60" y="131" text-anchor="middle" class="formula">
         y
       </text>
       {Array.from({ length: 72 }, (_, i) => (
@@ -106,7 +112,13 @@ const { maskId } = Astro.props;
       ))}
     </g>
     <g data-vector="at">
-      <text x="73" y="417" text-anchor="end" class="formula">
+      <text
+        x="71"
+        y="412"
+        dominant-baseline="middle"
+        text-anchor="end"
+        class="formula"
+      >
         Aᵀy
       </text>
       {Array.from({ length: 96 }, (_, i) => (
@@ -206,5 +218,10 @@ const { maskId } = Astro.props;
     stroke-linejoin: round;
     fill: var(--red);
     font-size: 15px;
+  }
+  @container (max-width: 480px) {
+    .formula {
+      font-size: 23px;
+    }
   }
 </style>

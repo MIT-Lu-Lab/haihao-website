@@ -26,7 +26,10 @@ const nonzeros = (matrix.nonzeros / 1_000_000).toFixed(2);
         decoding="async"
       />
     </div>
-    <p class="scene-title"><span>Optimization</span><span>at scale.</span></p>
+    <p class="scene-title">
+      <span>Optimization</span>
+      <span>at scale.</span>
+    </p>
     <div class="matrix-panel">
       <div class="matrix-artwork">
         <GpuMatrixAnimation maskId={`${id}-density`} />
@@ -162,7 +165,7 @@ const nonzeros = (matrix.nonzeros / 1_000_000).toFixed(2);
     width: 100%;
     aspect-ratio: 1 / 1.02;
     margin-top: 12px;
-    margin-bottom: clamp(-28px, -5cqw, -16px);
+    margin-bottom: clamp(-40px, -7cqw, -24px);
     isolation: isolate;
   }
   .rail-scene {
@@ -219,7 +222,10 @@ const nonzeros = (matrix.nonzeros / 1_000_000).toFixed(2);
     padding: 3px 17px 5px 0;
     background: var(--surface);
   }
-  .scene-title span + span { padding-top: 0; padding-bottom: 11px; }
+  .scene-title span + span {
+    padding-top: 0;
+    padding-bottom: 11px;
+  }
   .matrix-panel {
     z-index: 2;
     position: absolute;
@@ -251,9 +257,9 @@ const nonzeros = (matrix.nonzeros / 1_000_000).toFixed(2);
 
   .matrix-stats {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-    width: 52%;
+    grid-template-columns: repeat(3, max-content);
+    column-gap: clamp(12px, 3cqw, 20px);
+    width: max-content;
     margin-top: -10px;
     margin-left: 14.1667%;
     color: var(--red);
@@ -270,7 +276,7 @@ const nonzeros = (matrix.nonzeros / 1_000_000).toFixed(2);
   }
   .matrix-stats small {
     color: var(--muted);
-    font-size: 11px;
+    font-size: 12px;
     letter-spacing: 0;
   }
   .gpu-platform {
@@ -297,7 +303,9 @@ const nonzeros = (matrix.nonzeros / 1_000_000).toFixed(2);
     .gpu-composition {
       margin-bottom: -10px;
     }
-    .scene-title span { padding-right: 12px; }
+    .scene-title span {
+      padding-right: 12px;
+    }
     .matrix-title {
       font-size: 11px;
       gap: 2px;
@@ -306,10 +314,13 @@ const nonzeros = (matrix.nonzeros / 1_000_000).toFixed(2);
     .matrix-stats {
       font-size: 14px;
       margin-top: -8px;
-      gap: 8px;
+      grid-template-columns: 1fr;
+      gap: 4px;
     }
     .matrix-stats > span {
-      gap: 4px;
+      flex-direction: row;
+      align-items: baseline;
+      gap: 8px;
     }
   }
   @container (max-width: 320px) {
