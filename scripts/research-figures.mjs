@@ -15,39 +15,6 @@ const text = (x, y, s, { fill = MUTED, anchor = 'start', size = 12, weight = 400
 const svg = (title, body) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="${FONT}" role="img"><title>${title}</title>${body}</svg>\n`;
 
-function random(seed) {
-  return () => {
-    seed = (seed * 1664525 + 1013904223) % 4294967296;
-    return seed / 4294967296;
-  };
-}
-
-function dual() {
-  const rand = random(7);
-  const T = 260;
-  const rho = 0.3;
-  const eta = 0.035;
-  let mu = 0.05;
-  const prices = [];
-  for (let t = 0; t < T; t++) {
-    prices.push(mu);
-    const value = rand();
-    mu = Math.max(0, mu + eta * ((value > mu ? 1 : 0) - rho));
-  }
-  const x0 = 40, x1 = 300, y0 = 196, y1 = 30, top = 1;
-  const px = t => x0 + (x1 - x0) * t / (T - 1);
-  const py = m => y0 - (y0 - y1) * m / top;
-  const target = 1 - rho;
-  return svg('Shadow price learned by dual mirror descent settling near its optimal value',
-    `<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y0}" stroke="${MUTED}" stroke-width="1"/><line x1="${x0}" y1="${y0}" x2="${x0}" y2="${y1 - 6}" stroke="${MUTED}" stroke-width="1"/>` +
-    `<line x1="${x0}" y1="${f(py(target))}" x2="${x1}" y2="${f(py(target))}" stroke="${GRAY}" stroke-width="1.5" stroke-dasharray="4 3"/>` +
-    text(x1, py(target) + 18, 'optimal shadow price', { anchor: 'end', size: 11 }) +
-    `<path d="${path(prices.map((m, t) => [px(t), py(m)]))}" fill="none" stroke="${RED}" stroke-width="2" stroke-linejoin="round"/>` +
-    text(px(150), py(0.42), 'learned price', { fill: RED, weight: 600 }) +
-    text(x1, y0 + 20, 'requests over time →', { anchor: 'end', size: 11 }) +
-    `<text transform="translate(${x0 - 14} ${y0}) rotate(-90)" fill="${MUTED}" font-size="11">shadow price →</text>`);
-}
-
 function tax() {
   const x0 = 40, x1 = 300, y0 = 190, y1 = 30;
   const n = 10;
@@ -70,6 +37,4 @@ function tax() {
 
 const out = new URL('../public/images/research/', import.meta.url);
 mkdirSync(out, { recursive: true });
-for (const [name, make] of [['dual-price', dual], ['property-tax', tax]]) {
-  writeFileSync(new URL(`${name}.svg`, out), make());
-}
+writeFileSync(new URL('property-tax.svg', out), tax());

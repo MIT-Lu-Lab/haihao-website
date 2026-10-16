@@ -1,13 +1,17 @@
+import { createFakeBrowser } from './helpers/fake-browser.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
-import { initializeTheoryFigure } from '../src/lib/research/theory-figure.mjs';
-import { DISPLAY_STEPS, TIMING } from '../src/lib/research/theory-renderer.mjs';
+import {
+  initializeTheoryFigure,
+  loadTheoryFigure,
+} from '../src/lib/research/theory-figure.ts';
+import { DISPLAY_STEPS, TIMING } from '../src/lib/research/theory-renderer.ts';
 
 test('load failure shows an error without starting playback', async () => {
   const errorMessage = { hidden: true, textContent: '' };
   let reportedError;
-  await initializeTheoryFigure(
+  await loadTheoryFigure(
     {
       dataset: { source: '/pdhg-comparison.json' },
       querySelector: () => errorMessage,
@@ -30,19 +34,21 @@ test('load failure shows an error without starting playback', async () => {
 });
 
 for (const width of [345, 712]) {
-  test(`visibility and reduced motion at ${width}px`, async () => {
+  test(`visibility and reduced motion at ${width}px`, () => {
     const data = JSON.parse(
       fs.readFileSync(
         new URL('../public/pdhg-comparison.json', import.meta.url),
       ),
     );
-    const frames = new Map();
-    let nextId = 0;
-    const events = {};
-    const motion = {
-      matches: false,
-      addEventListener: (_, fn) => (events.motion = fn),
-    };
+    const {
+      browser,
+      frames,
+      events,
+      motion,
+      document,
+      observers,
+      resizeObservers,
+    } = createFakeBrowser();
     const context = {
       globalAlpha: 1,
       fillStyle: '#000',
@@ -118,19 +124,15 @@ for (const width of [345, 712]) {
       getContext: () => context,
       getBoundingClientRect: () => ({
         width: canvasWidth,
-        height: (canvasWidth * (canvasWidth < 600 ? 900 : 820)) / 1000,
+        height: (canvasWidth * (canvasWidth < 600 ? 1020 : 820)) / 1000,
       }),
     };
     const root = {
       dataset: { source: '/example-base/pdhg-comparison.json' },
       querySelector: (selector) => ({ canvas, '.error': {} })[selector],
     };
-    const document = {
-      hidden: false,
-      addEventListener: (name, fn) => (events[name] = fn),
-    };
-    await initializeTheoryFigure(root, {
-      document,
+    const playback = initializeTheoryFigure(root, data, {
+      ...browser,
       devicePixelRatio: 1,
       getComputedStyle: () => ({
         getPropertyValue: (name) => {
@@ -138,47 +140,26 @@ for (const width of [345, 712]) {
           return theme[name];
         },
       }),
-      matchMedia: () => motion,
-      IntersectionObserver: class {
-        constructor(callback) {
-          events.visibility = callback;
-        }
-        observe(target) {
-          assert.equal(target, canvas);
-        }
-      },
-      ResizeObserver: class {
-        constructor(callback) {
-          events.resize = callback;
-        }
-        observe(target) {
-          assert.equal(target, canvas);
-        }
-      },
-      requestAnimationFrame: (fn) => {
-        frames.set(++nextId, fn);
-        return nextId;
-      },
-      cancelAnimationFrame: (id) => frames.delete(id),
-      fetch: async (url) => {
-        assert.equal(url, root.dataset.source);
-        return { ok: true, json: async () => data };
-      },
       console: {
         error: (error) => {
           throw error;
         },
       },
     });
+    assert.equal(observers[0].target, canvas);
+    assert.equal(resizeObservers[0].target, canvas);
     const visibility = (visible) =>
-      events.visibility([{ isIntersecting: visible }]);
+      events.visible([{ isIntersecting: visible }]);
     assert.equal(
       canvas.style.aspectRatio,
       undefined,
       'CSS owns the reserved aspect ratio',
     );
     assert.ok(context.font.endsWith(theme['--sans']));
-    assert.equal(canvas.height, Math.round(width * (width < 600 ? 0.9 : 0.82)));
+    assert.equal(
+      canvas.height,
+      Math.round(width * (width < 600 ? 1.02 : 0.82)),
+    );
     assert.equal(
       frames.size,
       0,
@@ -253,10 +234,10 @@ for (const width of [345, 712]) {
     events.motion();
     assert.equal(frames.size, 1);
     document.hidden = true;
-    events.visibilitychange();
+    events.hidden();
     assert.equal(frames.size, 0);
     document.hidden = false;
-    events.visibilitychange();
+    events.hidden();
     assert.equal(frames.size, 1);
     visibility(false);
     assert.equal(frames.size, 0);
@@ -265,12 +246,15 @@ for (const width of [345, 712]) {
     assert.equal(canvas.width, canvasWidth);
     assert.equal(
       canvas.height,
-      Math.round(canvasWidth * (canvasWidth < 600 ? 0.9 : 0.82)),
+      Math.round(canvasWidth * (canvasWidth < 600 ? 1.02 : 0.82)),
     );
     assert.equal(
       frames.size,
       0,
       'resizing an offscreen figure must not start playback',
     );
+    playback.dispose();
+    assert.equal(resizeObservers[0].active, false);
+    assert.equal(observers[0].active, false);
   });
 }

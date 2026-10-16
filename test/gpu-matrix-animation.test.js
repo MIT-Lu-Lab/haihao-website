@@ -1,7 +1,8 @@
+import { createFakeBrowser } from './helpers/fake-browser.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
-import * as gpuAnimation from '../src/lib/research/gpu-matrix-animation.mjs';
+import * as gpuAnimation from '../src/lib/research/gpu-matrix-animation.ts';
 
 const products = JSON.parse(
   fs.readFileSync(
@@ -33,46 +34,21 @@ test('GPU playback respects visibility and reduced motion', () => {
       );
     },
   };
-  const callbacks = {};
-  const frames = new Map();
-  let nextId = 0;
-  const motion = {
-    matches: false,
-    addEventListener: (_, callback) => {
-      callbacks.motion = callback;
-    },
-  };
-  const document = {
-    hidden: false,
-    addEventListener: (_, callback) => {
-      callbacks.hidden = callback;
-    },
-  };
-  gpuAnimation.initializeGpuAnimation(root, products, {
+  const {
+    browser,
+    events: callbacks,
+    frames,
+    motion,
     document,
-    matchMedia: () => motion,
-    IntersectionObserver: class {
-      constructor(callback) {
-        callbacks.visible = callback;
-      }
-      observe(target) {
-        assert.equal(target, root);
-      }
-    },
-    requestAnimationFrame(callback) {
-      frames.set(++nextId, callback);
-      return nextId;
-    },
-    cancelAnimationFrame: (id) => frames.delete(id),
-  });
+    tick,
+  } = createFakeBrowser();
+  gpuAnimation.initializeGpuFigure(root, products, browser);
   assert.equal(frames.size, 0);
   callbacks.visible([{ isIntersecting: true }]);
   callbacks.visible([{ isIntersecting: true }]);
   assert.equal(frames.size, 1);
   for (const timestamp of [100, 1000, 5000, 9400, 19000]) {
-    const [id, callback] = frames.entries().next().value;
-    frames.delete(id);
-    callback(timestamp);
+    tick(timestamp);
     assert.equal(frames.size, 1);
   }
   callbacks.visible([{ isIntersecting: false }]);

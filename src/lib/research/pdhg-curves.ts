@@ -1,38 +1,32 @@
-// @ts-check
-/** @typedef {{x: number, y: number}} Point */
-/** @typedef {'last' | 'restarted' | 'halpern'} MethodName */
-/**
- * @typedef {Object} ComparisonRow
- * @property {number} k Iteration index, starting at zero.
- * @property {Point & {distance: number}} last Plain PDHG iterate.
- * @property {Point & {distance: number}} restarted Restarted averaged iterate.
- * @property {Point & {distance: number}} halpern Reflected Halpern iterate.
- * @property {boolean} restart Whether this step resets averaged PDHG.
- * @property {Point | null} preRestart Endpoint before the averaged reset.
- * @property {Point | null} preHalpern Endpoint before the Halpern reset.
- */
-/**
- * @typedef {{start: Point, end: Point, startTangent: Point,
- *   endTangent: Point}} Segment
- */
-/**
- * @typedef {Record<MethodName, Map<number, Segment>>}
- * ComparisonCurves
- */
+export type Point = { x: number; y: number };
+export type MethodName = 'last' | 'restarted' | 'halpern';
+export interface ComparisonRow {
+  k: number;
+  last: Point & { distance: number };
+  restarted: Point & { distance: number };
+  halpern: Point & { distance: number };
+  restart: boolean;
+  preRestart: Point | null;
+  preHalpern: Point | null;
+}
+export type Segment = {
+  start: Point;
+  end: Point;
+  startTangent: Point;
+  endTangent: Point;
+};
+export type ComparisonCurves = Record<MethodName, Map<number, Segment>>;
 
 // Interpolation is for display only. Each segment ends at an original iterate.
 // Restart jumps separate epochs so tangents never smooth across a reset.
-/**
- * @param {ComparisonRow[]} rows
- * @param {MethodName} method
- * @param {'preRestart' | 'preHalpern'} [preRestartKey]
- * @returns {Map<number, Segment>}
- */
-function makeCurves(rows, method, preRestartKey) {
-  /** @type {Array<Array<{step: number, point: Point}>>} */
-  const epochs = [];
-  /** @type {Array<{step: number, point: Point}>} */
-  let epoch = [];
+
+function makeCurves(
+  rows: ComparisonRow[],
+  method: MethodName,
+  preRestartKey?: 'preRestart' | 'preHalpern',
+): Map<number, Segment> {
+  const epochs: Array<Array<{ step: number; point: Point }>> = [];
+  let epoch: Array<{ step: number; point: Point }> = [];
   for (const row of rows) {
     const endpoint = preRestartKey && row[preRestartKey];
     if (endpoint) {
@@ -48,9 +42,9 @@ function makeCurves(rows, method, preRestartKey) {
   }
   epochs.push(epoch);
 
-  const segments = new Map();
+  const segments = new Map<number, Segment>();
   for (const points of epochs) {
-    const tangentAt = (/** @type {number} */ index) => {
+    const tangentAt = (index: number) => {
       const left = points[Math.max(0, index - 1)];
       const right = points[Math.min(points.length - 1, index + 1)];
       const stepSpan = right.step - left.step;
@@ -73,11 +67,11 @@ function makeCurves(rows, method, preRestartKey) {
 
 /**
  * Evaluate a cubic Hermite segment without changing the saved iterates.
- * @param {Segment} segment Endpoint positions and tangents.
- * @param {number} t Fraction along the segment, from zero to one.
- * @returns {Point} Interpolated position.
+ * @param segment Endpoint positions and tangents.
+ * @param t Fraction along the segment, from zero to one.
+ * @returns Interpolated position.
  */
-export function sample(segment, t) {
+export function sample(segment: Segment, t: number): Point {
   const startWeight = 2 * t * t * t - 3 * t * t + 1;
   const startTangentWeight = t * t * t - 2 * t * t + t;
   const endWeight = -2 * t * t * t + 3 * t * t;
@@ -99,10 +93,10 @@ export function sample(segment, t) {
 
 /**
  * Build display curves without smoothing across restart jumps.
- * @param {ComparisonRow[]} rows Iterates including step zero and a restart.
- * @returns {ComparisonCurves} Segments keyed by their ending iteration index.
+ * @param rows Iterates including step zero and a restart.
+ * @returns Segments keyed by their ending iteration index.
  */
-export function makeComparisonCurves(rows) {
+export function makeComparisonCurves(rows: ComparisonRow[]): ComparisonCurves {
   const curves = {
     last: makeCurves(rows, 'last'),
     restarted: makeCurves(rows, 'restarted', 'preRestart'),

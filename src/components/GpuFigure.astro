@@ -146,11 +146,11 @@ const nonzeros = (matrix.nonzeros / 1_000_000).toFixed(2);
 </div>
 <script>
   import products from '../../data/research/rail4284-products.json';
-  import { initializeGpuAnimation } from '../lib/research/gpu-matrix-animation.mjs';
+  import { initializeGpuFigure } from '../lib/research/gpu-matrix-animation.ts';
   for (const root of document.querySelectorAll<HTMLElement>(
     '.gpu-composition',
   )) {
-    initializeGpuAnimation(root, products, window);
+    initializeGpuFigure(root, products, window);
   }
 </script>
 <style>

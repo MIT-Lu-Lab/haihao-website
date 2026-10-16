@@ -1,0 +1,5 @@
+# Generated research data; preserve the generators' output.
+data/research/*.json
+public/*.json
+# Attribution is maintained by hand.
+!data/research/image-sources.json

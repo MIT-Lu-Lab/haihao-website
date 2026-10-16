@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
   makeComparisonCurves,
   sample,
-} from '../src/lib/research/pdhg-curves.mjs';
+} from '../src/lib/research/pdhg-curves.ts';
 test('display interpolation preserves endpoints and restart boundaries', () => {
   const { rows } = JSON.parse(
     fs.readFileSync(new URL('../public/pdhg-comparison.json', import.meta.url)),

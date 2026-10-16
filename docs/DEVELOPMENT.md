@@ -4,7 +4,12 @@ This is an English-language Astro static-site prototype. Home and Publications a
 
 ## Run locally
 
-Use Node 24 LTS (see `.nvmrc`), then:
+Use Node 24 LTS (see `.nvmrc`).
+
+Tests and research generators import TypeScript directly using Node's native
+type stripping. Node 22 requires version 22.18 or later; Node 24 is recommended.
+
+Install dependencies and start the development server:
 
 ```sh
 npm ci
@@ -24,16 +29,15 @@ The static build is generated in `dist/`. Hosting and a production domain have n
 
 ## Research figures
 
-Run `npm run research:generate` to regenerate the PDHG comparison. The command runs `scripts/pdhg-study.mjs` before `scripts/pdhg-comparison.mjs`, which reads the first script's output. Paths resolve relative to the scripts, and the generators create their output directories as needed.
+Run `npm run research:generate` to regenerate the PDHG comparison and online allocation data. The command runs `scripts/pdhg-study.mjs` before `scripts/pdhg-comparison.mjs`, which reads the first script's output, then runs `scripts/online-allocation.mjs`. Paths resolve relative to the scripts, and the generators create their output directories as needed.
 
-- `data/research/`: reproducible research artifacts (trajectory JSON and CSV files); these are not deployed.
+- `data/research/`: reproducible research artifacts (JSON and CSV files); imported data is bundled into the page, while the source directory is not copied to the site.
 - `public/pdhg-comparison.json`: the comparison data fetched by the research page.
 - `src/components/TheoryFigure.astro`: canvas markup, text alternative, controls, and styles.
 - `src/lib/research/`: playback, drawing, and interpolation modules bundled through the component's Astro script.
-- `scripts/research-figures.mjs`: generator for the other research SVG illustrations.
+- `scripts/research-figures.mjs`: generator for the property-tax SVG illustration.
 
-The GPU composition lives in `src/components/GpuFigure.astro`. The railway photo's
-source and attribution are maintained in `data/research/gpu-image-sources.json`.
+The GPU composition lives in `src/components/GpuFigure.astro`. Image sources and attribution are maintained in `data/research/image-sources.json`.
 To regenerate the matrix image, download the archive linked in
 `data/research/rail4284-figure.json`, then run:
 
@@ -45,12 +49,12 @@ This script requires Python 3.11 or later, NumPy, and Pillow (`python3` may be
 needed outside Windows). It writes `public/images/research/rail4284-density.png`
 and `data/research/rail4284-figure.json`; it does not modify image attribution.
 The matrix PNG uses a 128-color palette without dithering; this only quantizes
-display colors, not matrix counts. The railway photograph and GPU illustration
-use WebP quality 80, method 6, with embedded metadata removed; the GPU illustration
-retains its alpha channel.
+display colors, not matrix counts. The railway and commerce photographs and GPU illustration use WebP quality 80,
+method 6, with embedded metadata removed. The commerce photo is 1120 pixels
+wide; the GPU illustration is 800 pixels wide and retains its alpha channel.
 
 `GpuMatrixAnimation.astro` supplies the matrix SVG; the parent GPU component
-initializes `src/lib/research/gpu-matrix-animation.mjs` with the saved products.
+initializes `src/lib/research/gpu-matrix-animation.ts` with the saved products.
 Playback stops offscreen, in hidden tabs, and under reduced motion. For multiple
 figures on a page, pass distinct stable `id` props to `GpuFigure` so its SVG
 mask and gradient identifiers remain unique.
@@ -68,16 +72,44 @@ illustrate matrix operations, not a continuous solver trajectory or benchmark.
 
 `npm test` includes the research interpolation and playback tests, plus an independent exact-arithmetic audit. The audit requires Python 3, available as `python` on Windows or `python3` elsewhere. `src/data/` holds site content; `data/research/` holds generated research artifacts.
 
-Research modules use `// @ts-check`, so `npm run check` checks their JavaScript implementations against the JSDoc types. Keep this directive in new research modules; JSDoc alone does not enable implementation checking. Each figure initializes separately. Its `descriptionId` defaults to `comparison-description`; when placing multiple figures on one page, supply unique, stable values, such as `<TheoryFigure descriptionId="comparison-secondary" />`.
+Research modules use TypeScript and are checked by `npm run check`.
+Each entry point follows `initialize<Figure>(root, data, browser)` and returns
+playback cleanup. `playback.ts` owns the millisecond clock, visibility, reduced
+motion, and listener cleanup; `easing.ts` preserves the cubic and quintic curves.
+Theory playback caps frame advances at 80 ms; online playback runs at 0.8 speed.
+GPU playback uses the uncapped clock. Figure tests share
+`test/helpers/fake-browser.js`, with DOM and canvas stubs kept per figure.
+
+Data loading stays outside playback: the theory figure fetches its larger
+public dataset through `loadTheoryFigure`, while GPU and online figures import
+saved data at build time. All three initialize playback only after data is
+available. Do not add size thresholds or data fetching to the controller.
+
+Each figure initializes separately. Theory's `descriptionId` defaults to
+`comparison-description`; pass distinct stable IDs for multiple instances.
+
+The online bidding composition lives in `OnlineFigure.astro`; its SVG and
+responsive diagram styles live in `OnlineDiagram.astro`. Playback lives in
+`src/lib/research/online-figure.ts`. Run `npm run research:generate` (or `node scripts/online-allocation.mjs` alone)
+to regenerate `data/research/online-allocation.json`. Shared display dimensions live in `src/lib/research/online-layout.ts`.
+The component imports this data at build time; its TypeScript playback is checked by `astro check`.
+The animation retains the first 23 auctions as history and plays from auction
+24 through the last gain, retaining the full 48-auction axis. Playback stops offscreen, in hidden tabs, and with reduced
+motion. Supply distinct stable `id` props when using multiple instances on one
+page.
 
 ## Formatting
 
 Format only the files changed for a task; keep unrelated formatting out of functional changes. Pass explicit file paths to these commands:
 
 ```sh
-npm run format -- src/components/TheoryFigure.astro src/lib/research/theory-figure.mjs
-npm run format:check -- src/components/TheoryFigure.astro src/lib/research/theory-figure.mjs
+npm run format -- src/components/TheoryFigure.astro src/lib/research/theory-figure.ts
+npm run format:check -- src/components/TheoryFigure.astro src/lib/research/theory-figure.ts
 ```
+
+Generated JSON is excluded by `.prettierignore`; the hand-maintained image
+attribution file remains checked. Regenerate data with its scripts instead
+of formatting it manually.
 
 The repository has not undergone a full Prettier migration, so a repository-wide format check is not a CI requirement. Prettier uses `.prettierrc.json` and the Astro plugin.
 

@@ -31,9 +31,9 @@ const { descriptionId = 'comparison-description' } = Astro.props;
   <p class="error" role="alert" hidden></p>
 </div>
 <script>
-  import { initializeTheoryFigure } from '../lib/research/theory-figure.mjs';
+  import { loadTheoryFigure } from '../lib/research/theory-figure.ts';
   for (const root of document.querySelectorAll<HTMLElement>('.theory-visual')) {
-    initializeTheoryFigure(root, window);
+    loadTheoryFigure(root, window);
   }
 </script>
 <style>

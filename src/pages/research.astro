@@ -5,6 +5,7 @@ import ExternalLink from '../components/ExternalLink.astro';
 import ResearchSection from '../components/ResearchSection.astro';
 import TheoryFigure from '../components/TheoryFigure.astro';
 import GpuFigure from '../components/GpuFigure.astro';
+import OnlineFigure from '../components/OnlineFigure.astro';
 import { sitePath } from '../utils/paths';
 ---
 <Layout title="Research">
@@ -71,9 +72,9 @@ import { sitePath } from '../utils/paths';
           <li>S. R. Balseiro, H. Lu, V. Mirrokni, and B. Sivan (2026). <ExternalLink href="https://arxiv.org/abs/2202.06152" mark={false}>Analysis of Dual-Based PID Controllers through Convolutional Mirror Descent</ExternalLink>. <em>Operations Research</em>, forthcoming.</li>
         </ol>
       </div>
-      <figure slot="figure" class="research-figure">
-        <img src={sitePath('images/research/dual-price.svg')} alt="Shadow price learned by dual mirror descent rising and settling near its optimal value" width="320" height="240" loading="lazy" />
-        <figcaption>Schematic. Dual mirror descent learns the shadow price of a budget from streaming requests and settles near its optimal value.</figcaption>
+      <figure slot="figure" class="research-figure online-figure">
+        <OnlineFigure />
+        <figcaption>A simulated example of bidding in second-price auctions. Dual mirror descent updates the budget shadow price using observed payments. The curves compare its cumulative net utility (value minus payment) with bidding each impression’s value. Both bidders face the same auctions and budget.<span class="theory-sources">Framework: <ExternalLink href="https://arxiv.org/abs/2011.10124" mark={false}>Balseiro, Lu &amp; Mirrokni</ExternalLink>. Photo: <ExternalLink href="https://www.pexels.com/photo/person-purchasing-goods-online-6612276/" mark={false}>Mikhail Nilov / Pexels</ExternalLink>.</span></figcaption>
       </figure>
     </ResearchSection>
     <ResearchSection id="property-taxation" title="Addressing regressivity in property taxation">
@@ -175,7 +176,8 @@ import { sitePath } from '../utils/paths';
       margin-top: var(--space-xl);
     }
     .theory-figure,
-    .gpu-figure {
+    .gpu-figure,
+    .online-figure {
       max-width: none;
     }
   }

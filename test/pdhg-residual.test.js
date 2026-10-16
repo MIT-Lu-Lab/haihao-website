@@ -1,13 +1,13 @@
 import test from 'node:test';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
-import { makeComparisonCurves } from '../src/lib/research/pdhg-curves.mjs';
+import { makeComparisonCurves } from '../src/lib/research/pdhg-curves.ts';
 import {
   kktResidual,
   logResidual,
   makeLiftedCurves,
   sampleLifted,
-} from '../src/lib/research/kkt-lift.mjs';
+} from '../src/lib/research/kkt-lift.ts';
 test('residual curves preserve endpoints without extra extrema', () => {
   const { rows } = JSON.parse(
     fs.readFileSync(new URL('../public/pdhg-comparison.json', import.meta.url)),

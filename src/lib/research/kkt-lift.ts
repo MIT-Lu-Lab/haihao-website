@@ -1,30 +1,33 @@
-// @ts-check
+import type {
+  ComparisonCurves,
+  MethodName,
+  Point,
+  Segment,
+} from './pdhg-curves.ts';
 // For unconstrained L(x,y)=xy: F=(dL/dx,-dL/dy)=(y,-x).
 // This is the absolute Euclidean stationarity residual, not a solver's
 // normalized stopping test and not ||z-T(z)||.
-import { sample } from './pdhg-curves.mjs';
-/** @typedef {import('./pdhg-curves.mjs').Point} Point */
-/** @typedef {import('./pdhg-curves.mjs').MethodName} MethodName */
-/**
- * @typedef {import('./pdhg-curves.mjs').Segment & {
- *   startLog: number, endLog: number, startSlope: number, endSlope: number
- * }} ResidualSegment
- */
-/**
- * @typedef {Record<MethodName, Map<number, ResidualSegment>>} ResidualCurves
- */
+import { sample } from './pdhg-curves.ts';
+export type ResidualSegment = Segment & {
+  startLog: number;
+  endLog: number;
+  startSlope: number;
+  endSlope: number;
+};
+export type ResidualCurves = Record<MethodName, Map<number, ResidualSegment>>;
 
 /**
- * @param {import('./pdhg-curves.mjs').Point} position State for L(x,y)=xy.
- * @returns {number} Absolute Euclidean KKT residual.
+ * @param position State for L(x,y)=xy.
+ * @returns Absolute Euclidean KKT residual.
  */
-export const kktResidual = (position) => Math.hypot(position.y, -position.x);
+export const kktResidual = (position: Point): number =>
+  Math.hypot(position.y, -position.x);
 /**
- * @param {import('./pdhg-curves.mjs').Point} position Nonzero state.
- * @returns {number} Base-10 logarithm of the residual.
+ * @param position Nonzero state.
+ * @returns Base-10 logarithm of the residual.
  * @throws {RangeError} If the residual is zero.
  */
-export function logResidual(position) {
+export function logResidual(position: Point): number {
   const residual = kktResidual(position);
   if (!(residual > 0)) {
     throw new RangeError('Zero residual has no finite log height');
@@ -34,17 +37,20 @@ export function logResidual(position) {
 /**
  * Add shape-preserving log-residual interpolation within each restart epoch.
  * Display frames are not additional iterates and introduce no residual extrema.
- * @param {import('./pdhg-curves.mjs').ComparisonCurves} curves State curves.
- * @returns {ResidualCurves} State segments augmented with log-residual slopes.
+ * @param curves State curves.
+ * @returns State segments augmented with log-residual slopes.
  */
-export function makeLiftedCurves(curves) {
-  /** @type {ResidualCurves} */
-  const result = { last: new Map(), restarted: new Map(), halpern: new Map() };
-  /** @type {(a: Point, b: Point) => boolean} */
-  const samePoint = (a, b) => Math.hypot(a.x - b.x, a.y - b.y) < 1e-14;
-  /** @type {(a: number, b: number) => number} */
-  const monotoneSlope = (a, b) => (a * b <= 0 ? 0 : (2 * a * b) / (a + b));
-  const names = /** @type {MethodName[]} */ (Object.keys(curves));
+export function makeLiftedCurves(curves: ComparisonCurves): ResidualCurves {
+  const result: ResidualCurves = {
+    last: new Map(),
+    restarted: new Map(),
+    halpern: new Map(),
+  };
+  const samePoint = (a: Point, b: Point): boolean =>
+    Math.hypot(a.x - b.x, a.y - b.y) < 1e-14;
+  const monotoneSlope = (a: number, b: number): number =>
+    a * b <= 0 ? 0 : (2 * a * b) / (a + b);
+  const names = Object.keys(curves) as MethodName[];
   for (const name of names) {
     const segments = curves[name];
     const residualSegments = result[name];
@@ -80,12 +86,14 @@ export function makeLiftedCurves(curves) {
   return result;
 }
 /**
- * @param {ResidualSegment} segment State and log-residual segment.
- * @param {number} t Fraction along the segment, from zero to one.
- * @returns {import('./pdhg-curves.mjs').Point & {residualLog: number}}
- *   Display position and log residual.
+ * @param segment State and log-residual segment.
+ * @param t Fraction along the segment, from zero to one.
+ * @returns Display position and log residual.
  */
-export function sampleLifted(segment, t) {
+export function sampleLifted(
+  segment: ResidualSegment,
+  t: number,
+): Point & { residualLog: number } {
   const position = sample(segment, t);
   const t2 = t * t;
   const t3 = t2 * t;

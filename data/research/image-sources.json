@@ -1,0 +1,27 @@
+{
+  "railwayPhoto": {
+    "file": "public/images/research/railway-oakland.webp",
+    "source": "https://commons.wikimedia.org/wiki/File:Aerial_view_of_West_Oakland_rail_yards,_December_2022.JPG",
+    "author": "Pi.1415926535",
+    "license": "CC BY-SA 4.0",
+    "changes": "CSS crop and saturation/contrast adjustment; this photographic adaptation remains CC BY-SA 4.0.",
+    "context": "West Oakland, illustrative railway setting, not geographic data for rail4284",
+    "encoding": "WebP quality 80, method 6; embedded metadata removed."
+  },
+  "note": "The rail4284 matrix is real; the railway photograph illustrates the application context.",
+  "commercePhoto": {
+    "file": "public/images/research/online-commerce.webp",
+    "source": "https://www.pexels.com/photo/person-purchasing-goods-online-6612276/",
+    "author": "Mikhail Nilov",
+    "license": "Pexels License",
+    "licenseUrl": "https://www.pexels.com/license/",
+    "changes": "Resized to 1120 x 747; cropped in CSS.",
+    "encoding": "WebP quality 80, method 6; embedded metadata removed."
+  },
+  "gpuIllustration": {
+    "file": "public/images/research/gpu-platform.webp",
+    "source": "Original illustration supplied by the project owner, who confirmed creating it.",
+    "changes": "Resized to 800 x 533.",
+    "encoding": "WebP quality 80, method 6; alpha channel retained; embedded metadata removed."
+  }
+}

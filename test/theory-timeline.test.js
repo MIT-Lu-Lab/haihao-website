@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createTheoryTimeline } from '../src/lib/research/theory-timeline.mjs';
-import { TIMING, DISPLAY_STEPS } from '../src/lib/research/theory-renderer.mjs';
+import { createTheoryTimeline } from '../src/lib/research/theory-timeline.ts';
+import { TIMING, DISPLAY_STEPS } from '../src/lib/research/theory-renderer.ts';
 
 const timeline = createTheoryTimeline(
   [14, 25, 28, 42, 50, 56, 70, 75, 84, 98],

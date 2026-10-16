@@ -1,0 +1,572 @@
+---
+import data from '../../data/research/online-allocation.json';
+import { DISPLAY_START, RULER, REELS } from '../lib/research/online-layout';
+interface Props {
+  id: string;
+}
+const { id } = Astro.props;
+const target = data.budget / data.T;
+const finalRound = data.rounds.at(-1);
+if (!finalRound) {
+  throw new Error('OnlineFigure requires auction data.');
+}
+const finalState = finalRound.after;
+---
+
+<div class="online-diagram">
+  <p class="scroll-hint">Scroll horizontally to view the full diagram.</p>
+  <div
+    class="diagram-scroll"
+    tabindex="0"
+    role="region"
+    aria-label="Bidding diagram"
+  >
+    <svg
+      viewBox="0 0 640 432"
+      role="img"
+      aria-labelledby={`${id}-title`}
+      aria-describedby={`${id}-desc ${id}-current-price`}
+    >
+      <title id={`${id}-title`}>A bidding decision and its learning loop</title>
+      <desc id={`${id}-desc`}>
+        A synthetic illustration of the net-utility bidding model in section
+        6.2. Values fluctuate randomly with a smooth upward trend with
+        overlapping value distributions across 48 second-price auctions. Both
+        bidders face the same auctions and budget; neither sees future
+        opportunities. DMD starts with shadow price 0.8 and bids value / (1 +
+        shadow price), capped by remaining budget as a feasibility safeguard,
+        and updates from actual payment (zero on losses). The dial shows the
+        actual bid on a fixed zero-to-one scale. Competing prices shown in the
+        diagram are simulator information; losing prices are not used by DMD.
+        Utility is value won minus payment. Animation starts after auction{' '}
+        {DISPLAY_START}; curves retain history from zero. With budget{' '}
+        {data.budget}, final utility is {finalState.value.toFixed(2)} for DMD
+        and {finalState.fixedValue.toFixed(2)} for truthful bidding. The
+        baseline bids value, capped by budget; it is not tuned fixed pacing.
+        This illustrative scenario is not a general performance guarantee.
+      </desc>
+      <defs>
+        <clipPath id={`${id}-shadow-window`}>
+          <rect x="538" y="352" width="66" height="35" />
+        </clipPath>
+        <marker
+          id={`${id}-arrow`}
+          markerUnits="userSpaceOnUse"
+          markerWidth="6"
+          markerHeight="6"
+          refX="5.5"
+          refY="3"
+          orient="auto"
+        >
+          <path d="M0 0 6 3 0 6 Z" fill="context-stroke" />
+        </marker>
+      </defs>
+
+      <!-- The top-row ports share a centreline and identical 28-unit gutters. -->
+      <path d="M18 48 H154 L166 60 V160 H18 Z" fill="var(--soft)" />
+      <path d="M194 24 H354 L366 36 V184 H194 Z" fill="var(--red)" />
+      <path d="M394 24 H610 L622 36 V184 H394 Z" fill="var(--muted)" />
+      <g
+        transform="translate(34 62) scale(0.75)"
+        class="icon icon-ink"
+        aria-hidden="true"
+      >
+        <rect x="0" y="1" width="24" height="22" rx="2" />
+        <path d="M0 6 H24" />
+        <text x="12" y="18" text-anchor="middle" class="ad-symbol">
+          Ad
+        </text>
+      </g>
+      <text x="60" y="78" class="module-title">
+        Impression
+      </text>
+      <text x="34" y="109" class="label">
+        Value
+      </text>
+      <text x="34" y="140" class="number" data-part="opportunity-value" />
+      <path d="M172 104 H188" class="wire" marker-end={`url(#${id}-arrow)`} />
+      <path
+        d="M172 104 H188"
+        class="signal signal-tail"
+        opacity="0"
+        pathLength="1"
+        data-part="to-input-tail"
+      />
+      <path
+        d="M172 104 H188"
+        class="signal"
+        opacity="0"
+        pathLength="1"
+        data-part="to-input"
+      />
+
+      <g
+        transform="translate(214 44) scale(0.83)"
+        class="icon icon-white"
+        aria-hidden="true"
+      >
+        <circle cx="11" cy="11" r="9" />
+        <circle cx="11" cy="11" r="4" />
+        <path d="M11 11 L23 -1 M18 -1 H23 V4" />
+      </g>
+      <text x="244" y="60" class="module-title on-dark">
+        Bid
+      </text>
+      <!-- A fixed 0–1 scale for the actual, budget-feasible bid. -->
+      <path d="M238 122 A42 42 0 0 1 322 122" class="dial-track" />
+      <text x="228" y="126" text-anchor="middle" class="dial-scale">
+        0
+      </text>
+      <text x="334" y="126" text-anchor="middle" class="dial-scale">
+        1.0
+      </text>
+      <text x="214" y="148" class="bid-amount-label">
+        Bid amount
+      </text>
+      <g data-part="bid-group">
+        <path
+          d="M238 122 A42 42 0 0 1 322 122"
+          class="dial-sweep"
+          pathLength="1"
+          data-part="bid-sweep"
+        />
+        <g transform="translate(280 122)">
+          <g data-part="formed-bid">
+            <path d="M-3 0 L0 -1.5 L36 0 L0 1.5 Z" fill="var(--surface)" />
+          </g>
+          <circle r="2.5" fill="var(--surface)" />
+        </g>
+        <text
+          x="346"
+          y="148"
+          text-anchor="end"
+          class="dial-value"
+          data-part="bid-value"
+        />
+      </g>
+      <text x="280" y="172" text-anchor="middle" class="formula on-dark">
+        value / (1 + μ)
+      </text>
+      <path d="M372 104 H388" class="wire" marker-end={`url(#${id}-arrow)`} />
+      <path
+        d="M372 104 H388"
+        class="signal signal-tail"
+        opacity="0"
+        pathLength="1"
+        data-part="to-auction-tail"
+      />
+      <path
+        d="M372 104 H388"
+        class="signal"
+        opacity="0"
+        pathLength="1"
+        data-part="to-auction"
+      />
+
+      <g
+        transform="translate(414 44) scale(0.83)"
+        class="icon icon-white"
+        aria-hidden="true"
+      >
+        <path d="M4 5 L8 1 L19 12 L15 16 Z M10 11 L2 19 M14 23 H25 M16 20 H23 V23" />
+      </g>
+      <text x="444" y="60" class="module-title on-dark">
+        Auction
+      </text>
+      <!-- Bid and competing price share the same fixed 0–1 ruler as Payment. -->
+      <path
+        d={`M${RULER.left} 111 H${RULER.left + RULER.width}`}
+        stroke="var(--surface)"
+        stroke-opacity=".18"
+        stroke-width="2"
+      />
+      <rect
+        x={RULER.left}
+        y="107"
+        height="8"
+        fill="var(--surface)"
+        data-part="bid"
+      />
+      <text
+        y="140"
+        text-anchor="middle"
+        class="auction-readout"
+        data-part="auction-bid-label"
+      />
+      <line
+        y1="97"
+        y2="123"
+        stroke="var(--red)"
+        stroke-width="3"
+        data-part="price-marker"
+      />
+      <text
+        y="88"
+        text-anchor="middle"
+        class="auction-readout"
+        data-part="price-label"
+      />
+      <g data-part="outcome">
+        <path
+          d="M414 162 L419 167 L428 156"
+          class="icon icon-white"
+          data-part="win-check"
+        />
+        <path
+          d="M416 157 L425 166 M425 157 L416 166"
+          class="icon icon-white"
+          data-part="loss-cross"
+        />
+        <text x="439" y="167" class="label on-dark" data-part="result" />
+      </g>
+
+      <!-- Feedback owns mu; the only external return leads to the next bid. -->
+      <path d="M508 190 V226" class="wire" marker-end={`url(#${id}-arrow)`} />
+      <path
+        d="M508 190 V226"
+        class="signal signal-tail"
+        opacity="0"
+        pathLength="1"
+        data-part="to-spend-tail"
+      />
+      <path
+        d="M508 190 V226"
+        class="signal"
+        opacity="0"
+        pathLength="1"
+        data-part="to-spend"
+      />
+      <path d="M394 232 H610 L622 244 V398 H394 Z" fill="var(--soft)" />
+      <g
+        transform="translate(414 249) scale(0.83)"
+        class="icon icon-ink"
+        aria-hidden="true"
+      >
+        <path d="M8 2 L13 4 L18 2 L17 8 H9 Z M7 8 H19 M8 9 L4 16 C0 24 7 26 13 26 C19 26 26 24 22 16 L18 9 M13 12 V22 M16 14 C11 11 8 16 13 17 C19 18 16 23 10 20" />
+      </g>
+      <text x="444" y="265" class="module-title">
+        Dual update
+      </text>
+      <text x="414" y="297" class="label">
+        Payment
+      </text>
+      <text
+        x="602"
+        y="297"
+        text-anchor="end"
+        class="payment-number"
+        data-part="payment-value"
+      />
+      <path
+        d={`M${RULER.left} 311 H${RULER.left + RULER.width}`}
+        class="rule"
+        stroke-width="6"
+      />
+      <rect
+        x={RULER.left}
+        y="308"
+        height="6"
+        fill="var(--red)"
+        data-part="spend-bar"
+      />
+      <path
+        d={`M${RULER.left + (RULER.width * target) / RULER.maximum} 303 V319`}
+        stroke="var(--muted)"
+        stroke-width="1.3"
+      />
+      <text x="414" y="337" class="small">
+        Budget per auction
+      </text>
+      <text x="602" y="337" text-anchor="end" class="small">
+        {target.toFixed(2)}
+      </text>
+      <text x="414" y="378" class="label">
+        Shadow price μ
+      </text>
+      <g aria-hidden="true">
+        <g
+          clip-path={`url(#${id}-shadow-window)`}
+          aria-hidden="true"
+          class="shadow-reels"
+        >
+          <text x="563" y={REELS.baseline} text-anchor="middle">
+            .
+          </text>
+          <g data-part="shadow-digit-0">
+            <text x="551" y={REELS.baseline} data-part="shadow-digit-0-front" />
+            <text
+              x="551"
+              y={REELS.baseline + REELS.rowHeight}
+              data-part="shadow-digit-0-back"
+            />
+          </g>
+          <g data-part="shadow-digit-1">
+            <text x="575" y={REELS.baseline} data-part="shadow-digit-1-front" />
+            <text
+              x="575"
+              y={REELS.baseline + REELS.rowHeight}
+              data-part="shadow-digit-1-back"
+            />
+          </g>
+          <g data-part="shadow-digit-2">
+            <text x="594" y={REELS.baseline} data-part="shadow-digit-2-front" />
+            <text
+              x="594"
+              y={REELS.baseline + REELS.rowHeight}
+              data-part="shadow-digit-2-back"
+            />
+          </g>
+        </g>
+      </g>
+      <path
+        d="M388 372 H378 Q370 372 370 364 V222 Q370 214 362 214 H288 Q280 214 280 206 V190"
+        class="wire"
+        marker-end={`url(#${id}-arrow)`}
+      />
+      <path
+        d="M388 372 H378 Q370 372 370 364 V222 Q370 214 362 214 H288 Q280 214 280 206 V190"
+        class="signal signal-tail"
+        opacity="0"
+        pathLength="1"
+        data-part="to-bid-tail"
+      />
+      <path
+        d="M388 372 H378 Q370 372 370 364 V222 Q370 214 362 214 H288 Q280 214 280 206 V190"
+        class="signal"
+        opacity="0"
+        pathLength="1"
+        data-part="to-bid"
+      />
+      <text x="318" y="204" text-anchor="middle" class="small">
+        Next bid
+      </text>
+
+      <!-- The result has room to breathe, alongside rather than inside the loop. -->
+      <g>
+        <text
+          transform="translate(20 306) rotate(-90)"
+          text-anchor="middle"
+          class="small"
+        >
+          Cumulative net utility
+        </text>
+        <path d="M62 238 H338 M62 306 H338" class="plot-grid" />
+        <path d="M62 374 H338" class="plot-baseline" />
+        <g class="small">
+          <text x="50" y="243" text-anchor="end" data-part="top-tick" />
+          <text x="50" y="311" text-anchor="end" data-part="mid-tick" />
+          <text x="50" y="379" text-anchor="end">
+            0
+          </text>
+          <text x="62" y="398" text-anchor="middle">
+            0
+          </text>
+          <text x="200" y="398" text-anchor="middle" data-part="middle-tick">
+            24
+          </text>
+          <text x="338" y="398" text-anchor="middle" data-part="end-tick">
+            48
+          </text>
+          <text x="200" y="423" text-anchor="middle">
+            Auctions
+          </text>
+        </g>
+        <g data-part="chart-motion">
+          <path class="fixed-curve" data-part="fixed-curve" />
+          <path class="dmd-curve" data-part="dmd-curve" />
+          <circle r="2.5" fill="var(--muted)" data-part="fixed-point" />
+          <circle r="3" fill="var(--red)" data-part="dmd-point" />
+        </g>
+        <g class="small" transform="translate(38 0)">
+          <path d="M198 335 H218" class="dmd-curve" />
+          <text x="227" y="340">
+            DMD
+          </text>
+          <path d="M198 355 H218" class="fixed-curve" />
+          <text x="227" y="360">
+            Bid = value
+          </text>
+        </g>
+      </g>
+    </svg>
+  </div>
+  <p id={`${id}-current-price`} class="sr-only">
+    Current shadow price: <span data-part="shadow-price" />
+  </p>
+</div>
+<style>
+  .online-diagram {
+    container-type: inline-size;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .diagram-scroll {
+    overflow-x: auto;
+  }
+  .scroll-hint {
+    display: none;
+    margin: 12px 0 4px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  svg {
+    width: 100%;
+    display: block;
+    font-family: var(--sans);
+    overflow: visible;
+  }
+  .module-title {
+    font-size: 16.5px;
+    font-weight: 500;
+    fill: var(--muted);
+  }
+  .label {
+    font-size: 15px;
+    fill: var(--ink);
+  }
+  .small {
+    font-size: 14px;
+    fill: var(--muted);
+  }
+  .number {
+    font-size: 28px;
+    fill: var(--red);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.03em;
+  }
+  .formula {
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 400;
+    opacity: 0.82;
+  }
+  .dial-track,
+  .dial-sweep {
+    fill: none;
+    stroke: var(--surface);
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+  .dial-track {
+    stroke-opacity: 0.24;
+  }
+  .dial-sweep {
+    stroke-opacity: 0.85;
+    stroke-dasharray: 1;
+  }
+  .dial-scale,
+  .dial-value,
+  .bid-amount-label {
+    fill: var(--surface);
+    font-variant-numeric: tabular-nums;
+  }
+  .dial-scale {
+    font-size: 11px;
+    opacity: 0.68;
+  }
+  .dial-value {
+    font-size: 18px;
+    font-weight: 500;
+  }
+  .bid-amount-label {
+    font-size: 14px;
+    opacity: 0.8;
+  }
+  .auction-readout {
+    fill: var(--surface);
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  .payment-number {
+    fill: var(--ink);
+    font-size: 20px;
+    font-variant-numeric: tabular-nums;
+  }
+  .shadow-reels {
+    fill: var(--red);
+    font-size: 28px;
+    font-variant-numeric: tabular-nums;
+    text-anchor: middle;
+  }
+  .on-dark {
+    fill: var(--surface);
+  }
+  .icon {
+    fill: none;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .icon-white {
+    stroke: var(--surface);
+  }
+  .icon-ink {
+    stroke: var(--ink);
+  }
+  .ad-symbol {
+    font-size: 11px;
+    fill: var(--ink);
+    stroke: none;
+    font-weight: 600;
+  }
+  .wire {
+    fill: none;
+    stroke: var(--muted);
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .signal {
+    fill: none;
+    stroke: var(--red);
+    stroke-width: 2.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .signal-tail {
+    stroke-width: 2;
+  }
+  .rule {
+    stroke: var(--line);
+  }
+  .plot-grid {
+    fill: none;
+    stroke: var(--line);
+    stroke-width: 1;
+  }
+  .plot-baseline {
+    fill: none;
+    stroke: var(--line);
+    stroke-width: 1;
+  }
+  .fixed-curve,
+  .dmd-curve {
+    fill: none;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+  .fixed-curve {
+    stroke: var(--muted);
+    stroke-width: 1.8;
+    stroke-dasharray: 4 3;
+  }
+  .dmd-curve {
+    stroke: var(--red);
+    stroke-width: 2.5;
+  }
+  @container (max-width: 420px) {
+    .scroll-hint {
+      display: block;
+    }
+    svg {
+      min-width: 560px;
+    }
+  }
+</style>
