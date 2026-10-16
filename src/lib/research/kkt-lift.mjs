@@ -1,13 +1,18 @@
+// @ts-check
 // For unconstrained L(x,y)=xy: F=(dL/dx,-dL/dy)=(y,-x).
 // This is the absolute Euclidean stationarity residual, not a solver's
 // normalized stopping test and not ||z-T(z)||.
 import { sample } from './pdhg-curves.mjs';
+/** @typedef {import('./pdhg-curves.mjs').Point} Point */
+/** @typedef {import('./pdhg-curves.mjs').MethodName} MethodName */
 /**
  * @typedef {import('./pdhg-curves.mjs').Segment & {
  *   startLog: number, endLog: number, startSlope: number, endSlope: number
  * }} ResidualSegment
  */
-/** @typedef {Record<'last' | 'restarted' | 'halpern', Map<number, ResidualSegment>>} ResidualCurves */
+/**
+ * @typedef {Record<MethodName, Map<number, ResidualSegment>>} ResidualCurves
+ */
 
 /**
  * @param {import('./pdhg-curves.mjs').Point} position State for L(x,y)=xy.
@@ -33,11 +38,16 @@ export function logResidual(position) {
  * @returns {ResidualCurves} State segments augmented with log-residual slopes.
  */
 export function makeLiftedCurves(curves) {
-  const result = {};
+  /** @type {ResidualCurves} */
+  const result = { last: new Map(), restarted: new Map(), halpern: new Map() };
+  /** @type {(a: Point, b: Point) => boolean} */
   const samePoint = (a, b) => Math.hypot(a.x - b.x, a.y - b.y) < 1e-14;
+  /** @type {(a: number, b: number) => number} */
   const monotoneSlope = (a, b) => (a * b <= 0 ? 0 : (2 * a * b) / (a + b));
-  for (const [name, segments] of Object.entries(curves)) {
-    const residualSegments = new Map();
+  const names = /** @type {MethodName[]} */ (Object.keys(curves));
+  for (const name of names) {
+    const segments = curves[name];
+    const residualSegments = result[name];
     for (const [k, segment] of segments) {
       const startLog = logResidual(segment.start);
       const endLog = logResidual(segment.end);
@@ -60,12 +70,11 @@ export function makeLiftedCurves(curves) {
         endSlope,
       });
     }
-    result[name] = residualSegments;
   }
   // Shared initial PDHG paths must also share residual interpolation slopes.
-  for (const [k, segment] of curves.restarted) {
-    if (segment === curves.last.get(k)) {
-      result.restarted.set(k, result.last.get(k));
+  for (const [k, segment] of result.last) {
+    if (curves.restarted.get(k) === curves.last.get(k)) {
+      result.restarted.set(k, segment);
     }
   }
   return result;
@@ -73,7 +82,8 @@ export function makeLiftedCurves(curves) {
 /**
  * @param {ResidualSegment} segment State and log-residual segment.
  * @param {number} t Fraction along the segment, from zero to one.
- * @returns {import('./pdhg-curves.mjs').Point & {residualLog: number}} Display sample.
+ * @returns {import('./pdhg-curves.mjs').Point & {residualLog: number}}
+ *   Display position and log residual.
  */
 export function sampleLifted(segment, t) {
   const position = sample(segment, t);

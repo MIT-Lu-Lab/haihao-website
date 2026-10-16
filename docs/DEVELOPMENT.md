@@ -34,6 +34,8 @@ Run `npm run research:generate` to regenerate the PDHG comparison. The command r
 
 `npm test` includes the research interpolation and playback tests, plus an independent exact-arithmetic audit. The audit requires Python 3, available as `python` on Windows or `python3` elsewhere. `src/data/` holds site content; `data/research/` holds generated research artifacts.
 
+Research modules use `// @ts-check`, so `npm run check` checks their JavaScript implementations against the JSDoc types. Keep this directive in new research modules; JSDoc alone does not enable implementation checking. Each figure initializes separately. Its `descriptionId` defaults to `comparison-description`; when placing multiple figures on one page, supply unique, stable values, such as `<TheoryFigure descriptionId="comparison-secondary" />`.
+
 ## Formatting
 
 Format only the files changed for a task; keep unrelated formatting out of functional changes. Pass explicit file paths to these commands:

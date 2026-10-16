@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-test('saved trajectories agree with independent exact-rational calculations', () => {
+test('saved trajectories match exact-rational calculations', () => {
   const python = process.platform === 'win32' ? 'python' : 'python3';
   const result = spawnSync(
     python,

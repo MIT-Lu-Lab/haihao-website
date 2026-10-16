@@ -1,5 +1,24 @@
+// @ts-check
 import { makeComparisonCurves } from './pdhg-curves.mjs';
 import { makeLiftedCurves, sampleLifted as sample } from './kkt-lift.mjs';
+
+/** @typedef {import('./pdhg-curves.mjs').Point} Point */
+/** @typedef {import('./pdhg-curves.mjs').MethodName} MethodName */
+/** @typedef {import('./kkt-lift.mjs').ResidualSegment} ResidualSegment */
+/** @typedef {import('./theory-timeline.mjs').RestartState} RestartState */
+/** @typedef {[number, number]} Coordinates */
+/** @typedef {'circle' | 'square' | 'diamond'} MarkerShape */
+/**
+ * @typedef {Object} MethodStyle
+ * @property {string} color
+ * @property {MarkerShape} marker
+ * @property {'dots' | 'dash' | 'solid'} trajectoryStyle
+ * @property {number[]} residualDash
+ * @property {'preRestart' | 'preHalpern' | null} preRestartKey
+ * @property {number} separation Direction for overlapping first-epoch markers.
+ * @property {number} extraWidth
+ * @property {boolean} explain Whether the first restart highlights this method.
+ */
 
 export const DISPLAY_STEPS = 90;
 // All playback durations are in milliseconds.
@@ -7,7 +26,13 @@ export const TIMING = {
   step: 240,
   fade: 300,
   endHold: 2400,
-  restartIndicator: 1400,
+  restartBefore: 750,
+  restartAfter: 800,
+  firstRestartBefore: 900,
+  firstRestartAfter: 1300,
+  annotationFadeIn: 220,
+  annotationFadeOut: 300,
+  averageLabelDelay: 220,
 };
 const RESIDUAL_PLOT = {
   left: 175,
@@ -19,6 +44,35 @@ const RESIDUAL_PLOT = {
 };
 
 const DURATION = DISPLAY_STEPS * TIMING.step;
+const EXPLANATION_DIMMING = 0.62;
+const AVERAGE_LABEL = {
+  offsetX: -28,
+  offsetY: 40,
+  referenceScale: 0.45,
+};
+const RESTART_GUIDE = {
+  restingOpacity: 0.4,
+  emphasisOpacity: 0.35,
+  activeOpacity: 0.75,
+};
+
+/**
+ * Read-only state derived once per frame and passed to every drawing step.
+ *
+ * @typedef {Object} FrameState
+ * @property {boolean} compact Whether the narrow layout is active.
+ * @property {number} pixelScale CSS pixels per logical canvas unit.
+ * @property {(position: import('./pdhg-curves.mjs').Point) => Coordinates}
+ *   project Map a state-space point to logical canvas coordinates.
+ * @property {{step: number, fraction: number, done: boolean}} playback
+ *   Current iteration and the drawn fraction of its segment.
+ * @property {import('./theory-timeline.mjs').RestartState | null} restart
+ *   Active restart hold, if any.
+ * @property {number} loopOpacity Fade at the start and end of each loop.
+ * @property {number} annotationOpacity Fade of the active restart annotations.
+ * @property {number} explanationOpacity Annotation fade during the explained
+ *   first restart; zero otherwise.
+ */
 
 /**
  * Create a renderer that owns the canvas transform and drawing style.
@@ -27,10 +81,10 @@ const DURATION = DISPLAY_STEPS * TIMING.step;
  * --pdhg, --restarted, and --halpern from the figure's computed styles.
  *
  * @param {HTMLCanvasElement} canvas Canvas with a 2D rendering context.
- * @param {Array<import('./pdhg-curves.mjs').ComparisonRow>} rows Saved iterates.
+ * @param {import('./pdhg-curves.mjs').ComparisonRow[]} rows Saved iterates.
  * @param {CSSStyleDeclaration} styles Computed styles of the owning figure.
- * @returns {(frame: {time: number, endHold: number, reduceMotion: boolean,
- *   pixelRatio: number}) => void} Draw a frame; time and endHold are milliseconds.
+ * @returns {(input: import('./theory-timeline.mjs').TimelineSample &
+ *   {reduceMotion: boolean, pixelRatio: number}) => void} Draw one frame.
  */
 export function createTheoryRenderer(canvas, rows, styles) {
   const theme = {
@@ -40,22 +94,56 @@ export function createTheoryRenderer(canvas, rows, styles) {
     surface: styles.getPropertyValue('--surface').trim(),
     font: styles.getPropertyValue('--sans').trim(),
   };
-  const context = canvas.getContext('2d');
+  const canvasContext = canvas.getContext('2d');
+  if (!canvasContext) {
+    throw new Error('A 2D canvas context is required');
+  }
+  const context = canvasContext;
+  /** @type {Record<MethodName, MethodStyle>} */
   const methods = {
-    last: { color: styles.getPropertyValue('--pdhg').trim(), marker: 'circle' },
+    last: {
+      color: styles.getPropertyValue('--pdhg').trim(),
+      marker: 'circle',
+      trajectoryStyle: 'dots',
+      residualDash: [1, 4],
+      preRestartKey: null,
+      separation: 1,
+      extraWidth: 0,
+      explain: false,
+    },
     restarted: {
       color: styles.getPropertyValue('--restarted').trim(),
       marker: 'square',
+      trajectoryStyle: 'dash',
+      residualDash: [7, 4],
+      preRestartKey: 'preRestart',
+      separation: -1,
+      extraWidth: 0,
+      explain: true,
     },
     halpern: {
       color: styles.getPropertyValue('--halpern').trim(),
       marker: 'diamond',
+      trajectoryStyle: 'solid',
+      residualDash: [],
+      preRestartKey: 'preHalpern',
+      separation: 0,
+      extraWidth: 0.25,
+      explain: false,
     },
   };
-  const methodNames = Object.keys(methods);
+  const methodNames = /** @type {MethodName[]} */ (Object.keys(methods));
+  const restartedMethods = methodNames.filter(
+    (name) => methods[name].preRestartKey,
+  );
   const restartSteps = rows.filter((row) => row.restart).map((row) => row.k);
   const firstRestart = restartSteps[0];
   const curves = makeLiftedCurves(makeComparisonCurves(rows));
+  /**
+   * @param {number} time
+   * @param {number} endHold
+   * @param {boolean} reduceMotion
+   */
   function getLoopOpacity(time, endHold, reduceMotion) {
     if (reduceMotion) {
       return 1;
@@ -69,17 +157,38 @@ export function createTheoryRenderer(canvas, rows, styles) {
     const fadeStart = TIMING.endHold - TIMING.fade;
     return 1 - ease(clamp((endHold - fadeStart) / TIMING.fade));
   }
+  /** @type {(x: number, y: number) => Point} */
   const point = (x, y) => ({ x, y });
-  let view = {};
-  let compact = false;
-  let loopOpacity = 1;
-  const project = (position) => [
-    view.x + view.scale * position.x,
-    view.y - view.scale * position.y,
-  ];
+  /** @type {(frame: FrameState, name: MethodName) => number} */
+  const methodOpacity = (frame, name) =>
+    methods[name].explain
+      ? 1
+      : 1 - EXPLANATION_DIMMING * frame.explanationOpacity;
+  /** @type {(t: number) => number} */
   const ease = (t) => t * t * t * (t * (6 * t - 15) + 10);
+  /** @type {(t: number) => number} */
   const clamp = (t) => Math.min(1, Math.max(0, t));
-  function getProgress(time) {
+  /**
+   * @param {RestartState | null} restart
+   */
+  function getAnnotationOpacity(restart) {
+    if (!restart) {
+      return 0;
+    }
+    const fadeIn = ease(clamp(restart.elapsed / TIMING.annotationFadeIn));
+    const fadeOut = ease(
+      clamp((restart.duration - restart.elapsed) / TIMING.annotationFadeOut),
+    );
+    return fadeIn * fadeOut;
+  }
+  /**
+   * @param {number} time
+   * @param {RestartState | null} restart
+   */
+  function getProgress(time, restart) {
+    if (restart?.phase === 'before') {
+      return { step: restart.step, fraction: 1, done: false };
+    }
     if (time >= DURATION) {
       return { step: DISPLAY_STEPS, fraction: 1, done: true };
     }
@@ -90,55 +199,117 @@ export function createTheoryRenderer(canvas, rows, styles) {
       done: false,
     };
   }
-  function sampleTrajectory(name, step, fraction = 1) {
+  /**
+   * @param {MethodName} name
+   * @param {number} step
+   * @returns {ResidualSegment}
+   */
+  function segmentAt(name, step) {
     const segment = curves[name].get(step);
+    if (!segment) {
+      throw new Error(`Missing ${name} trajectory segment at step ${step}`);
+    }
+    return segment;
+  }
+  /**
+   * @param {MethodName} name
+   * @param {number} step
+   * @param {number} [fraction]
+   */
+  function sampleTrajectory(name, step, fraction = 1) {
+    const segment = segmentAt(name, step);
     return Array.from({ length: 17 }, (_, i) =>
       sample(segment, (i * fraction) / 16),
     );
   }
-  function drawAxis(points, color, width, alpha) {
+  /**
+   * @param {FrameState} frame
+   * @param {Point[]} points
+   * @param {string} color
+   * @param {number} width
+   * @param {number} alpha
+   */
+  function drawAxis(frame, points, color, width, alpha) {
     context.beginPath();
-    points.forEach((point, i) => {
-      const position = project(point);
-      i ? context.lineTo(...position) : context.moveTo(...position);
+    points.forEach((point, index) => {
+      const position = frame.project(point);
+      if (index === 0) {
+        context.moveTo(...position);
+      } else {
+        context.lineTo(...position);
+      }
     });
     context.strokeStyle = color;
     context.lineWidth = width;
     context.globalAlpha = alpha;
     context.setLineDash([]);
     context.stroke();
-    context.setLineDash([]);
     context.globalAlpha = 1;
   }
-  function drawMarker(point, color, shape, offset) {
-    const position = project(point);
+  /**
+   * @param {number} x
+   * @param {number} y
+   * @param {MarkerShape} shape
+   * @param {number} [radius]
+   */
+  function markerPath(x, y, shape, radius = 4) {
+    const scale = radius / 4;
+    context.beginPath();
+    if (shape === 'square') {
+      context.roundRect(
+        x - 3.8 * scale,
+        y - 3.8 * scale,
+        7.6 * scale,
+        7.6 * scale,
+        scale,
+      );
+    } else if (shape === 'diamond') {
+      context.moveTo(x, y - 5 * scale);
+      context.lineTo(x + 4.5 * scale, y);
+      context.lineTo(x, y + 5 * scale);
+      context.lineTo(x - 4.5 * scale, y);
+      context.closePath();
+    } else {
+      context.arc(x, y, radius, 0, Math.PI * 2);
+    }
+  }
+  /**
+   * @param {FrameState} frame
+   * @param {Point} point
+   * @param {string} color
+   * @param {MarkerShape} shape
+   * @param {Coordinates} offset
+   * @param {number} opacity
+   */
+  function drawMarker(frame, point, color, shape, offset, opacity) {
+    const position = frame.project(point);
     const x = position[0] + offset[0];
     const y = position[1] + offset[1];
     context.save();
-    context.globalAlpha = loopOpacity;
+    const markerScale = frame.compact ? 1.53 : 1.125;
+    context.globalAlpha = frame.loopOpacity * opacity;
     context.translate(x, y);
-    context.scale(compact ? 1.7 : 1.25, compact ? 1.7 : 1.25);
+    context.scale(markerScale, markerScale);
     context.translate(-x, -y);
-    context.beginPath();
-    if (shape === 'square') {
-      context.roundRect(x - 3.8, y - 3.8, 7.6, 7.6, 1);
-    } else if (shape === 'diamond') {
-      context.moveTo(x, y - 5);
-      context.lineTo(x + 4.5, y);
-      context.lineTo(x, y + 5);
-      context.lineTo(x - 4.5, y);
-      context.closePath();
-    } else {
-      context.arc(x, y, 4, 0, Math.PI * 2);
-    }
+    markerPath(x, y, shape);
     context.fillStyle = color;
     context.strokeStyle = theme.surface;
-    context.lineWidth = 1.8;
+    context.lineWidth = 1.2;
     context.fill();
     context.stroke();
     context.restore();
   }
+  /**
+   * @param {FrameState} frame
+   * @param {string} text
+   * @param {number} x
+   * @param {number} y
+   * @param {CanvasTextAlign} [align]
+   * @param {string} [color]
+   * @param {number} [size]
+   */
   function drawLabel(
+    frame,
     text,
     x,
     y,
@@ -147,34 +318,42 @@ export function createTheoryRenderer(canvas, rows, styles) {
     size = 13,
   ) {
     context.fillStyle = color;
-    // Preserve a readable CSS-pixel size when the logical canvas is scaled down.
-    const scaledSize = size * (compact ? 1.65 : 1);
-    const minimumSize = (size >= 12 ? 11 : 10) / view.pixelScale;
+    // Keep text readable in CSS pixels when the canvas scales down.
+    const scaledSize = size * (frame.compact ? 1.65 : 1);
+    const minimumSize = (size >= 12 ? 11 : 10) / frame.pixelScale;
     context.font = `${Math.max(scaledSize, minimumSize)}px ${theme.font}`;
     context.textAlign = align;
     context.fillText(text, x, y);
   }
-  function drawTrace(name, lastStep, fraction) {
+  /**
+   * @param {FrameState} frame
+   * @param {MethodName} name
+   */
+  function drawTrace(frame, name) {
+    const { compact } = frame;
+    const { step: lastStep, fraction } = frame.playback;
     let offset = 0;
     const color = methods[name].color;
-    const progress = lastStep - 1 + fraction;
     for (let i = 1; i <= lastStep; i++) {
-      if (name !== 'last' && rows[i - 1].restart) {
+      if (methods[name].preRestartKey && rows[i - 1].restart) {
         offset = 0;
       }
       const points = sampleTrajectory(name, i, i === lastStep ? fraction : 1);
-      const alpha = 0.25 + 0.65 * Math.exp(-Math.max(0, progress - i) / 24);
-      const screenPoints = points.map(project);
+      const screenPoints = points.map(frame.project);
       context.beginPath();
-      screenPoints.forEach((position, j) =>
-        j ? context.lineTo(...position) : context.moveTo(...position),
-      );
+      screenPoints.forEach((position, index) => {
+        if (index === 0) {
+          context.moveTo(...position);
+        } else {
+          context.lineTo(...position);
+        }
+      });
       context.strokeStyle = color;
-      context.lineWidth =
-        (compact ? 3.4 : 1.8) + (name === 'halpern' ? 0.25 : 0);
-      context.globalAlpha = alpha * loopOpacity;
+      context.lineWidth = (compact ? 3.8 : 2.05) + methods[name].extraWidth;
+      context.globalAlpha =
+        0.9 * frame.loopOpacity * methodOpacity(frame, name);
       const period = compact ? 28 : 16;
-      if (name === 'last') {
+      if (methods[name].trajectoryStyle === 'dots') {
         // Place dots by arc length, in the middle of the green gaps.
         const phase = period * 0.75;
         const dotPeriod = period / 2;
@@ -191,7 +370,7 @@ export function createTheoryRenderer(canvas, rows, styles) {
             context.arc(
               from[0] + t * (to[0] - from[0]),
               from[1] + t * (to[1] - from[1]),
-              compact ? 2.2 : 1.35,
+              compact ? 2.45 : 1.5,
               0,
               Math.PI * 2,
             );
@@ -202,7 +381,9 @@ export function createTheoryRenderer(canvas, rows, styles) {
         }
       } else {
         context.setLineDash(
-          name === 'restarted' ? [period * 0.5, period * 0.5] : [],
+          methods[name].trajectoryStyle === 'dash'
+            ? [period * 0.5, period * 0.5]
+            : [],
         );
         context.lineDashOffset = offset;
         context.stroke();
@@ -218,27 +399,41 @@ export function createTheoryRenderer(canvas, rows, styles) {
     context.lineDashOffset = 0;
     context.globalAlpha = 1;
   }
-  function drawTrajectories(playback, time, endHold) {
+  /**
+   * @param {FrameState} frame
+   */
+  function drawTrajectories(frame) {
+    const { playback } = frame;
     const completedStep = playback.done ? playback.step : playback.step - 1;
     for (const name of methodNames) {
-      drawTrace(name, playback.step, playback.fraction);
+      drawTrace(frame, name);
     }
-    drawRestartLandings(completedStep);
-    drawRestartArrows(completedStep, time, endHold, playback.done);
-    drawCurrentPositions(playback, completedStep);
+    drawRestartLandings(frame, completedStep);
+    drawRestartArrows(frame);
+    drawCurrentPositions(frame, completedStep);
+    drawAverageLabel(frame);
   }
-  function drawRestartLandings(completedStep) {
+  /**
+   * @param {FrameState} frame
+   * @param {number} completedStep
+   */
+  function drawRestartLandings(frame, completedStep) {
+    const { compact } = frame;
     // Exact landing coordinates, identical in both coordinate systems.
     for (const restart of restartSteps.filter(
       (step) => step <= completedStep,
     )) {
-      for (const name of ['restarted', 'halpern']) {
-        const position = project(rows[restart][name]);
-        context.beginPath();
-        context.arc(...position, compact ? 4.5 : 2.6, 0, Math.PI * 2);
+      for (const name of restartedMethods) {
+        const position = frame.project(rows[restart][name]);
+        markerPath(
+          position[0],
+          position[1],
+          methods[name].marker,
+          compact ? 4.05 : 2.34,
+        );
         context.globalAlpha =
           (0.1 + 0.65 * Math.exp(-(completedStep - restart) / 12)) *
-          loopOpacity;
+          frame.loopOpacity;
         context.fillStyle = theme.surface;
         context.fill();
         context.strokeStyle = methods[name].color;
@@ -248,32 +443,44 @@ export function createTheoryRenderer(canvas, rows, styles) {
       }
     }
   }
-  function drawRestartArrows(completedStep, time, endHold, done) {
-    // Restart arrows are annotations; the iterate marker never follows them.
-    const restartStep =
-      restartSteps.findLast((step) => step <= completedStep) ?? 0;
-    const elapsedSinceRestart =
-      time - restartStep * TIMING.step + (done ? endHold : 0);
-    if (restartStep > 0 && elapsedSinceRestart < TIMING.restartIndicator) {
+  /**
+   * @param {FrameState} frame
+   */
+  function drawRestartArrows(frame) {
+    // Arrows fade before iteration resumes; markers never follow the arrows.
+    const { compact, restart } = frame;
+    if (restart) {
+      const restartStep = restart.step;
       const alpha =
         0.65 *
-        (1 - Math.min(1, elapsedSinceRestart / TIMING.restartIndicator)) **
-          0.65;
-      for (const name of ['restarted', 'halpern']) {
-        const from = project(
-          rows[restartStep][name === 'halpern' ? 'preHalpern' : 'preRestart'],
+        ease(
+          clamp(
+            (restart.duration - restart.elapsed) / TIMING.annotationFadeOut,
+          ),
         );
-        const to = project(rows[restartStep][name]);
+      for (const name of methodNames) {
+        const preRestartKey = methods[name].preRestartKey;
+        if (preRestartKey === null) {
+          continue;
+        }
+        // Restart rows contain the pre-reset endpoint, verified by the audit.
+        const endpoint = /** @type {Point} */ (
+          rows[restartStep][preRestartKey]
+        );
+        const from = frame.project(endpoint);
+        const to = frame.project(rows[restartStep][name]);
         const dx = to[0] - from[0];
         const dy = to[1] - from[1];
         const length = Math.hypot(dx, dy);
-        const directionX = dx / length;
-        const directionY = dy / length;
         context.save();
-        context.globalAlpha = alpha * loopOpacity;
+        context.globalAlpha =
+          alpha * frame.loopOpacity * methodOpacity(frame, name);
         context.strokeStyle = methods[name].color;
         context.lineWidth = compact ? 2 : 1;
         if (length > 9) {
+          const directionX = dx / length;
+          const directionY = dy / length;
+          /** @type {Coordinates} */
           const tip = [to[0] - directionX * 4, to[1] - directionY * 4];
           context.setLineDash([2, 4]);
           context.beginPath();
@@ -294,21 +501,83 @@ export function createTheoryRenderer(canvas, rows, styles) {
           );
           context.stroke();
         }
-        context.beginPath();
-        context.arc(...from, compact ? 3.5 : 2, 0, Math.PI * 2);
+        markerPath(
+          from[0],
+          from[1],
+          methods[name].marker,
+          compact ? 3.15 : 1.8,
+        );
         context.stroke();
         context.restore();
       }
     }
   }
-  function drawCurrentPositions(playback, completedStep) {
+  /**
+   * @param {FrameState} frame
+   */
+  function drawAverageLabel(frame) {
+    const { compact, pixelScale, restart } = frame;
+    if (!restart?.explain) {
+      return;
+    }
+    const [x, y] = frame.project(rows[restart.step].restarted);
+    // Explain the first restart in the open space beside its trajectories.
+    // CSS-pixel offsets keep the labels readable at the website's figure size.
+    const { offsetX: dx, offsetY: dy, referenceScale } = AVERAGE_LABEL;
+    const spacing = Math.min(1, pixelScale / referenceScale);
+    const endX = x + (dx * spacing) / pixelScale;
+    const endY = y + (dy * spacing) / pixelScale;
+    const length = Math.hypot(endX - x, endY - y);
+    const gap = 3 / pixelScale;
+    context.save();
+    context.globalAlpha = frame.annotationOpacity * frame.loopOpacity;
+    context.strokeStyle = methods.restarted.color;
+    context.lineWidth = 0.9 / pixelScale;
+    context.setLineDash([]);
+    context.beginPath();
+    context.moveTo(
+      x + ((endX - x) * gap) / length,
+      y + ((endY - y) * gap) / length,
+    );
+    context.lineTo(endX, endY);
+    context.stroke();
+    if (restart.phase === 'before') {
+      markerPath(x, y, methods.restarted.marker, compact ? 4.05 : 2.34);
+      context.fillStyle = theme.surface;
+      context.fill();
+      context.stroke();
+    }
+    // Let the leader establish the destination before naming the cycle mean.
+    context.globalAlpha *= ease(
+      clamp(
+        (restart.elapsed - TIMING.averageLabelDelay) / TIMING.annotationFadeIn,
+      ),
+    );
+    drawLabel(
+      frame,
+      'Average',
+      endX - 5 / pixelScale,
+      endY + 3 / pixelScale,
+      'right',
+      methods.restarted.color,
+      11,
+    );
+    context.restore();
+  }
+  /**
+   * @param {FrameState} frame
+   * @param {number} completedStep
+   */
+  function drawCurrentPositions(frame, completedStep) {
+    const { compact, playback } = frame;
+    /** @type {Coordinates} */
     let separationOffset = [0, 0];
     if (completedStep < firstRestart && !playback.done) {
-      const segment = curves.last.get(playback.step);
-      const before = project(
+      const segment = segmentAt('last', playback.step);
+      const before = frame.project(
         sample(segment, Math.max(0, playback.fraction - 0.01)),
       );
-      const after = project(
+      const after = frame.project(
         sample(segment, Math.min(1, playback.fraction + 0.01)),
       );
       const dx = after[0] - before[0];
@@ -320,36 +589,49 @@ export function createTheoryRenderer(canvas, rows, styles) {
     for (const name of methodNames) {
       const point = playback.done
         ? rows[playback.step][name]
-        : sample(curves[name].get(playback.step), playback.fraction);
-      const offset =
-        name === 'last'
-          ? separationOffset
-          : name === 'restarted'
-            ? separationOffset.map((v) => -v)
-            : [0, 0];
+        : sample(segmentAt(name, playback.step), playback.fraction);
+      const offset = /** @type {Coordinates} */ (
+        separationOffset.map((value) => value * methods[name].separation)
+      );
       if (offset.some((v) => v !== 0)) {
-        const position = project(point);
+        const position = frame.project(point);
         context.beginPath();
         context.moveTo(...position);
         context.lineTo(position[0] + offset[0], position[1] + offset[1]);
         context.strokeStyle = methods[name].color;
-        context.globalAlpha = 0.4 * loopOpacity;
+        context.globalAlpha =
+          0.4 * frame.loopOpacity * methodOpacity(frame, name);
         context.lineWidth = 0.8;
         context.stroke();
         context.globalAlpha = 1;
       }
-      drawMarker(point, methods[name].color, methods[name].marker, offset);
+      drawMarker(
+        frame,
+        point,
+        methods[name].color,
+        methods[name].marker,
+        offset,
+        methodOpacity(frame, name),
+      );
     }
   }
-  function drawResidualPlot(playback) {
+  /**
+   * @param {FrameState} frame
+   */
+  function drawResidualPlot(frame) {
+    const { compact, pixelScale, playback, restart, loopOpacity } = frame;
+    const { annotationOpacity } = frame;
     const { left, right, maxLog, logRange } = RESIDUAL_PLOT;
     const { top, bottom } = compact
       ? RESIDUAL_PLOT.compact
       : RESIDUAL_PLOT.desktop;
+    /** @type {(k: number) => number} */
     const iterationX = (k) => left + ((right - left) * k) / DISPLAY_STEPS;
+    /** @type {(logResidual: number) => number} */
     const residualY = (logResidual) =>
       top + ((maxLog - logResidual) / logRange) * (bottom - top);
     drawLabel(
+      frame,
       'KKT residual (log scale)',
       left,
       top - 30,
@@ -358,13 +640,15 @@ export function createTheoryRenderer(canvas, rows, styles) {
       13,
     );
 
-    for (const [logResidual, label] of [
+    /** @type {Array<[number, string]>} */
+    const residualTicks = [
       [0, '1'],
       [-1, '10⁻¹'],
       [-2, '10⁻²'],
       [-3, '10⁻³'],
       [-4, '10⁻⁴'],
-    ]) {
+    ];
+    for (const [logResidual, label] of residualTicks) {
       const y = residualY(logResidual);
       context.beginPath();
       context.moveTo(left, y);
@@ -372,7 +656,7 @@ export function createTheoryRenderer(canvas, rows, styles) {
       context.strokeStyle = theme.line;
       context.lineWidth = 0.6;
       context.stroke();
-      drawLabel(label, left - 12, y + 4, 'right', theme.muted, 10);
+      drawLabel(frame, label, left - 12, y + 4, 'right', theme.muted, 10);
     }
     const completedStep = playback.done ? playback.step : playback.step - 1;
     for (const k of [
@@ -381,6 +665,7 @@ export function createTheoryRenderer(canvas, rows, styles) {
       DISPLAY_STEPS,
     ]) {
       drawLabel(
+        frame,
         String(k),
         iterationX(k),
         bottom + 25,
@@ -390,20 +675,50 @@ export function createTheoryRenderer(canvas, rows, styles) {
       );
     }
     context.save();
-    context.globalAlpha = loopOpacity;
     for (const k of restartSteps.filter((step) => step <= DISPLAY_STEPS)) {
-      if (k <= completedStep) {
+      const active = restart?.step === k;
+      if (k <= completedStep || active) {
+        // Keep a visible event guide after the temporary emphasis has faded.
+        const alpha =
+          k <= completedStep
+            ? RESTART_GUIDE.restingOpacity +
+              (active ? RESTART_GUIDE.emphasisOpacity * annotationOpacity : 0)
+            : RESTART_GUIDE.activeOpacity * annotationOpacity;
+        context.globalAlpha = alpha * loopOpacity;
+        context.strokeStyle = theme.muted;
+        context.lineWidth = 0.9 / pixelScale;
+        context.setLineDash([3 / pixelScale, 4 / pixelScale]);
         context.beginPath();
         context.moveTo(iterationX(k), top);
         context.lineTo(iterationX(k), bottom);
-        context.setLineDash([2, 5]);
-        context.strokeStyle = theme.line;
         context.stroke();
-        context.setLineDash([]);
       }
     }
     context.restore();
-    drawLabel('Iterations', right, bottom + 48, 'right', theme.muted, 10);
+    if (restart) {
+      context.save();
+      context.globalAlpha =
+        annotationOpacity * loopOpacity * RESTART_GUIDE.activeOpacity;
+      drawLabel(
+        frame,
+        'Restart',
+        iterationX(restart.step),
+        bottom + 48,
+        'center',
+        theme.muted,
+        10,
+      );
+      context.restore();
+    }
+    drawLabel(
+      frame,
+      'Iterations',
+      (left + right) / 2,
+      bottom + (compact ? 72 : 64),
+      'center',
+      theme.muted,
+      10,
+    );
     for (const name of methodNames) {
       context.beginPath();
       context.moveTo(
@@ -413,9 +728,10 @@ export function createTheoryRenderer(canvas, rows, styles) {
       for (let j = 1; j <= playback.step; j++) {
         const segmentFraction =
           j === playback.step && !playback.done ? playback.fraction : 1;
+        const segment = segmentAt(name, j);
         for (let sampleIndex = 1; sampleIndex <= 16; sampleIndex++) {
           const t = (segmentFraction * sampleIndex) / 16;
-          const position = sample(curves[name].get(j), t);
+          const position = sample(segment, t);
           context.lineTo(
             iterationX(j - 1 + t),
             residualY(position.residualLog),
@@ -430,34 +746,35 @@ export function createTheoryRenderer(canvas, rows, styles) {
         }
       }
       context.strokeStyle = methods[name].color;
-      context.lineWidth = compact ? 3 : 1.7;
-      context.globalAlpha = 0.8 * loopOpacity;
-      context.setLineDash(
-        name === 'last' ? [1, 4] : name === 'restarted' ? [7, 4] : [],
-      );
+      context.lineWidth = compact ? 3.3 : 1.9;
+      context.globalAlpha = 0.8 * loopOpacity * methodOpacity(frame, name);
+      context.setLineDash(methods[name].residualDash);
       context.stroke();
       context.setLineDash([]);
       context.globalAlpha = 1;
       const position = playback.done
         ? { residualLog: Math.log10(rows[playback.step][name].distance) }
-        : sample(curves[name].get(playback.step), playback.fraction);
+        : sample(segmentAt(name, playback.step), playback.fraction);
       const x = iterationX(
         playback.done ? playback.step : playback.step - 1 + playback.fraction,
       );
       const y = residualY(position.residualLog);
-      context.beginPath();
-      context.arc(x, y, compact ? 5.5 : 3.3, 0, Math.PI * 2);
+      markerPath(x, y, methods[name].marker, compact ? 4.95 : 2.97);
       context.fillStyle = methods[name].color;
-      context.globalAlpha = loopOpacity;
+      context.globalAlpha = loopOpacity * methodOpacity(frame, name);
       context.fill();
       context.globalAlpha = 1;
     }
   }
-  function render({ time, endHold, reduceMotion, pixelRatio }) {
+  /**
+   * @param {import('./theory-timeline.mjs').TimelineSample &
+   *   {reduceMotion: boolean, pixelRatio: number}} input
+   */
+  function render({ time, endHold, reduceMotion, pixelRatio, restart = null }) {
     const rect = canvas.getBoundingClientRect();
     // CSS sets the responsive aspect ratio before JavaScript loads.
     const canvasHeight = Math.round((1000 * rect.height) / rect.width);
-    compact = canvasHeight === 900;
+    const compact = canvasHeight === 900;
     const pixelDensity = Math.min(pixelRatio, 2);
     const pixelWidth = Math.round(rect.width * pixelDensity);
     const pixelHeight = Math.round(
@@ -478,23 +795,51 @@ export function createTheoryRenderer(canvas, rows, styles) {
     context.clearRect(0, 0, 1000, canvasHeight);
     context.lineCap = 'round';
     context.lineJoin = 'round';
-    const playback = getProgress(time);
-    loopOpacity = getLoopOpacity(time, endHold, reduceMotion);
-    view = {
-      x: 500,
-      y: compact ? 300 : 280,
-      scale: compact ? 220 : 200,
+    const originX = 500;
+    const originY = compact ? 300 : 280;
+    const scale = compact ? 220 : 200;
+    const annotationOpacity = getAnnotationOpacity(restart);
+    /** @type {FrameState} */
+    const frame = {
+      compact,
       pixelScale: rect.width / 1000,
+      project: (position) => [
+        originX + scale * position.x,
+        originY - scale * position.y,
+      ],
+      playback: getProgress(time, restart),
+      restart,
+      loopOpacity: getLoopOpacity(time, endHold, reduceMotion),
+      annotationOpacity,
+      explanationOpacity: restart?.explain ? annotationOpacity : 0,
     };
-    drawAxis([point(-1.45, 0), point(1.5, 0)], theme.muted, 0.7, 0.45);
-    drawAxis([point(0, -1.25), point(0, 1.25)], theme.muted, 0.7, 0.45);
-    const xAxisEnd = project(point(1.5, 0));
-    const yAxisEnd = project(point(0, 1.25));
-    drawLabel('x', xAxisEnd[0] + 12, xAxisEnd[1] + 4, 'left', theme.muted, 13);
-    drawLabel('y', yAxisEnd[0], yAxisEnd[1] - 12, 'center', theme.muted, 13);
+    const axisColor = theme.muted;
+    drawAxis(frame, [point(-1.45, 0), point(1.5, 0)], axisColor, 0.7, 0.45);
+    drawAxis(frame, [point(0, -1.25), point(0, 1.25)], axisColor, 0.7, 0.45);
+    const xAxisEnd = frame.project(point(1.5, 0));
+    const yAxisEnd = frame.project(point(0, 1.25));
+    drawLabel(
+      frame,
+      'x',
+      xAxisEnd[0] + 12,
+      xAxisEnd[1] + 4,
+      'left',
+      theme.muted,
+      13,
+    );
+    drawLabel(
+      frame,
+      'y',
+      yAxisEnd[0],
+      yAxisEnd[1] - 12,
+      'center',
+      theme.muted,
+      13,
+    );
     for (const v of [-1, 1]) {
-      const tickPosition = project(point(v, 0));
+      const tickPosition = frame.project(point(v, 0));
       drawLabel(
+        frame,
         String(v),
         tickPosition[0],
         tickPosition[1] + 20,
@@ -503,15 +848,23 @@ export function createTheoryRenderer(canvas, rows, styles) {
         10,
       );
     }
-    drawTrajectories(playback, time, endHold);
-    const origin = project(point(0, 0));
+    drawTrajectories(frame);
+    const origin = frame.project(point(0, 0));
     context.beginPath();
     context.arc(...origin, 2, 0, Math.PI * 2);
     context.fillStyle = theme.muted;
     context.fill();
-    const start = project(rows[0].last);
-    drawLabel('Start', start[0] + 12, start[1] - 10, 'left', theme.muted, 12);
-    drawResidualPlot(playback);
+    const start = frame.project(rows[0].last);
+    drawLabel(
+      frame,
+      'Start',
+      start[0] + 12,
+      start[1] - 10,
+      'left',
+      theme.muted,
+      12,
+    );
+    drawResidualPlot(frame);
   }
   return render;
 }

@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
 import { initializeTheoryFigure } from '../src/lib/research/theory-figure.mjs';
+import { DISPLAY_STEPS, TIMING } from '../src/lib/research/theory-renderer.mjs';
 
-test('failed data loading shows a message without starting playback', async () => {
+test('load failure shows an error without starting playback', async () => {
   const errorMessage = { hidden: true, textContent: '' };
   let reportedError;
   await initializeTheoryFigure(
@@ -29,7 +30,7 @@ test('failed data loading shows a message without starting playback', async () =
 });
 
 for (const width of [345, 712]) {
-  test(`animation schedules frames only while visible and playing at ${width}px`, async () => {
+  test(`playback respects visibility and reduced motion at ${width}px`, async () => {
     const data = JSON.parse(
       fs.readFileSync(
         new URL('../public/pdhg-comparison.json', import.meta.url),
@@ -42,8 +43,37 @@ for (const width of [345, 712]) {
       matches: false,
       addEventListener: (_, fn) => (events.motion = fn),
     };
-    const button = { addEventListener: (_, fn) => (events.click = fn) };
-    const context = {};
+    const context = {
+      globalAlpha: 1,
+      fillStyle: '#000',
+      strokeStyle: '#000',
+      lineWidth: 1,
+      lineDashOffset: 0,
+      lineCap: 'butt',
+      lineJoin: 'miter',
+      font: '10px sans-serif',
+      textAlign: 'start',
+    };
+    const styleKeys = Object.keys(context);
+    const savedStyles = [];
+    let lineDash = [];
+    // Model the styles used by this renderer, not canvas geometry or pixels.
+    context.save = () => {
+      savedStyles.push({
+        styles: Object.fromEntries(styleKeys.map((key) => [key, context[key]])),
+        lineDash: [...lineDash],
+      });
+    };
+    context.restore = () => {
+      assert.ok(savedStyles.length, 'restore must have a matching save');
+      const saved = savedStyles.pop();
+      Object.assign(context, saved.styles);
+      lineDash = saved.lineDash;
+    };
+    context.setLineDash = (segments) => {
+      assert.ok(segments.every(Number.isFinite));
+      lineDash = [...segments];
+    };
     let lastMarkerOpacity;
     let canvasWidth = width;
     const theme = {
@@ -65,13 +95,10 @@ for (const width of [345, 712]) {
       'arc',
       'roundRect',
       'closePath',
-      'save',
-      'restore',
       'translate',
       'scale',
       'setTransform',
       'clearRect',
-      'setLineDash',
       'fillText',
     ];
     for (const method of drawingMethods) {
@@ -96,7 +123,7 @@ for (const width of [345, 712]) {
     };
     const root = {
       dataset: { source: '/example-base/pdhg-comparison.json' },
-      querySelector: (selector) => ({ canvas, button, '.error': {} })[selector],
+      querySelector: (selector) => ({ canvas, '.error': {} })[selector],
     };
     const document = {
       hidden: false,
@@ -165,21 +192,45 @@ for (const width of [345, 712]) {
       1,
       'repeated notifications must not multiply loops',
     );
-    for (let tick = 1; tick <= 340; tick++) {
+    const restartCount = data.rows.filter(
+      (row) => row.restart && row.k > 0 && row.k < DISPLAY_STEPS,
+    ).length;
+    const restartHolds =
+      restartCount === 0
+        ? 0
+        : TIMING.firstRestartBefore +
+          TIMING.firstRestartAfter +
+          (restartCount - 1) * (TIMING.restartBefore + TIMING.restartAfter);
+    const cycleDuration =
+      DISPLAY_STEPS * TIMING.step + restartHolds + TIMING.endHold;
+    const frameInterval = 80;
+    // The first callback establishes the clock without advancing time.
+    const loopStartTick = Math.ceil(cycleDuration / frameInterval) + 1;
+    const fadedInTick = loopStartTick + Math.ceil(TIMING.fade / frameInterval);
+    for (let tick = 1; tick <= fadedInTick; tick++) {
       const [id, frame] = frames.entries().next().value;
       frames.delete(id);
-      frame(tick * 80);
-      if (tick === 300) {
+      frame(tick * frameInterval);
+      assert.equal(savedStyles.length, 0, 'each frame balances save/restore');
+      assert.equal(context.globalAlpha, 1, 'frame opacity must be restored');
+      assert.deepEqual(lineDash, [], 'frame must leave no active dash pattern');
+      if (tick === loopStartTick - 1) {
         assert.ok(
           lastMarkerOpacity > 0,
           'the end hold must not finish one frame early',
         );
       }
-      if (tick === 301) {
+      if (tick === loopStartTick) {
+        assert.ok(
+          lastMarkerOpacity < 0.1,
+          'the next loop begins after the full end hold',
+        );
+      }
+      if (tick === fadedInTick) {
         assert.equal(
           lastMarkerOpacity,
-          0,
-          'the next loop begins after the full end hold',
+          1,
+          'the next loop must become visible after its fade-in',
         );
       }
       assert.equal(
@@ -188,14 +239,8 @@ for (const width of [345, 712]) {
         'a full animation cycle keeps exactly one pending frame',
       );
     }
-    events.click();
-    assert.equal(frames.size, 0, 'pause cancels the pending frame');
-    assert.equal(button.textContent, 'Play animation');
-    events.click();
-    assert.equal(frames.size, 1);
     motion.matches = true;
     events.motion();
-    assert.equal(button.disabled, true);
     assert.equal(
       frames.size,
       0,
@@ -203,7 +248,6 @@ for (const width of [345, 712]) {
     );
     motion.matches = false;
     events.motion();
-    assert.equal(button.disabled, false);
     assert.equal(frames.size, 1);
     document.hidden = true;
     events.visibilitychange();

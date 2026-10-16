@@ -1,18 +1,19 @@
 ---
 import { sitePath } from '../utils/paths';
+interface Props {
+  descriptionId?: string;
+}
+
+const { descriptionId = 'comparison-description' } = Astro.props;
 ---
 
-<div
-  id="theory-visual"
-  class="theory-visual"
-  data-source={sitePath('pdhg-comparison.json')}
->
+<div class="theory-visual" data-source={sitePath('pdhg-comparison.json')}>
   <canvas
     width="1000"
     height="900"
     role="img"
-    aria-describedby="comparison-description"
-    aria-label="Three methods on the bilinear saddle-point problem min x max y xy. State trajectories above and KKT residual below. Blue dots: PDHG. Green dashes: restarted averaged PDHG. Burgundy: restarted reflected Halpern PDHG. Small hollow circles mark restart landings; brief arrows indicate resets."
+    aria-describedby={descriptionId}
+    aria-label="Three methods on the bilinear saddle-point problem min x max y xy. State trajectories above and KKT residual below. Blue dots: PDHG. Green dashes: restarted averaged PDHG. Burgundy: restarted reflected Halpern PDHG. Small hollow markers mark restart landings; brief arrows indicate resets."
   ></canvas>
   <div class="legend">
     <span class="blue">
@@ -27,31 +28,11 @@ import { sitePath } from '../utils/paths';
       PDHG
     </span>
   </div>
-  <div class="controls">
-    <button type="button" disabled>
-      Pause animation
-    </button>
-  </div>
-  <details class="description">
-    <summary>About this comparison</summary>
-    <p id="comparison-description">
-      All three methods start at (1, 1) on the saddle-point problem min x max y
-      xy, whose solution is (0, 0). The upper plot shows their paths; the lower
-      plot shows the Euclidean KKT residual on a logarithmic scale. In this
-      example, restarting every 25 inner updates reduces the residual faster
-      than plain PDHG. Reflected Halpern uses one extra operator evaluation at
-      each restart, so equal iteration counts do not represent equal
-      computational work. Curves between recorded iterates are interpolated for
-      display. This is a controlled illustration, not a runtime benchmark or an
-      adaptive solver run.
-    </p>
-  </details>
   <p class="error" role="alert" hidden></p>
 </div>
 <script>
   import { initializeTheoryFigure } from '../lib/research/theory-figure.mjs';
-  const root = document.querySelector<HTMLElement>('#theory-visual');
-  if (root) {
+  for (const root of document.querySelectorAll<HTMLElement>('.theory-visual')) {
     initializeTheoryFigure(root, window);
   }
 </script>
@@ -126,32 +107,6 @@ import { sitePath } from '../utils/paths';
       margin-right: 3px;
     }
   }
-  .description {
-    font-size: 12px;
-    line-height: 1.5;
-    margin-top: 12px;
-  }
-  .description summary {
-    cursor: pointer;
-  }
-  .controls {
-    text-align: center;
-    min-height: 30px;
-  }
-  button {
-    font: inherit;
-    font-size: 12px;
-    background: transparent;
-    border: 1px solid var(--line);
-    border-radius: 3px;
-    padding: 4px 10px;
-    color: inherit;
-    cursor: pointer;
-  }
-  button:focus-visible {
-    outline: 2px solid var(--halpern);
-    outline-offset: 3px;
-  }
   [hidden] {
     display: none !important;
   }
@@ -160,8 +115,5 @@ import { sitePath } from '../utils/paths';
     canvas {
       aspect-ratio: 1000 / 820;
     }
-  }
-  button:disabled {
-    visibility: hidden;
   }
 </style>

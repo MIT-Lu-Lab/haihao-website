@@ -1,4 +1,6 @@
+// @ts-check
 /** @typedef {{x: number, y: number}} Point */
+/** @typedef {'last' | 'restarted' | 'halpern'} MethodName */
 /**
  * @typedef {Object} ComparisonRow
  * @property {number} k Iteration index, starting at zero.
@@ -13,16 +15,31 @@
  * @typedef {{start: Point, end: Point, startTangent: Point,
  *   endTangent: Point}} Segment
  */
-/** @typedef {Record<'last' | 'restarted' | 'halpern', Map<number, Segment>>} ComparisonCurves */
+/**
+ * @typedef {Record<MethodName, Map<number, Segment>>}
+ * ComparisonCurves
+ */
 
 // Interpolation is for display only. Each segment ends at an original iterate.
 // Restart jumps separate epochs so tangents never smooth across a reset.
+/**
+ * @param {ComparisonRow[]} rows
+ * @param {MethodName} method
+ * @param {'preRestart' | 'preHalpern'} [preRestartKey]
+ * @returns {Map<number, Segment>}
+ */
 function makeCurves(rows, method, preRestartKey) {
+  /** @type {Array<Array<{step: number, point: Point}>>} */
   const epochs = [];
+  /** @type {Array<{step: number, point: Point}>} */
   let epoch = [];
   for (const row of rows) {
     if (preRestartKey && row.restart) {
-      epoch.push({ step: row.k, point: row[preRestartKey] });
+      // Numerical audits verify the endpoint on generated restart rows.
+      epoch.push({
+        step: row.k,
+        point: /** @type {Point} */ (row[preRestartKey]),
+      });
       epochs.push(epoch);
       epoch = [{ step: row.k, point: row[method] }];
     } else {
@@ -33,7 +50,7 @@ function makeCurves(rows, method, preRestartKey) {
 
   const segments = new Map();
   for (const points of epochs) {
-    const tangentAt = (index) => {
+    const tangentAt = (/** @type {number} */ index) => {
       const left = points[Math.max(0, index - 1)];
       const right = points[Math.min(points.length - 1, index + 1)];
       const stepSpan = right.step - left.step;
@@ -82,7 +99,7 @@ export function sample(segment, t) {
 
 /**
  * Build display curves without smoothing across restart jumps.
- * @param {ComparisonRow[]} rows Consecutive iterates, including step zero and a restart.
+ * @param {ComparisonRow[]} rows Iterates including step zero and a restart.
  * @returns {ComparisonCurves} Segments keyed by their ending iteration index.
  */
 export function makeComparisonCurves(rows) {
@@ -91,11 +108,17 @@ export function makeComparisonCurves(rows) {
     restarted: makeCurves(rows, 'restarted', 'preRestart'),
     halpern: makeCurves(rows, 'halpern', 'preHalpern'),
   };
-  // Both PDHG methods share the first epoch, including its pre-restart endpoint.
+  // Both PDHG methods share the first epoch and its pre-restart endpoint.
   // Reuse the same segments so their display paths also coincide exactly.
-  const firstRestart = rows.find((row) => row.restart).k;
-  for (let step = 1; step <= firstRestart; step++) {
-    curves.restarted.set(step, curves.last.get(step));
+  const firstRestart = rows.find((row) => row.restart);
+  if (!firstRestart) {
+    return curves;
+  }
+  for (const [step, segment] of curves.last) {
+    if (step > firstRestart.k) {
+      break;
+    }
+    curves.restarted.set(step, segment);
   }
   return curves;
 }

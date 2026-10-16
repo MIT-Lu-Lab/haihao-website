@@ -8,7 +8,7 @@ import {
   makeLiftedCurves,
   sampleLifted,
 } from '../src/lib/research/kkt-lift.mjs';
-test('residual interpolation preserves endpoints and introduces no extrema', () => {
+test('residual curves preserve endpoints without extra extrema', () => {
   const { rows } = JSON.parse(
     fs.readFileSync(new URL('../public/pdhg-comparison.json', import.meta.url)),
   );
