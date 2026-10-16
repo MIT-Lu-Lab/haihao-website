@@ -26,9 +26,7 @@ const { maskId } = Astro.props;
       </mask>
     </defs>
     <g data-vector="x">
-      <text x="300" y="101" text-anchor="middle" class="formula">
-        x
-      </text>
+      <text x="73" y="129" text-anchor="end" class="formula">x</text>
       {Array.from({ length: 96 }, (_, i) => (
         <rect
           data-x
@@ -44,9 +42,7 @@ const { maskId } = Astro.props;
       <rect class="matrix-density" x="85" y="151" width="430" height="234" />
     </g>
     <g data-vector="a">
-      <text x="543" y="139" text-anchor="middle" class="formula">
-        Ax
-      </text>
+      <text x="567" y="255" class="formula">Ax</text>
       {Array.from({ length: 72 }, (_, i) => (
         <rect
           data-a
@@ -59,9 +55,7 @@ const { maskId } = Astro.props;
       ))}
     </g>
     <g data-vector="y">
-      <text x="57" y="139" text-anchor="middle" class="formula">
-        y
-      </text>
+      <text x="57" y="135" text-anchor="middle" class="formula">y</text>
       {Array.from({ length: 72 }, (_, i) => (
         <rect
           data-y
@@ -74,6 +68,7 @@ const { maskId } = Astro.props;
       ))}
     </g>
     <g data-vector="at">
+      <text x="73" y="417" text-anchor="end" class="formula">Aᵀy</text>
       {Array.from({ length: 96 }, (_, i) => (
         <rect
           data-at
@@ -84,24 +79,33 @@ const { maskId } = Astro.props;
           fill="var(--red)"
         />
       ))}
-      <text x="300" y="441" text-anchor="middle" class="formula">
-        Aᵀy
-      </text>
     </g>
     <g data-flow="a" fill="none" stroke="#9d5b65" stroke-width=".85">
       {Array.from({ length: 10 }, (_, i) => (
-        <path d={`M${106 + i * 43} 139v8m-2.5-3 2.5 3 2.5-3`} />
+        <g stroke-linecap="round" stroke-linejoin="round">
+          <path d={`M${106 + i * 43} 139v8m-2.5-3 2.5 3 2.5-3`} stroke="white" stroke-width="2.3" stroke-opacity=".8" />
+          <path d={`M${106 + i * 43} 139v8m-2.5-3 2.5 3 2.5-3`} />
+        </g>
       ))}
       {Array.from({ length: 8 }, (_, i) => (
-        <path d={`M519 ${166 + i * 29}h8m-3-2.5 3 2.5-3 2.5`} />
+        <g stroke-linecap="round" stroke-linejoin="round">
+          <path d={`M519 ${166 + i * 29}h8m-3-2.5 3 2.5-3 2.5`} stroke="white" stroke-width="2.3" stroke-opacity=".8" />
+          <path d={`M519 ${166 + i * 29}h8m-3-2.5 3 2.5-3 2.5`} />
+        </g>
       ))}
     </g>
     <g data-flow="at" fill="none" stroke="#9d5b65" stroke-width=".85">
       {Array.from({ length: 8 }, (_, i) => (
-        <path d={`M73 ${166 + i * 29}h8m-3-2.5 3 2.5-3 2.5`} />
+        <g stroke-linecap="round" stroke-linejoin="round">
+          <path d={`M73 ${166 + i * 29}h8m-3-2.5 3 2.5-3 2.5`} stroke="white" stroke-width="2.3" stroke-opacity=".8" />
+          <path d={`M73 ${166 + i * 29}h8m-3-2.5 3 2.5-3 2.5`} />
+        </g>
       ))}
       {Array.from({ length: 10 }, (_, i) => (
-        <path d={`M${106 + i * 43} 389v8m-2.5-3 2.5 3 2.5-3`} />
+        <g stroke-linecap="round" stroke-linejoin="round">
+          <path d={`M${106 + i * 43} 389v8m-2.5-3 2.5 3 2.5-3`} stroke="white" stroke-width="2.3" stroke-opacity=".8" />
+          <path d={`M${106 + i * 43} 389v8m-2.5-3 2.5 3 2.5-3`} />
+        </g>
       ))}
     </g>
   </svg>
