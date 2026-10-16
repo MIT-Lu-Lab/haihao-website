@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
 import { initializeOnlineFigure } from '../src/lib/research/online-figure.ts';
+import { onlineChart } from '../src/lib/research/online-layout.ts';
 
 const data = JSON.parse(
   fs.readFileSync(
@@ -75,7 +76,7 @@ test('online playback stops when hidden, offscreen, or reduced', () => {
   assert.equal(frames.size, 0);
   assert.equal(
     Number(elements.get('dmd-point').attributes.cx),
-    62 + (34 / 48) * 276,
+    54 + (34 / 35) * 254,
   );
   assert.equal(elements.get('to-bid').attributes.opacity, '0');
   events.visible([{ isIntersecting: true }]);
@@ -97,7 +98,7 @@ test('last auction stays visible through the final hold', () => {
     assert.equal(elements.get('opportunity-value').attributes.opacity, '1');
     assert.equal(
       Number(elements.get('dmd-point').attributes.cx),
-      62 + (34 / 48) * 276,
+      54 + (34 / 35) * 254,
     );
   }
 });
@@ -113,7 +114,7 @@ test('a full cycle returns to the first displayed auction', () => {
   assert.ok(elements.get('dmd-curve').attributes.d.startsWith(firstPath));
   assert.ok(
     Math.abs(
-      Number(elements.get('dmd-point').attributes.cx) - (62 + (23 / 48) * 276),
+      Number(elements.get('dmd-point').attributes.cx) - (54 + (23 / 35) * 254),
     ) < 1e-9,
   );
   assert.equal(
@@ -177,7 +178,7 @@ test('arrival advances the chart before utility is revealed', () => {
   const beforeY = elements.get('dmd-point').attributes.cy;
   tick(3990);
   const arrivalX = elements.get('dmd-point').attributes.cx;
-  assert.equal(Number(arrivalX), 62 + (25 / 48) * 276);
+  assert.equal(Number(arrivalX), 54 + (25 / 35) * 254);
   assert.equal(elements.get('dmd-point').attributes.cy, beforeY);
   tick(5100);
   assert.equal(elements.get('dmd-point').attributes.cx, arrivalX);
@@ -323,10 +324,10 @@ test('auction reveals bid, price, outcome and payment in order', () => {
 
 test('flow segments arrive before fading and clear the connectors', () => {
   const cues = [
-    ['to-input', 180, 300, 40, 120],
+    ['to-input', 210, 300, 40, 120],
     ['to-auction', 900, 240, 40, 120],
     ['to-spend', 1710, 270, 40, 120],
-    ['to-bid', 2580, 550, 80, 180],
+    ['to-bid', 0, 550, 80, 180],
   ];
   for (const [part, start, duration, hold, fade] of cues) {
     const { events, tick, elements, motion } = setup();
@@ -336,16 +337,19 @@ test('flow segments arrive before fading and clear the connectors', () => {
       get(part, 'stroke-dashoffset');
     events.visible([{ isIntersecting: true }]);
     tick(0);
-    tick(start - 1);
+    tick(Math.max(0, start - 1));
     assert.equal(get(part, 'opacity'), 0);
     assert.equal(get(`${part}-tail`, 'opacity'), 0);
-    tick(start + duration / 2);
+    tick(start + duration / 1.2 / 2);
     assert.ok(Math.abs(head() - 0.5) < 1e-9);
     assert.ok(get(part, 'opacity') > get(`${part}-tail`, 'opacity'));
     assert.ok(get(`${part}-tail`, 'opacity') > 0);
-    tick(start + duration);
+    tick(start + duration / 1.2);
     assert.ok(Math.abs(head() - 1) < 1e-9);
     const arrivalOpacity = get(part, 'opacity');
+    if (part === 'to-bid') {
+      assert.equal(get('next-bid-highlight', 'opacity'), 1);
+    }
     tick(start + duration + hold / 2);
     assert.equal(get(part, 'opacity'), arrivalOpacity);
     tick(start + duration + hold + fade / 2);
@@ -353,6 +357,9 @@ test('flow segments arrive before fading and clear the connectors', () => {
     tick(start + duration + hold + fade + 1);
     assert.equal(get(part, 'opacity'), 0);
     assert.equal(get(`${part}-tail`, 'opacity'), 0);
+    if (part === 'to-bid') {
+      assert.equal(get('next-bid-highlight', 'opacity'), 0);
+    }
     motion.matches = true;
     events.motion();
     for (const [name] of cues) {
@@ -463,12 +470,12 @@ test('slower playback keeps bid and feedback synchronized', () => {
 
 test('missing SVG parts report the component contract error', () => {
   assert.throws(
-    () => setup('top-tick'),
-    /OnlineFigure is missing data-part="top-tick"/,
+    () => setup('dmd-curve'),
+    /OnlineFigure is missing data-part="dmd-curve"/,
   );
 });
 
-test('loop stops at the last gain and preserves data and axis range', () => {
+test('loop stops at the last gain and fits the axes without changing data', () => {
   const { events, tick, elements } = setup();
   const lastGain = data.rounds.findLastIndex(
     (r) =>
@@ -484,7 +491,11 @@ test('loop stops at the last gain and preserves data and axis range', () => {
     elements.get('opportunity-value').textContent,
     data.rounds[lastGain].v.toFixed(2),
   );
-  assert.equal(elements.get('end-tick').textContent, '48');
+  const plot = onlineChart(data);
+  assert.equal(plot.maxAuction, 35);
+  assert.equal(plot.maxUtility, 35);
+  assert.deepEqual(plot.auctionTicks, [0, 10, 20, 30]);
+  assert.deepEqual(plot.utilityTicks, [0, 10, 20, 30]);
   const finalPoint = elements.get('dmd-point').attributes.cy;
   tick(38090);
   assert.equal(elements.get('dmd-point').attributes.cy, finalPoint);
@@ -496,4 +507,18 @@ test('loop stops at the last gain and preserves data and axis range', () => {
     elements.get('opportunity-value').textContent,
     data.rounds[23].v.toFixed(2),
   );
+});
+
+ test('current impression and stored shadow price arrive together before bidding', () => {
+  const { events, tick, elements } = setup();
+  events.visible([{ isIntersecting: true }]);
+  tick(0);
+  for (const start of [0, 3390, 6780]) {
+    tick(start + 460);
+    for (const name of ['to-input', 'to-bid']) {
+      assert.ok(Number(elements.get(name).attributes.opacity) > 0.9);
+    }
+    assert.equal(elements.get('shadow-price').textContent,
+      data.rounds[23 + start / 3390].before.mu.toFixed(2));
+  }
 });

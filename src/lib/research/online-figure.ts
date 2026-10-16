@@ -2,7 +2,13 @@ import { createPlayback } from './playback.ts';
 import { smoothstep as ease, mix } from './easing.ts';
 import type simulation from '../../../data/research/online-allocation.json';
 
-import { DISPLAY_START, RULER, DIAL, REELS } from './online-layout.ts';
+import {
+  DISPLAY_START,
+  RULER,
+  DIAL,
+  REELS,
+  onlineChart,
+} from './online-layout.ts';
 
 type Simulation = typeof simulation;
 const PLAYBACK_RATE = 0.8;
@@ -11,7 +17,9 @@ const REEL_DURATIONS = [0.22, 0.27, 0.32] as const;
 const TIMING = {
   stagesDuration: 3,
   dialResetDuration: 0.36,
-  returnStart: 2.58,
+  roundDuration: 3.39,
+  roundFade: 0.18,
+  returnStart: 0,
   returnDuration: 0.55,
   returnHold: 0.08,
   returnFade: 0.18,
@@ -33,7 +41,7 @@ const STAGES = {
 const SIGNALS = [
   {
     name: 'to-input',
-    start: 0.18,
+    start: 0.21,
     duration: 0.3,
     head: 0.35,
     tail: 0.3,
@@ -59,6 +67,8 @@ const SIGNALS = [
     fade: 0.12,
   },
   {
+    // The stored mu_t and new impression meet at Bid before it is formed.
+    // This is the previous auction's update, not feedback from this auction.
     name: 'to-bid',
     start: TIMING.returnStart,
     duration: TIMING.returnDuration,
@@ -68,7 +78,8 @@ const SIGNALS = [
     fade: TIMING.returnFade,
   },
 ] as const;
-const PLOT = { left: 62, bottom: 374, width: 276, height: 136 };
+// Only the travelling highlight speeds up; its cue and fade stay in place.
+const SIGNAL_TRAVEL_SPEED = 1.2;
 const REVEAL_OPACITY_RATE = 3;
 const SIGNAL_STYLE = {
   opacity: 0.95,
@@ -88,18 +99,13 @@ export function initializeOnlineFigure(
   browser: Window & typeof globalThis = window,
 ) {
   // Continue after auction 23, retaining the actual state and totals.
-  const { returnStart, returnDuration, returnHold, returnFade } = TIMING;
-  const fadeStart = returnStart + returnDuration + returnHold;
-  // Stop after the last gain; retain the full simulation and axis scale.
-  const lastGain = data.rounds.findLastIndex(
-    (round) =>
-      round.after.value > round.before.value ||
-      round.after.fixedValue > round.before.fixedValue,
-  );
-  const playbackEnd = Math.max(DISPLAY_START + 1, lastGain + 1);
+  const fadeStart = TIMING.roundDuration - TIMING.roundFade;
+  // Stop after the last gain and fit the visible chart to that prefix.
+  const plot = onlineChart(data);
+  const { playbackEnd } = plot;
   const rounds = data.rounds.slice(DISPLAY_START, playbackEnd);
   const count = rounds.length;
-  const period = fadeStart + returnFade;
+  const period = TIMING.roundDuration;
   const activeDuration = count * period;
   const cycleDuration = activeDuration + TIMING.endHold + TIMING.endFade;
   const elements = new Map<string, Element>();
@@ -117,20 +123,10 @@ export function initializeOnlineFigure(
   }
   const set = (name: string, attribute: string, value: string | number) =>
     element(name).setAttribute(attribute, String(value));
-  const ceiling =
-    Math.ceil(
-      Math.max(
-        ...rounds.map((round) =>
-          Math.max(round.after.value, round.after.fixedValue),
-        ),
-      ) / 10,
-    ) * 10;
-  const px = (auction: number) => PLOT.left + (auction / data.T) * PLOT.width;
-  const py = (value: number) => PLOT.bottom - (value / ceiling) * PLOT.height;
-  element('top-tick').textContent = String(ceiling);
-  element('mid-tick').textContent = String(ceiling / 2);
-  element('middle-tick').textContent = String(data.T / 2);
-  element('end-tick').textContent = String(data.T);
+  const px = (auction: number) =>
+    plot.left + (auction / plot.maxAuction) * plot.width;
+  const py = (value: number) =>
+    plot.bottom - (value / plot.maxUtility) * plot.height;
   function curvePoints(
     index: number,
     key: 'value' | 'fixedValue',
@@ -200,7 +196,7 @@ export function initializeOnlineFigure(
   function drawSignals(roundTime: number, fade: number, still: boolean) {
     for (const signal of SIGNALS) {
       const local = roundTime - signal.start;
-      const head = ease(local / signal.duration);
+      const head = ease(local / (signal.duration / SIGNAL_TRAVEL_SPEED));
       // One clipped dash moves forward, leaving the fixed grey connector
       // behind.
       // Gap > path length prevents a second dash wrapping into view.
@@ -217,6 +213,9 @@ export function initializeOnlineFigure(
       );
       set(signal.name, 'stroke-dashoffset', signal.head - head);
       set(signal.name, 'opacity', opacity);
+      if (signal.name === 'to-bid') {
+        set('next-bid-highlight', 'opacity', opacity / SIGNAL_STYLE.opacity);
+      }
       set(
         `${signal.name}-tail`,
         'stroke-dasharray',
@@ -251,7 +250,7 @@ export function initializeOnlineFigure(
     const roundOpacity =
       index === count - 1
         ? fade
-        : 1 - ease((roundTime - fadeStart) / returnFade);
+        : 1 - ease((roundTime - fadeStart) / TIMING.roundFade);
     set('chart-motion', 'opacity', fade);
     // Each stage reveals this auction's values; never blend different auctions.
     element('opportunity-value').textContent = round.v.toFixed(2);
