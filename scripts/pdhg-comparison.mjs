@@ -12,6 +12,7 @@ const {
   steps: STEPS,
   initial: INITIAL_POINT,
 } = baseTrajectories.metadata;
+const HALPERN_PERIOD = 14;
 const T = ([x, y]) => [
   x - STEP_SIZE * y,
   STEP_SIZE * x + (1 - 2 * STEP_SIZE * STEP_SIZE) * y,
@@ -42,15 +43,16 @@ const rows = baseTrajectories.rows.map((row) => {
     (value, i) => ((local + 1) * value + anchor[i]) / (local + 2),
   );
   local++;
-  // Independent closed form for a linear reflected operator: mean of R^j anchor, j=0..local.
+  // Independent closed form for a linear reflected operator:
+  // mean of R^j anchor, j=0..local.
   power = R(power);
   sum = sum.map((value, i) => value + power[i]);
   close(
     z,
     sum.map((value) => value / (local + 1)),
   );
-  const preHalpern = local === RESTART_PERIOD ? pack(z) : null;
-  if (local === RESTART_PERIOD) {
+  const preHalpern = local === HALPERN_PERIOD ? pack(z) : null;
+  if (local === HALPERN_PERIOD) {
     const before = z;
     z = T(z);
     calls++;
@@ -73,8 +75,8 @@ const rows = baseTrajectories.rows.map((row) => {
 });
 close([rows[1].halpern.x, rows[1].halpern.y], [rows[1].last.x, rows[1].last.y]);
 for (const row of rows) {
-  assert.equal(row.halpernCalls, row.k + Math.floor(row.k / RESTART_PERIOD));
-  if (row.restart) {
+  assert.equal(row.halpernCalls, row.k + Math.floor(row.k / HALPERN_PERIOD));
+  if (row.preHalpern) {
     close(
       [row.halpern.x, row.halpern.y],
       T([row.preHalpern.x, row.preHalpern.y]),
@@ -85,14 +87,13 @@ const metadata = {
   problem: 'min_x max_y xy; x,y in R; solution (0,0)',
   eta: STEP_SIZE,
   period: RESTART_PERIOD,
+  halpernPeriod: HALPERN_PERIOD,
   initial: INITIAL_POINT,
   steps: STEPS,
-  halpern:
-    'Paper 2407.16144v2 Eq26 and Algorithm2: z_next=((j+1)(2T(z)-z)+anchor)/(j+2); restart at j=25 to T(z), reset j=0.',
+  halpern: `Paper 2407.16144v2 Eq26 and Algorithm2: z_next=((j+1)(2T(z)-z)+anchor)/(j+2); restart at j=${HALPERN_PERIOD} to T(z), reset j=0.`,
   restartPolicy:
-    'Fixed 25 inner updates for BOTH restarted methods. Chosen controlled illustration, not the theorem-derived optimal period; not cuPDLPx adaptive policy.',
-  counting:
-    'k counts inner updates. Halpern restart uses one additional T evaluation; halpernCalls=k+floor(k/25). Not an equal-compute or runtime benchmark.',
+    'Averaged PDHG: fixed 25 inner updates. Reflected Halpern: fixed 14, ceil(e/0.2), using the exact PDHG-norm sharpness constant of this bilinear operator. Not cuPDLPx adaptive policy.',
+  counting: `k counts inner updates. Halpern restart uses one additional T evaluation; halpernCalls=k+floor(k/${HALPERN_PERIOD}). Not an equal-compute or runtime benchmark.`,
   provenance:
     'Independent deterministic numerical calculation. No cuPDLPx solver run, presolve, adaptive weights or industrial data.',
   sources: [
@@ -107,7 +108,7 @@ fs.writeFileSync(
 );
 fs.writeFileSync(
   new URL('../data/research/pdhg-comparison.csv', import.meta.url),
-  'k,PDHG_x,PDHG_y,raPDHG_x,raPDHG_y,r2HPDHG_x,r2HPDHG_y,average_x,average_y,restart,halpern_T_calls\n' +
+  'k,PDHG_x,PDHG_y,raPDHG_x,raPDHG_y,r2HPDHG_x,r2HPDHG_y,average_x,average_y,restart,halpern_restart,halpern_T_calls\n' +
     rows
       .map((row) =>
         [
@@ -121,13 +122,14 @@ fs.writeFileSync(
           row.average?.x ?? '',
           row.average?.y ?? '',
           row.restart,
+          Boolean(row.preHalpern),
           row.halpernCalls,
         ].join(','),
       )
       .join('\n'),
 );
 console.log(
-  'Verified 150 reflected Halpern steps against independent closed form, 6 exact T(z) resets, initial overlap and operator counts.',
+  `Verified ${STEPS} reflected Halpern steps against independent closed form, ${rows.filter((row) => row.preHalpern).length} exact T(z) resets, initial overlap and operator counts.`,
 );
 console.log(
   JSON.stringify(

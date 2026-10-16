@@ -34,9 +34,12 @@ export async function initializeTheoryFigure(root, browser) {
       browser.getComputedStyle(root),
     );
     const timeline = createTheoryTimeline(
-      rows.filter((row) => row.restart).map((row) => row.k),
+      rows
+        .filter((row) => row.preRestart || row.preHalpern)
+        .map((row) => row.k),
       DISPLAY_STEPS,
       TIMING,
+      rows.find((row) => row.preRestart)?.k,
     );
     const duration = timeline.duration;
     const cycleDuration = duration + TIMING.endHold;

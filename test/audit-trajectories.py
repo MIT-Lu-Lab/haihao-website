@@ -26,7 +26,7 @@ reflection_powers = [anchor]
 for k, row in enumerate(rows):
     assert row['k'] == k
     assert row['restart'] == (k > 0 and k % 25 == 0)
-    assert row['halpernCalls'] == k + k//25
+    assert row['halpernCalls'] == k + k//14
     if k:
         blue = mul(M, blue)
         all_blue.append(blue)
@@ -39,17 +39,22 @@ for k, row in enumerate(rows):
         check(row['average'], mean(all_blue))
         if k % 25 == 0:
             check(row['preRestart'], green)
-            check(row['preHalpern'], halpern)
             green = mean(green_epoch)
             green_epoch = []
+        else:
+            assert row['preRestart'] is None
+        if k % 14 == 0:
+            check(row['preHalpern'], halpern)
             halpern = mul(M, halpern)
             anchor = halpern
             reflection_powers = [anchor]
         else:
-            assert row['preRestart'] is None and row['preHalpern'] is None
+            assert row['preHalpern'] is None
     else:
         halpern = anchor
     for key, value in [('last',blue), ('restarted',green), ('halpern',halpern), ('anchor',anchor)]:
         check(row[key], value)
 print(json.dumps({'point_checks':checks, 'max_absolute_error':max_error,
-                  'iterations_per_method':len(rows)-1, 'restarts_per_method':sum(row['restart'] for row in rows)}))
+                  'iterations_per_method':len(rows)-1,
+                  'averaged_restarts':sum(row['restart'] for row in rows),
+                  'halpern_restarts':sum(row['preHalpern'] is not None for row in rows)}))

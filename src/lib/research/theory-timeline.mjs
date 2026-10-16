@@ -24,25 +24,36 @@
  * @param {{step: number, restartBefore: number, restartAfter: number,
  *   firstRestartBefore: number, firstRestartAfter: number}} timing
  *   Hold durations and milliseconds per iteration.
+ * @param {number} [explanationStep] First averaged restart to explain.
  * @returns {{duration: number, sample: (elapsed: number) => TimelineSample}}
  *   Duration includes restart holds but excludes the final hold. Sample accepts
  *   nonnegative presentation time and returns iteration time, final-hold time,
  *   and the active restart (or null). The caller handles looping.
  */
-export function createTheoryTimeline(restartSteps, displaySteps, timing) {
-  const restarts = restartSteps.filter((k) => k > 0 && k < displaySteps);
+export function createTheoryTimeline(
+  restartSteps,
+  displaySteps,
+  timing,
+  explanationStep = restartSteps[0],
+) {
+  const restarts = restartSteps.filter((k) => k > 0 && k <= displaySteps);
   const hold = timing.restartBefore + timing.restartAfter;
   const firstHold = timing.firstRestartBefore + timing.firstRestartAfter;
   const duration =
     displaySteps * timing.step +
-    restarts.reduce((total, _, i) => total + (i === 0 ? firstHold : hold), 0);
+    restarts.reduce(
+      (total, step) => total + (step === explanationStep ? firstHold : hold),
+      0,
+    );
   /** @param {number} elapsed @returns {TimelineSample} */
   function sample(elapsed) {
     let time = elapsed;
-    for (const [index, step] of restarts.entries()) {
+    for (const step of restarts) {
       const before =
-        index === 0 ? timing.firstRestartBefore : timing.restartBefore;
-      const total = index === 0 ? firstHold : hold;
+        step === explanationStep
+          ? timing.firstRestartBefore
+          : timing.restartBefore;
+      const total = step === explanationStep ? firstHold : hold;
       const boundary = step * timing.step;
       if (time < boundary) {
         break;
@@ -56,7 +67,7 @@ export function createTheoryTimeline(restartSteps, displaySteps, timing) {
             phase: time < boundary + before ? 'before' : 'after',
             elapsed: time - boundary,
             duration: total,
-            explain: index === 0,
+            explain: step === explanationStep,
           },
         };
       }

@@ -15,24 +15,27 @@ import { makeLiftedCurves, sampleLifted as sample } from './kkt-lift.mjs';
  * @property {'dots' | 'dash' | 'solid'} trajectoryStyle
  * @property {number[]} residualDash
  * @property {'preRestart' | 'preHalpern' | null} preRestartKey
+ * @property {'above' | 'below' | null} restartLabelPosition
  * @property {number} separation Direction for overlapping first-epoch markers.
  * @property {number} extraWidth
  * @property {boolean} explain Whether the first restart highlights this method.
  */
 
-export const DISPLAY_STEPS = 90;
+export const DISPLAY_STEPS = 60;
 // All playback durations are in milliseconds.
 export const TIMING = {
   step: 240,
   fade: 300,
   endHold: 2400,
-  restartBefore: 750,
-  restartAfter: 800,
+  restartBefore: 0,
+  restartAfter: 0,
   firstRestartBefore: 900,
   firstRestartAfter: 1300,
   annotationFadeIn: 220,
   annotationFadeOut: 300,
   averageLabelDelay: 220,
+  restartLabelHold: 1000,
+  restartLabelFade: 300,
 };
 const RESIDUAL_PLOT = {
   left: 175,
@@ -40,7 +43,7 @@ const RESIDUAL_PLOT = {
   desktop: { top: 610, bottom: 752 },
   compact: { top: 650, bottom: 810 },
   maxLog: 0.2,
-  logRange: 4.5,
+  logRange: 6.5,
 };
 
 const DURATION = DISPLAY_STEPS * TIMING.step;
@@ -68,6 +71,7 @@ const RESTART_GUIDE = {
  *   Current iteration and the drawn fraction of its segment.
  * @property {import('./theory-timeline.mjs').RestartState | null} restart
  *   Active restart hold, if any.
+ * @property {number} endHold Milliseconds in the final hold.
  * @property {number} loopOpacity Fade at the start and end of each loop.
  * @property {number} annotationOpacity Fade of the active restart annotations.
  * @property {number} explanationOpacity Annotation fade during the explained
@@ -107,6 +111,7 @@ export function createTheoryRenderer(canvas, rows, styles) {
       trajectoryStyle: 'dots',
       residualDash: [1, 4],
       preRestartKey: null,
+      restartLabelPosition: null,
       separation: 1,
       extraWidth: 0,
       explain: false,
@@ -117,6 +122,7 @@ export function createTheoryRenderer(canvas, rows, styles) {
       trajectoryStyle: 'dash',
       residualDash: [7, 4],
       preRestartKey: 'preRestart',
+      restartLabelPosition: 'above',
       separation: -1,
       extraWidth: 0,
       explain: true,
@@ -127,6 +133,7 @@ export function createTheoryRenderer(canvas, rows, styles) {
       trajectoryStyle: 'solid',
       residualDash: [],
       preRestartKey: 'preHalpern',
+      restartLabelPosition: 'below',
       separation: 0,
       extraWidth: 0.25,
       explain: false,
@@ -136,8 +143,10 @@ export function createTheoryRenderer(canvas, rows, styles) {
   const restartedMethods = methodNames.filter(
     (name) => methods[name].preRestartKey,
   );
-  const restartSteps = rows.filter((row) => row.restart).map((row) => row.k);
-  const firstRestart = restartSteps[0];
+  const restartSteps = rows
+    .filter((row) => row.preRestart || row.preHalpern)
+    .map((row) => row.k);
+  const firstRestart = rows.find((row) => row.preRestart)?.k ?? Infinity;
   const curves = makeLiftedCurves(makeComparisonCurves(rows));
   /**
    * @param {number} time
@@ -334,8 +343,9 @@ export function createTheoryRenderer(canvas, rows, styles) {
     const { step: lastStep, fraction } = frame.playback;
     let offset = 0;
     const color = methods[name].color;
+    const { preRestartKey } = methods[name];
     for (let i = 1; i <= lastStep; i++) {
-      if (methods[name].preRestartKey && rows[i - 1].restart) {
+      if (preRestartKey && rows[i - 1][preRestartKey]) {
         offset = 0;
       }
       const points = sampleTrajectory(name, i, i === lastStep ? fraction : 1);
@@ -424,6 +434,10 @@ export function createTheoryRenderer(canvas, rows, styles) {
       (step) => step <= completedStep,
     )) {
       for (const name of restartedMethods) {
+        const key = methods[name].preRestartKey;
+        if (!key || !rows[restart][key]) {
+          continue;
+        }
         const position = frame.project(rows[restart][name]);
         markerPath(
           position[0],
@@ -460,7 +474,7 @@ export function createTheoryRenderer(canvas, rows, styles) {
         );
       for (const name of methodNames) {
         const preRestartKey = methods[name].preRestartKey;
-        if (preRestartKey === null) {
+        if (preRestartKey === null || !rows[restartStep][preRestartKey]) {
           continue;
         }
         // Restart rows contain the pre-reset endpoint, verified by the audit.
@@ -630,6 +644,26 @@ export function createTheoryRenderer(canvas, rows, styles) {
     /** @type {(logResidual: number) => number} */
     const residualY = (logResidual) =>
       top + ((maxLog - logResidual) / logRange) * (bottom - top);
+    /**
+     * Padded jump bounds shared by the guide and its label.
+     * @param {MethodName} name
+     * @param {number} step
+     * @returns {{top: number, bottom: number} | null}
+     */
+    function restartBounds(name, step) {
+      const key = methods[name].preRestartKey;
+      const before = key && rows[step][key];
+      if (!before) {
+        return null;
+      }
+      const fromY = residualY(Math.log10(Math.hypot(before.x, before.y)));
+      const toY = residualY(Math.log10(rows[step][name].distance));
+      const padding = 6 / pixelScale;
+      return {
+        top: Math.max(top, Math.min(fromY, toY) - padding),
+        bottom: Math.min(bottom, Math.max(fromY, toY) + padding),
+      };
+    }
     drawLabel(
       frame,
       'KKT residual (log scale)',
@@ -643,10 +677,9 @@ export function createTheoryRenderer(canvas, rows, styles) {
     /** @type {Array<[number, string]>} */
     const residualTicks = [
       [0, '1'],
-      [-1, '10⁻¹'],
       [-2, '10⁻²'],
-      [-3, '10⁻³'],
       [-4, '10⁻⁴'],
+      [-6, '10⁻⁶'],
     ];
     for (const [logResidual, label] of residualTicks) {
       const y = residualY(logResidual);
@@ -659,11 +692,7 @@ export function createTheoryRenderer(canvas, rows, styles) {
       drawLabel(frame, label, left - 12, y + 4, 'right', theme.muted, 10);
     }
     const completedStep = playback.done ? playback.step : playback.step - 1;
-    for (const k of [
-      0,
-      ...restartSteps.filter((step) => step < DISPLAY_STEPS),
-      DISPLAY_STEPS,
-    ]) {
+    for (let k = 0; k <= DISPLAY_STEPS; k += 10) {
       drawLabel(
         frame,
         String(k),
@@ -677,37 +706,70 @@ export function createTheoryRenderer(canvas, rows, styles) {
     context.save();
     for (const k of restartSteps.filter((step) => step <= DISPLAY_STEPS)) {
       const active = restart?.step === k;
-      if (k <= completedStep || active) {
-        // Keep a visible event guide after the temporary emphasis has faded.
-        const alpha =
-          k <= completedStep
+      if (k > completedStep && !active) {
+        continue;
+      }
+      for (const name of restartedMethods) {
+        const bounds = restartBounds(name, k);
+        if (!bounds) {
+          continue;
+        }
+        context.globalAlpha =
+          loopOpacity *
+          (k <= completedStep
             ? RESTART_GUIDE.restingOpacity +
               (active ? RESTART_GUIDE.emphasisOpacity * annotationOpacity : 0)
-            : RESTART_GUIDE.activeOpacity * annotationOpacity;
-        context.globalAlpha = alpha * loopOpacity;
-        context.strokeStyle = theme.muted;
-        context.lineWidth = 0.9 / pixelScale;
-        context.setLineDash([3 / pixelScale, 4 / pixelScale]);
+            : RESTART_GUIDE.activeOpacity * annotationOpacity);
+        context.strokeStyle = methods[name].color;
+        context.lineWidth = 0.85 / pixelScale;
+        context.setLineDash([2 / pixelScale, 3 / pixelScale]);
         context.beginPath();
-        context.moveTo(iterationX(k), top);
-        context.lineTo(iterationX(k), bottom);
+        context.moveTo(iterationX(k), bounds.top);
+        context.lineTo(iterationX(k), bounds.bottom);
         context.stroke();
       }
     }
     context.restore();
-    if (restart) {
+    // Keep the lower event label readable after playback resumes.
+    // This does not extend the shared iteration hold or the upper jump arrow.
+    const currentIteration = playback.done
+      ? playback.step
+      : playback.step - 1 + playback.fraction;
+    const labelStep =
+      restart?.step ?? restartSteps.findLast((k) => k <= currentIteration);
+    const labelAge =
+      labelStep === undefined
+        ? Infinity
+        : (currentIteration - labelStep) * TIMING.step + frame.endHold;
+    const labelOpacity = restart
+      ? ease(clamp(restart.elapsed / TIMING.annotationFadeIn))
+      : 1 -
+        ease(
+          clamp((labelAge - TIMING.restartLabelHold) / TIMING.restartLabelFade),
+        );
+    if (labelStep !== undefined && labelOpacity > 0) {
       context.save();
       context.globalAlpha =
-        annotationOpacity * loopOpacity * RESTART_GUIDE.activeOpacity;
-      drawLabel(
-        frame,
-        'Restart',
-        iterationX(restart.step),
-        bottom + 48,
-        'center',
-        theme.muted,
-        10,
-      );
+        labelOpacity * loopOpacity * RESTART_GUIDE.activeOpacity;
+      for (const name of restartedMethods) {
+        const bounds = restartBounds(name, labelStep);
+        if (!bounds) {
+          continue;
+        }
+        const labelY =
+          methods[name].restartLabelPosition === 'above'
+            ? bounds.top - 4 / pixelScale
+            : bounds.bottom + 13 / pixelScale;
+        drawLabel(
+          frame,
+          'Restart',
+          iterationX(labelStep),
+          labelY,
+          'center',
+          methods[name].color,
+          10,
+        );
+      }
       context.restore();
     }
     drawLabel(
@@ -725,6 +787,7 @@ export function createTheoryRenderer(canvas, rows, styles) {
         iterationX(0),
         residualY(Math.log10(rows[0][name].distance)),
       );
+      const { preRestartKey } = methods[name];
       for (let j = 1; j <= playback.step; j++) {
         const segmentFraction =
           j === playback.step && !playback.done ? playback.fraction : 1;
@@ -738,7 +801,7 @@ export function createTheoryRenderer(canvas, rows, styles) {
           );
         }
         // Same-k vertical connector denotes the actual restart discontinuity.
-        if (rows[j].restart && j <= completedStep) {
+        if (preRestartKey && rows[j][preRestartKey] && j <= completedStep) {
           context.lineTo(
             iterationX(j),
             residualY(Math.log10(rows[j][name].distance)),
@@ -809,6 +872,7 @@ export function createTheoryRenderer(canvas, rows, styles) {
       ],
       playback: getProgress(time, restart),
       restart,
+      endHold,
       loopOpacity: getLoopOpacity(time, endHold, reduceMotion),
       annotationOpacity,
       explanationOpacity: restart?.explain ? annotationOpacity : 0,

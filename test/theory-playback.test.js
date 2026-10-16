@@ -30,7 +30,7 @@ test('load failure shows an error without starting playback', async () => {
 });
 
 for (const width of [345, 712]) {
-  test(`playback respects visibility and reduced motion at ${width}px`, async () => {
+  test(`visibility and reduced motion at ${width}px`, async () => {
     const data = JSON.parse(
       fs.readFileSync(
         new URL('../public/pdhg-comparison.json', import.meta.url),
@@ -193,7 +193,10 @@ for (const width of [345, 712]) {
       'repeated notifications must not multiply loops',
     );
     const restartCount = data.rows.filter(
-      (row) => row.restart && row.k > 0 && row.k < DISPLAY_STEPS,
+      (row) =>
+        (row.preRestart || row.preHalpern) &&
+        row.k > 0 &&
+        row.k <= DISPLAY_STEPS,
     ).length;
     const restartHolds =
       restartCount === 0

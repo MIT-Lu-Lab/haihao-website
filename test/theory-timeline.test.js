@@ -4,23 +4,24 @@ import { createTheoryTimeline } from '../src/lib/research/theory-timeline.mjs';
 import { TIMING, DISPLAY_STEPS } from '../src/lib/research/theory-renderer.mjs';
 
 const timeline = createTheoryTimeline(
-  [25, 50, 75, 100, 125, 150],
+  [14, 25, 28, 42, 50, 56, 70, 75, 84, 98],
   DISPLAY_STEPS,
   TIMING,
+  25,
 );
 
-// Golden values from TIMING: 900 + 1300 ms for the first restart,
-// then 750 + 800 ms twice, totaling 5300 ms. Keep expectations independent
-// of the timeline calculation so changes to the intended timing are explicit.
+// Six independent events; only green at 25 has the longer Average hold.
 
-test('timeline freezes on both sides of each reset', () => {
+test('only the first averaged reset pauses playback', () => {
   let previousHolds = 0;
-  for (const [index, step] of [25, 50, 75].entries()) {
-    const before = index === 0 ? 900 : 750;
-    const duration = index === 0 ? 2200 : 1550;
+  for (const step of [14, 25, 28, 42, 50, 56]) {
+    const before = step === 25 ? 900 : 0;
+    const duration = step === 25 ? 2200 : 0;
     const start = step * TIMING.step + previousHolds;
     assert.equal(timeline.sample(start - 1).time, step * TIMING.step - 1);
-    for (const elapsed of [0, before - 1, before, duration - 1]) {
+    for (const elapsed of duration
+      ? [0, before - 1, before, duration - 1]
+      : []) {
       assert.deepEqual(timeline.sample(start + elapsed), {
         time: step * TIMING.step,
         endHold: 0,
@@ -29,7 +30,7 @@ test('timeline freezes on both sides of each reset', () => {
           phase: elapsed < before ? 'before' : 'after',
           elapsed,
           duration,
-          explain: index === 0,
+          explain: step === 25,
         },
       });
     }
@@ -43,11 +44,28 @@ test('timeline freezes on both sides of each reset', () => {
 });
 
 test('explanation holds preserve iterations and the full final hold', () => {
-  assert.equal(timeline.duration, DISPLAY_STEPS * TIMING.step + 5300);
+  assert.equal(timeline.duration, DISPLAY_STEPS * TIMING.step + 2200);
   assert.deepEqual(timeline.sample(timeline.duration), {
     time: DISPLAY_STEPS * TIMING.step,
     endHold: 0,
     restart: null,
   });
   assert.equal(timeline.sample(timeline.duration + 2399).endHold, 2399);
+});
+
+test('a reset at the final displayed step finishes before the end hold', () => {
+  const finalReset = createTheoryTimeline([25], 25, TIMING, 25);
+  const boundary = 25 * TIMING.step;
+  assert.equal(finalReset.sample(boundary).restart.phase, 'before');
+  assert.equal(
+    finalReset.sample(boundary + TIMING.firstRestartBefore).restart.phase,
+    'after',
+  );
+  assert.equal(finalReset.sample(finalReset.duration - 1).endHold, 0);
+  assert.deepEqual(finalReset.sample(finalReset.duration), {
+    time: boundary,
+    endHold: 0,
+    restart: null,
+  });
+  assert.equal(finalReset.sample(finalReset.duration + 1).endHold, 1);
 });

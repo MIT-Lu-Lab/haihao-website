@@ -16,11 +16,12 @@ test('display interpolation preserves endpoints and restart boundaries', () => {
     }
   };
   for (const name of ['last', 'restarted', 'halpern']) {
+    const preRestartKey = { restarted: 'preRestart', halpern: 'preHalpern' }[
+      name
+    ];
     for (let k = 1; k < rows.length; k++) {
-      const end =
-        rows[k].restart && name !== 'last'
-          ? rows[k][name === 'halpern' ? 'preHalpern' : 'preRestart']
-          : rows[k][name];
+      const endpoint = preRestartKey && rows[k][preRestartKey];
+      const end = endpoint || rows[k][name];
       same(sample(curves[name].get(k), 0), rows[k - 1][name]);
       same(sample(curves[name].get(k), 1), end);
     }

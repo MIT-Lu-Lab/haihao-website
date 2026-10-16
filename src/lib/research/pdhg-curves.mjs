@@ -7,7 +7,7 @@
  * @property {Point & {distance: number}} last Plain PDHG iterate.
  * @property {Point & {distance: number}} restarted Restarted averaged iterate.
  * @property {Point & {distance: number}} halpern Reflected Halpern iterate.
- * @property {boolean} restart Whether this step resets the restarted methods.
+ * @property {boolean} restart Whether this step resets averaged PDHG.
  * @property {Point | null} preRestart Endpoint before the averaged reset.
  * @property {Point | null} preHalpern Endpoint before the Halpern reset.
  */
@@ -34,11 +34,11 @@ function makeCurves(rows, method, preRestartKey) {
   /** @type {Array<{step: number, point: Point}>} */
   let epoch = [];
   for (const row of rows) {
-    if (preRestartKey && row.restart) {
-      // Numerical audits verify the endpoint on generated restart rows.
+    const endpoint = preRestartKey && row[preRestartKey];
+    if (endpoint) {
       epoch.push({
         step: row.k,
-        point: /** @type {Point} */ (row[preRestartKey]),
+        point: endpoint,
       });
       epochs.push(epoch);
       epoch = [{ step: row.k, point: row[method] }];
