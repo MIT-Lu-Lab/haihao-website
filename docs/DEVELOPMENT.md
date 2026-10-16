@@ -49,6 +49,23 @@ display colors, not matrix counts. The railway photograph and GPU illustration
 use WebP quality 80, method 6, with embedded metadata removed; the GPU illustration
 retains its alpha channel.
 
+`GpuMatrixAnimation.astro` supplies the matrix SVG; the parent GPU component
+initializes `src/lib/research/gpu-matrix-animation.mjs` with the saved products.
+Playback stops offscreen, in hidden tabs, and under reduced motion. For multiple
+figures on a page, pass distinct stable `id` props to `GpuFigure` so its SVG
+mask and gradient identifiers remain unique.
+
+Generate the product samples with Python 3.11+, NumPy, and SciPy:
+
+```sh
+python scripts/generate-gpu-products.py /path/to/rail4284.tar.gz
+```
+
+The optional second argument overrides `data/research/rail4284-products.json`.
+The displayed vectors aggregate contiguous entries by RMS; the y input includes
+a seeded perturbation, and its transpose product is recomputed. These samples
+illustrate matrix operations, not a continuous solver trajectory or benchmark.
+
 `npm test` includes the research interpolation and playback tests, plus an independent exact-arithmetic audit. The audit requires Python 3, available as `python` on Windows or `python3` elsewhere. `src/data/` holds site content; `data/research/` holds generated research artifacts.
 
 Research modules use `// @ts-check`, so `npm run check` checks their JavaScript implementations against the JSDoc types. Keep this directive in new research modules; JSDoc alone does not enable implementation checking. Each figure initializes separately. Its `descriptionId` defaults to `comparison-description`; when placing multiple figures on one page, supply unique, stable values, such as `<TheoryFigure descriptionId="comparison-secondary" />`.

@@ -1,0 +1,145 @@
+---
+import { sitePath } from '../utils/paths';
+interface Props {
+  maskId: string;
+}
+const { maskId } = Astro.props;
+---
+
+<div class="gpu-study">
+  <svg
+    viewBox="0 85 600 365"
+    role="img"
+    aria-label="Matrix products Ax and A transpose y on rail4284. Bars show RMS magnitudes of contiguous entries with a fixed logarithmic scale per vector. The y input is perturbed for illustration, not a continuous solver trajectory."
+  >
+    <defs>
+      <mask id={maskId}>
+        <image
+          href={sitePath('images/research/rail4284-density.png')}
+          x="85"
+          y="151"
+          width="430"
+          height="234"
+          preserveAspectRatio="none"
+          style="filter:invert(1)"
+        />
+      </mask>
+    </defs>
+    <g data-vector="x">
+      <text x="300" y="101" text-anchor="middle" class="formula">
+        x
+      </text>
+      {Array.from({ length: 96 }, (_, i) => (
+        <rect
+          data-x
+          x={85 + (i * 430) / 96}
+          y="114"
+          width="3.5"
+          height="21"
+          fill="var(--red)"
+        />
+      ))}
+    </g>
+    <g mask={`url(#${maskId})`}>
+      <rect class="matrix-density" x="85" y="151" width="430" height="234" />
+    </g>
+    <g data-vector="a">
+      <text x="543" y="139" text-anchor="middle" class="formula">
+        A x
+      </text>
+      {Array.from({ length: 72 }, (_, i) => (
+        <rect
+          data-a
+          x="531"
+          y={151 + (i * 234) / 72}
+          width="24"
+          height="2.6"
+          fill="var(--red)"
+        />
+      ))}
+    </g>
+    <g data-vector="y">
+      <text x="57" y="139" text-anchor="middle" class="formula">
+        y
+      </text>
+      {Array.from({ length: 72 }, (_, i) => (
+        <rect
+          data-y
+          x="45"
+          y={151 + (i * 234) / 72}
+          width="24"
+          height="2.6"
+          fill="var(--red)"
+        />
+      ))}
+    </g>
+    <g data-vector="at">
+      {Array.from({ length: 96 }, (_, i) => (
+        <rect
+          data-at
+          x={85 + (i * 430) / 96}
+          y="401"
+          width="3.5"
+          height="21"
+          fill="var(--red)"
+        />
+      ))}
+      <text x="300" y="441" text-anchor="middle" class="formula">
+        Aᵀy
+      </text>
+    </g>
+    <g data-flow="a" fill="none" stroke="#9d5b65" stroke-width=".85">
+      {Array.from({ length: 10 }, (_, i) => (
+        <path d={`M${106 + i * 43} 139v8m-2.5-3 2.5 3 2.5-3`} />
+      ))}
+      {Array.from({ length: 8 }, (_, i) => (
+        <path d={`M519 ${166 + i * 29}h8m-3-2.5 3 2.5-3 2.5`} />
+      ))}
+    </g>
+    <g data-flow="at" fill="none" stroke="#9d5b65" stroke-width=".85">
+      {Array.from({ length: 8 }, (_, i) => (
+        <path d={`M73 ${166 + i * 29}h8m-3-2.5 3 2.5-3 2.5`} />
+      ))}
+      {Array.from({ length: 10 }, (_, i) => (
+        <path d={`M${106 + i * 43} 389v8m-2.5-3 2.5 3 2.5-3`} />
+      ))}
+    </g>
+  </svg>
+</div>
+
+<style>
+  [data-x],
+  [data-y],
+  [data-a],
+  [data-at] {
+    paint-order: stroke fill;
+    stroke: rgb(255 255 255 / 0.6);
+    stroke-width: 0.65px;
+  }
+  .matrix-density {
+    fill: var(--red);
+    opacity: 0.92;
+  }
+  .gpu-study {
+    width: 100%;
+    margin-top: 0;
+  }
+  svg {
+    display: block;
+    width: 100%;
+    font-family: inherit;
+  }
+  text {
+    fill: #777276;
+    font-size: 12px;
+  }
+
+  .formula {
+    paint-order: stroke fill;
+    stroke: rgb(255 255 255 / 0.6);
+    stroke-width: 1.4px;
+    stroke-linejoin: round;
+    fill: var(--red);
+    font-size: 15px;
+  }
+</style>
