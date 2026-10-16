@@ -1,0 +1,669 @@
+---
+import { Image } from 'astro:assets';
+import residentialPhoto from '../assets/research/chicago-residences.jpg';
+import results from '../../data/research/property-profiles.json';
+import {
+  getPropertyArrow,
+  type PropertyData,
+} from '../lib/research/property-animation';
+
+interface Props {
+  id?: string;
+}
+
+const { id = 'property-comparison' } = Astro.props;
+const baseline = results.profiles[0];
+const profiles = results.profiles;
+const plot = {
+  left: 44,
+  right: 584,
+  top: 292,
+  bottom: 482,
+  xmin: 60000,
+  xmax: 2000000,
+  ymin: 0.7,
+  ymax: 1.8,
+};
+const px = (price: number) =>
+  plot.left +
+  (Math.log(price / plot.xmin) / Math.log(plot.xmax / plot.xmin)) *
+    (plot.right - plot.left);
+const py = (ratio: number) =>
+  plot.bottom -
+  ((ratio - plot.ymin) / (plot.ymax - plot.ymin)) * (plot.bottom - plot.top);
+const path = (points: { salePrice: number; ratio: number }[]) =>
+  points
+    .map(
+      (point, i) =>
+        `${i ? 'L' : 'M'}${px(point.salePrice).toFixed(3)},` +
+        py(point.ratio).toFixed(3),
+    )
+    .join(' ');
+const difference = (profile: typeof baseline) =>
+  path(baseline.points) +
+  ' ' +
+  path([...profile.points].reverse()).replace(/^M/, 'L') +
+  ' Z';
+const groupIndex = baseline.points.findIndex(
+  (point) => Math.abs(point.salePrice - 100000) < 1,
+);
+const curvePoints = profiles.map((profile) =>
+  profile.points.map((point): [number, number] => [
+    Number(px(point.salePrice).toFixed(3)),
+    Number(py(point.ratio).toFixed(3)),
+  ]),
+);
+const data: PropertyData = {
+  curves: curvePoints,
+  focus: {
+    index: groupIndex,
+    ratios: profiles.map((profile) => profile.points[groupIndex].ratio),
+  },
+  metrics: profiles.map(({ prd, prb, priceR2 }) => ({ prd, prb, priceR2 })),
+  penalties: profiles.map(({ nominalRho }) => nominalRho),
+};
+const before = baseline.points[groupIndex];
+const groupX = px(before.salePrice);
+const initialArrow = getPropertyArrow(
+  curvePoints[0][groupIndex][0],
+  curvePoints[0][groupIndex][1],
+  curvePoints[1][groupIndex][1],
+);
+const penaltyDescription =
+  `Burgundy cycles through nominal ρ values of ${profiles[1].nominalRho}` +
+  ` and ${profiles[2].nominalRho}. The nominal ρ = ` +
+  `${profiles[1].nominalRho} setting was evaluated at ρ = ` +
+  `${profiles[1].rho}.`;
+const percent = (ratio: number) => `${Math.round(ratio * 100)}%`;
+const signed = (value: number) =>
+  (value > 0 ? '+' : '') + value.toFixed(3).replace('-', '−');
+const ticks = [
+  { value: 100000, label: '$100k' },
+  { value: 300000, label: '$300k' },
+  { value: 1000000, label: '$1m' },
+  { value: 2000000, label: '$2m' },
+];
+---
+
+<div
+  class="property-poster"
+  data-property-poster
+  data-property-mode="penalized"
+  data-property={JSON.stringify(data)}
+>
+  <div class="residential-photo">
+    <Image
+      src={residentialPhoto}
+      width={1200}
+      format="webp"
+      quality={80}
+      alt="Brick residential façades along Bissell Street in Chicago."
+      loading="lazy"
+      decoding="async"
+    />
+  </div>
+  <svg
+    viewBox="0 0 600 532"
+    role="img"
+    aria-labelledby={`${id}-title`}
+    aria-describedby={`${id}-description`}
+  >
+    <title id={`${id}-title`}>Fairer property valuation</title>
+    <desc id={`${id}-description`}>
+      Held-out Surrogate results from Acevedo, Lu, Wagner and Sparer's
+      unpublished manuscript. Gray shows the same model implementation without a
+      penalty. {penaltyDescription} All three curves preserve the original
+      median valuation-to-sale ratios in 30 equal-count price groups. Near a
+      median sale price of $100,000, the ratios are 129.7, 117.9 and 96.5
+      percent. Strong correction moves PRD closer to one but reverses the sign
+      of PRB and lowers price-scale R squared. Local valuation differences
+      remain. These are comparisons of fitted settings, not training iterations
+      or a selected deployment parameter.
+    </desc>
+    <path class="paper" d="M0 0H322L346 24V123L320 149H0Z" />
+    <path class="paper" d="M0 211L600 290V532H0Z" />
+    <text class="headline" x="15" y="53">
+      Fairer property
+    </text>
+    <text class="headline" x="15" y="101">
+      valuation.
+    </text>
+    <text class="location" x="17" y="132">
+      Cook County, Illinois
+    </text>
+
+    <text class="axis-heading" x="8" y="276">
+      Valuation / sale price
+    </text>
+    <path
+      class="axis"
+      d={`M${plot.left} ${plot.top}V${plot.bottom}H${plot.right}`}
+    />
+    {[0.75, 1, 1.25, 1.5, 1.75].map((value) => (
+      <g>
+        <path class="tick" d={`M${plot.left - 4} ${py(value)}h4`} />
+        <text
+          class="tick-label y-tick-label"
+          x={plot.left - 12}
+          y={py(value) + 4.5}
+          text-anchor="end"
+        >
+          {Math.round(value * 100)}%
+        </text>
+      </g>
+    ))}
+    {ticks.map((tick) => (
+      <g>
+        <path class="tick" d={`M${px(tick.value)} ${plot.bottom}v4`} />
+        <text
+          class="tick-label"
+          x={px(tick.value)}
+          y="505"
+          text-anchor={tick.value === plot.xmax ? 'end' : 'middle'}
+        >
+          {tick.label}
+        </text>
+      </g>
+    ))}
+    <path class="reference" d={`M${plot.left} ${py(1)}H${plot.right}`} />
+    <text class="reference-label" x="584" y={py(1) - 10} text-anchor="end">
+      100% = sale price
+    </text>
+    <path class="profile baseline" d={path(baseline.points)} />
+    <path
+      class="difference"
+      data-property-live-difference
+      d={difference(profiles[1])}
+    />
+    <path
+      class="profile corrected"
+      data-property-live-curve
+      d={path(profiles[1].points)}
+    />
+    <g class="curve-key" transform="translate(416 314)">
+      <path class="profile baseline" d="M0 -4H22" />
+      <text x="32" y="0">
+        No penalty
+      </text>
+    </g>
+    <g class="curve-key active-key" transform="translate(416 337)">
+      <path class="profile penalty-swatch" d="M0 -4H22" />
+      <text x="32" y="0">
+        Penalty · ρ ≈{' '}
+        <tspan data-property-penalty-value>{profiles[1].nominalRho}</tspan>
+      </text>
+    </g>
+    <g class="focus-note">
+      <text class="focus-heading" x="230" y="340">
+        Lower-priced homes
+      </text>
+      <text class="focus-before" x="230" y="381">
+        {percent(before.ratio)}
+      </text>
+      <path
+        class="change-arrow focus-comparison-arrow"
+        d="M314 370H336m-5-4 5 4-5 4"
+      />
+      <text class="focus-after" x="354" y="381" data-property-focus-value>
+        {percent(profiles[1].points[groupIndex].ratio)}
+      </text>
+      <text class="focus-detail" x="230" y="409">
+        Near $100k · median ratio
+      </text>
+      <path
+        class="leader"
+        d={`M216 371H169L${groupX + 7} ${py(before.ratio)}`}
+      />
+      <circle class="baseline-dot" cx={groupX} cy={py(before.ratio)} r="3.5" />
+      <path
+        class="change-arrow"
+        data-property-focus-arrow
+        d={initialArrow.arrow}
+        opacity={initialArrow.arrowOpacity}
+      />
+      <circle
+        class="corrected-dot"
+        data-property-focus-point
+        cx={groupX}
+        cy={py(profiles[1].points[groupIndex].ratio)}
+        r="3.5"
+      />
+    </g>
+    <text class="axis-title" x="314" y="530" text-anchor="middle">
+      Sale price (log scale)
+    </text>
+  </svg>
+
+  <div
+    role="group"
+    class="result-strip"
+    aria-label="Held-out results without and with regularization"
+  >
+    <div class="fairness-results">
+      <p class="result-heading">Price-related regressivity</p>
+      <div class="fairness-pair">
+        <div class="result">
+          <p class="result-label">
+            <abbr title="Price-related differential">PRD</abbr>
+            <span>neutral: 1</span>
+          </p>
+          <p class="result-values">
+            <span class="baseline-value">{baseline.prd.toFixed(3)}</span>
+            <svg class="result-arrow" viewBox="0 0 14 10" aria-hidden="true">
+              <path d="M1 5H12m-3-3 3 3-3 3" />
+            </svg>
+            <strong data-property-metric="prd">
+              {profiles[1].prd.toFixed(3)}
+            </strong>
+            <span class="baseline-caption">No penalty</span>
+            <span class="current-caption">Penalty</span>
+          </p>
+        </div>
+        <div class="result">
+          <p class="result-label">
+            <abbr title="Price-related bias">PRB</abbr>
+            <span>neutral: 0</span>
+          </p>
+          <p class="result-values">
+            <span class="baseline-value">{signed(baseline.prb)}</span>
+            <svg class="result-arrow" viewBox="0 0 14 10" aria-hidden="true">
+              <path d="M1 5H12m-3-3 3 3-3 3" />
+            </svg>
+            <strong data-property-metric="prb">
+              {signed(profiles[1].prb)}
+            </strong>
+            <span class="baseline-caption">No penalty</span>
+            <span class="current-caption">Penalty</span>
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="accuracy-result">
+      <p class="result-heading">Predictive accuracy</p>
+      <p class="result-label">Price-scale R²</p>
+      <p class="result-values">
+        <span class="baseline-value">{baseline.priceR2.toFixed(3)}</span>
+        <svg class="result-arrow" viewBox="0 0 14 10" aria-hidden="true">
+          <path d="M1 5H12m-3-3 3 3-3 3" />
+        </svg>
+        <strong data-property-metric="priceR2">
+          {profiles[1].priceR2.toFixed(3)}
+        </strong>
+        <span class="baseline-caption">No penalty</span>
+        <span class="current-caption">Penalty</span>
+      </p>
+    </div>
+  </div>
+</div>
+<style>
+  .property-poster {
+    --baseline: var(--chart-baseline);
+    position: relative;
+    width: 100%;
+    isolation: isolate;
+    container-type: inline-size;
+    color: var(--ink);
+  }
+  .residential-photo {
+    position: absolute;
+    inset: 0 0 auto;
+    aspect-ratio: 600 / 301.35;
+    overflow: hidden;
+    clip-path: polygon(0 0, 100% 0, 100% 96.2%, 0 69.9%);
+  }
+  .residential-photo :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 56% 54%;
+    filter: saturate(0.62) contrast(0.98) brightness(1.02);
+  }
+  svg {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    font-family: var(--sans);
+  }
+  .paper {
+    fill: var(--surface);
+  }
+  .headline {
+    fill: var(--red);
+    font-family: var(--serif);
+    font-size: 46px;
+    letter-spacing: -1.6px;
+  }
+  .location {
+    fill: var(--muted);
+    font-size: 13px;
+  }
+  .axis-heading {
+    font-size: 19px;
+    fill: var(--ink);
+    font-weight: 500;
+  }
+  .axis,
+  .tick {
+    fill: none;
+    stroke: var(--muted);
+    stroke-opacity: 0.5;
+    stroke-width: 0.8;
+  }
+  .tick-label {
+    fill: var(--muted);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .reference {
+    stroke: var(--muted);
+    stroke-opacity: 0.3;
+    stroke-width: 1;
+  }
+  .reference-label {
+    font-size: 13px;
+    fill: var(--muted);
+  }
+  .profile {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .baseline {
+    stroke: var(--baseline);
+    stroke-width: 2;
+  }
+  .corrected {
+    stroke: var(--red);
+    stroke-width: 2.7;
+  }
+  .difference {
+    fill: var(--red);
+    fill-opacity: 0.06;
+  }
+  .curve-key,
+  .axis-title {
+    fill: var(--muted);
+    font-size: 13px;
+  }
+  .active-key {
+    fill: var(--muted);
+    transition: fill 0.35s ease;
+  }
+  .penalty-swatch {
+    stroke: var(--muted);
+    stroke-width: 2.7;
+    transition: stroke 0.35s ease;
+  }
+  .property-poster[data-property-mode='penalized'] .active-key {
+    fill: var(--red);
+  }
+  .property-poster[data-property-mode='penalized'] .penalty-swatch {
+    stroke: var(--red);
+  }
+  .active-key [data-property-penalty-value] {
+    font-variant-numeric: tabular-nums;
+  }
+  .focus-heading {
+    fill: var(--ink);
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .focus-before,
+  .focus-after {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.7px;
+  }
+  .focus-before {
+    fill: var(--baseline);
+    font-size: 28px;
+  }
+  .focus-after {
+    fill: var(--red);
+    font-size: 28px;
+  }
+  .focus-detail {
+    fill: var(--muted);
+    font-size: 12px;
+  }
+  .change-arrow {
+    fill: none;
+    stroke: var(--red);
+    stroke-width: 1.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .leader {
+    fill: none;
+    stroke: var(--baseline);
+    stroke-opacity: 0.65;
+    stroke-width: 0.8;
+  }
+  .baseline-dot {
+    fill: var(--baseline);
+    stroke: var(--surface);
+    stroke-width: 1.5;
+  }
+  .corrected-dot {
+    fill: var(--red);
+    stroke: var(--surface);
+    stroke-width: 1.5;
+  }
+  .result-strip {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 3cqw;
+    margin: 16px 0 0;
+    padding: 16px 2.666667% 16px 7.333333%;
+    background: color-mix(in srgb, var(--line) 28%, var(--surface));
+    font-family: var(--sans);
+  }
+  .result-strip p {
+    margin: 0;
+  }
+  .result-strip .result-heading {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 18px;
+    margin-bottom: 12px;
+  }
+  .fairness-results {
+    grid-column: span 2;
+  }
+  .fairness-pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3cqw;
+  }
+  .result-label {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 11.5px;
+    line-height: 16px;
+    height: 16px;
+  }
+  .result-label abbr {
+    color: var(--ink);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .result-label span {
+    font-size: 10.5px;
+  }
+  .result-strip .result-values {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 14px minmax(0, 1fr);
+    align-items: baseline;
+    column-gap: 4px;
+    row-gap: 5px;
+    margin-top: 9px;
+    white-space: nowrap;
+    font-size: 18px;
+    line-height: 26px;
+    letter-spacing: -0.25px;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+  }
+  .result-values strong {
+    font-size: inherit;
+    line-height: inherit;
+    font-weight: 400;
+    color: var(--red);
+    grid-column: 3;
+    grid-row: 1;
+    text-align: left;
+    transition: color 0.35s ease;
+  }
+  .baseline-value {
+    grid-column: 1;
+    grid-row: 1;
+    text-align: right;
+    color: var(--muted);
+  }
+  .result-arrow {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+    display: block;
+    width: 14px;
+    height: 10px;
+    fill: none;
+    stroke: var(--muted);
+    stroke-width: 1.1;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .baseline-caption,
+  .current-caption {
+    font-size: 10.5px;
+    line-height: 14px;
+    letter-spacing: 0;
+    color: var(--muted);
+  }
+  .baseline-caption {
+    grid-column: 1;
+    grid-row: 2;
+    text-align: right;
+  }
+  .current-caption {
+    grid-column: 3;
+    grid-row: 2;
+    text-align: left;
+  }
+  .accuracy-result {
+    position: relative;
+  }
+  .accuracy-result::before {
+    content: '';
+    position: absolute;
+    left: -1.5cqw;
+    top: 2px;
+    bottom: 1px;
+    width: 1.5px;
+    background: var(--line);
+  }
+  .focus-after,
+  .corrected-dot {
+    transition: fill 0.35s ease;
+  }
+  .change-arrow {
+    transition: stroke 0.35s ease;
+  }
+  .focus-comparison-arrow {
+    stroke: var(--muted);
+    transition: none;
+  }
+  .property-poster[data-property-mode='baseline'] .focus-after,
+  .property-poster[data-property-mode='baseline'] .corrected-dot {
+    fill: var(--baseline);
+  }
+  .property-poster[data-property-mode='baseline']
+    .change-arrow:not(.focus-comparison-arrow) {
+    stroke: var(--baseline);
+  }
+  .property-poster[data-property-mode='baseline'] .result-values strong {
+    color: var(--muted);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .active-key,
+    .penalty-swatch,
+    .focus-after,
+    .corrected-dot,
+    .change-arrow,
+    .result-values strong {
+      transition: none;
+    }
+  }
+  @container (max-width:520px) {
+    .result-strip {
+      grid-template-columns: 1fr;
+      gap: 16px;
+      padding: 16px 12px;
+      margin: 15px 0 0;
+    }
+    .fairness-results {
+      grid-column: auto;
+    }
+    .result-label {
+      font-size: 12px;
+    }
+    .accuracy-result {
+      padding-top: 16px;
+      border-top: 1.5px solid var(--line);
+    }
+    .accuracy-result::before {
+      display: none;
+    }
+    .accuracy-result .result-values {
+      width: calc((100% - 3cqw) / 2);
+    }
+  }
+  @container (max-width:420px) {
+    .location {
+      font-size: 17px;
+    }
+    .axis-heading {
+      font-size: 22px;
+    }
+    .tick-label,
+    .axis-title,
+    .reference-label {
+      font-size: 18px;
+    }
+    .curve-key {
+      font-size: 17px;
+      translate: 12px 0;
+    }
+    .y-tick-label {
+      font-size: 16px;
+      transform: translateX(8px);
+    }
+    .focus-heading {
+      font-size: 20px;
+    }
+    .focus-detail {
+      font-size: 18px;
+    }
+  }
+</style>
+<script>
+  import {
+    initializePropertyFigure,
+    type PropertyData,
+  } from '../lib/research/property-animation';
+  document
+    .querySelectorAll<HTMLElement>('[data-property-poster]')
+    .forEach((root) => {
+      const serialized = root.dataset.property;
+      if (!serialized) {
+        throw new Error('PropertyFigure is missing its display data.');
+      }
+      const data: PropertyData = JSON.parse(serialized);
+      initializePropertyFigure(root, data, window);
+    });
+</script>

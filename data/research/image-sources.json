@@ -23,5 +23,14 @@
     "source": "Original illustration supplied by the project owner, who confirmed creating it.",
     "changes": "Resized to 800 x 533.",
     "encoding": "WebP quality 80, method 6; alpha channel retained; embedded metadata removed."
+  },
+  "residentialPhoto": {
+    "file": "src/assets/research/chicago-residences.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Bissell_Street_District_4.JPG",
+    "author": "Thshriver",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "changes": "Resized and encoded as WebP by Astro; CSS crop and color adjustment. This photographic adaptation remains CC BY-SA 3.0.",
+    "encoding": "Source: 1800 x 1200 JPEG quality 85, embedded metadata removed. Astro Image: 1200 pixels wide, WebP quality 80."
   }
 }

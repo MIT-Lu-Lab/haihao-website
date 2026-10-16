@@ -6,7 +6,7 @@ import ResearchSection from '../components/ResearchSection.astro';
 import TheoryFigure from '../components/TheoryFigure.astro';
 import GpuFigure from '../components/GpuFigure.astro';
 import OnlineFigure from '../components/OnlineFigure.astro';
-import { sitePath } from '../utils/paths';
+import PropertyFigure from '../components/PropertyFigure.astro';
 ---
 <Layout title="Research">
   <PageHeading title="Research"><p>I develop optimization theory, algorithms, and software for large-scale decision-making. My research connects mathematical foundations with practical questions: how to exploit modern computing architectures, explain and improve algorithmic performance, allocate scarce resources under uncertainty, and make data-driven decisions fairer. These questions unite the four research areas below and guide collaborations with industry and public agencies.</p></PageHeading>
@@ -88,9 +88,12 @@ import { sitePath } from '../utils/paths';
           <li>N. Acevedo, H. Lu, M. Wagner, and T. Sparer. Fair Property Tax: Targeting Regressivity in Machine Learning-Based Valuation. Unpublished manuscript.</li>
         </ol>
       </div>
-      <figure slot="figure" class="research-figure">
-        <img src={sitePath('images/research/property-tax.svg')} alt="Assessment ratio by home value: a standard model declines with value while a regressivity-penalized model stays flat" width="320" height="240" loading="lazy" />
-        <figcaption>Schematic. A standard valuation model over-assesses lower-valued homes; penalizing regressivity during training flattens the ratio.</figcaption>
+      <figure slot="figure" class="research-figure property-figure">
+        <PropertyFigure />
+        <figcaption>Regularization reduces the overvaluation of lower-priced homes in this Cook County example. Gray shows the model without a penalty, and burgundy shows the results as the surrogate-loss penalty increases. The measures below compare price-related regressivity (PRD and PRB) and predictive accuracy (R²) on held-out data.<span class="theory-sources">
+          Results: Acevedo, Lu, Wagner &amp; Sparer, <em>Fair Property Tax</em> (unpublished manuscript).
+          <br />Photo: <ExternalLink href="https://commons.wikimedia.org/wiki/File:Bissell_Street_District_4.JPG" mark={false}>Thshriver</ExternalLink> / <ExternalLink href="https://creativecommons.org/licenses/by-sa/3.0/" mark={false}>CC BY-SA 3.0</ExternalLink>; cropped and color-adjusted.
+        </span></figcaption>
       </figure>
     </ResearchSection>
     <ResearchSection id="other-research" title="Other research I have been working on">
@@ -177,7 +180,8 @@ import { sitePath } from '../utils/paths';
     }
     .theory-figure,
     .gpu-figure,
-    .online-figure {
+    .online-figure,
+    .property-figure {
       max-width: none;
     }
   }
