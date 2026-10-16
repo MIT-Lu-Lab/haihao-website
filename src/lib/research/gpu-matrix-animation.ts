@@ -1,5 +1,6 @@
 import { createPlayback } from './playback.ts';
 import { smoothstep as smooth } from './easing.ts';
+import { MATRIX, SCAN_BAND } from './gpu-layout.ts';
 
 type VectorKey = 'x' | 'a' | 'y' | 'at';
 interface MatrixProducts {
@@ -19,6 +20,12 @@ const PHRASE_DURATION = 4600;
 const CYCLE_DURATION = 2 * PHRASE_DURATION;
 // Envelope and hardware timings are in seconds within each phrase.
 const ENVELOPE = { fadeDuration: 0.6, fadeOutStart: 3.65, arrowsStart: 0.75 };
+const SCAN = {
+  start: 1,
+  duration: 0.95,
+  resultStart: 2,
+  arrowFadeDuration: 0.3,
+};
 const LIGHTS = {
   start: 0.75,
   riseDuration: 1,
@@ -40,9 +47,9 @@ const BUS_PULSE = {
 const BAR = { minimumSize: 3, sizeRange: 21, minimumOpacity: 0.25, logGain: 9 };
 const VECTOR_LAYOUT: VectorLayout[] = [
   { key: 'x', phase: 0, delay: 0, dimension: 'height', edge: 'y', anchor: 135 },
-  { key: 'a', phase: 0, delay: 1.35, dimension: 'width' },
+  { key: 'a', phase: 0, delay: SCAN.resultStart, dimension: 'width' },
   { key: 'y', phase: 1, delay: 0, dimension: 'width', edge: 'x', anchor: 69 },
-  { key: 'at', phase: 1, delay: 1.35, dimension: 'height' },
+  { key: 'at', phase: 1, delay: SCAN.resultStart, dimension: 'height' },
 ];
 
 /** Find a part of GpuFigure's own markup, failing loudly if it is missing. */
@@ -74,6 +81,9 @@ export function initializeGpuFigure(
   }));
   const flowA = requireElement(root, '[data-flow="a"]');
   const flowAT = requireElement(root, '[data-flow="at"]');
+  const scanDown = requireElement(root, '[data-matrix-scan="down"]');
+  const scanRight = requireElement(root, '[data-matrix-scan="right"]');
+  const outputArrows = root.querySelectorAll('[data-flow-output]');
   const indicators = requireElement(root, '[data-gpu-lights]');
   const chips = requireElement(root, '[data-gpu-chips]');
   const bus = requireElement(root, '[data-gpu-bus]');
@@ -111,6 +121,39 @@ export function initializeGpuFigure(
           (BAR.minimumOpacity + (1 - BAR.minimumOpacity) * magnitude) * gain,
         );
       });
+    }
+
+    // Finish sweeping the density mask before revealing the products.
+    const scanProgress = smooth((seconds - SCAN.start) / SCAN.duration);
+    const scanning =
+      !reducedMotion &&
+      seconds >= SCAN.start &&
+      seconds < SCAN.start + SCAN.duration;
+    scanDown.setAttribute(
+      'y',
+      String(
+        MATRIX.y -
+          SCAN_BAND.height +
+          (MATRIX.height + SCAN_BAND.height) * scanProgress,
+      ),
+    );
+    scanRight.setAttribute(
+      'x',
+      String(
+        MATRIX.x -
+          SCAN_BAND.width +
+          (MATRIX.width + SCAN_BAND.width) * scanProgress,
+      ),
+    );
+    setOpacity(scanDown, scanning && phase === 0 ? 1 : 0);
+    setOpacity(scanRight, scanning && phase === 1 ? 1 : 0);
+    for (const arrow of outputArrows) {
+      setOpacity(
+        arrow,
+        reducedMotion
+          ? 0
+          : smooth((seconds - SCAN.resultStart) / SCAN.arrowFadeDuration),
+      );
     }
 
     const breath = reducedMotion
