@@ -4,6 +4,7 @@ import type { RestartState, TimelineSample } from './theory-timeline.ts';
 import { smootherstep as ease, clamp } from './easing.ts';
 import { makeComparisonCurves } from './pdhg-curves.ts';
 import { makeLiftedCurves, sampleLifted as sample } from './kkt-lift.ts';
+import { CANVAS_WIDTH, RESIDUAL_PLOT } from './theory-layout.ts';
 
 type Coordinates = [number, number];
 type MarkerShape = 'circle' | 'square' | 'diamond';
@@ -14,6 +15,7 @@ interface MethodStyle {
   residualDash: number[];
   preRestartKey: 'preRestart' | 'preHalpern' | null;
   restartLabelPosition: 'above' | 'below' | null;
+  restartArrowOpacity: number;
   separation: number;
   extraWidth: number;
   explain: boolean;
@@ -33,14 +35,9 @@ export const TIMING = {
   restartLabelHold: 1000,
   restartLabelFade: 300,
 };
-const RESIDUAL_PLOT = {
-  left: 95,
-  right: 940,
-  desktop: { top: 610, bottom: 752 },
-  compact: { top: 760, bottom: 920 },
-  maxLog: 0.2,
-  logRange: 6.5,
-};
+
+// Text sizes are CSS pixels, independent of the responsive canvas scale.
+const TYPE_SIZE = { title: 18, axis: 13, annotation: 11.5, tick: 11 };
 
 const DURATION = DISPLAY_STEPS * TIMING.step;
 const EXPLANATION_DIMMING = 0.62;
@@ -73,7 +70,7 @@ interface FrameState {
 /**
  * Create a renderer that owns the canvas transform and drawing style.
  * Rows must include all displayed steps and the pre-reset restart endpoints.
- * Styles must provide --ink, --muted, --line, --surface, --sans,
+ * Styles must provide --ink, --muted, --line, --surface, --sans, --serif,
  * --pdhg, --restarted, and --halpern from the figure's computed styles.
  * @param canvas Canvas with a 2D rendering context.
  * @param rows Saved iterates.
@@ -96,6 +93,7 @@ export function createTheoryRenderer(
     line: styles.getPropertyValue('--line').trim(),
     surface: styles.getPropertyValue('--surface').trim(),
     font: styles.getPropertyValue('--sans').trim(),
+    headingFont: styles.getPropertyValue('--serif').trim(),
   };
   const canvasContext = canvas.getContext('2d');
   if (!canvasContext) {
@@ -110,6 +108,7 @@ export function createTheoryRenderer(
       residualDash: [1, 4],
       preRestartKey: null,
       restartLabelPosition: null,
+      restartArrowOpacity: 0.65,
       separation: 1,
       extraWidth: 0,
       explain: false,
@@ -121,6 +120,7 @@ export function createTheoryRenderer(
       residualDash: [7, 4],
       preRestartKey: 'preRestart',
       restartLabelPosition: 'above',
+      restartArrowOpacity: 0.85,
       separation: -1,
       extraWidth: 0,
       explain: true,
@@ -132,6 +132,7 @@ export function createTheoryRenderer(
       residualDash: [],
       preRestartKey: 'preHalpern',
       restartLabelPosition: 'below',
+      restartArrowOpacity: 0.65,
       separation: 0,
       extraWidth: 0.25,
       explain: false,
@@ -299,13 +300,11 @@ export function createTheoryRenderer(
     y: number,
     align: CanvasTextAlign = 'left',
     color: string = theme.muted,
-    size: number = 13,
+    size: number = TYPE_SIZE.axis,
+    font: string = theme.font,
   ) {
     context.fillStyle = color;
-    // Keep text readable in CSS pixels when the canvas scales down.
-    const scaledSize = size * (frame.compact ? 1.65 : 1);
-    const minimumSize = (size >= 12 ? 11 : 10) / frame.pixelScale;
-    context.font = `${Math.max(scaledSize, minimumSize)}px ${theme.font}`;
+    context.font = `${size / frame.pixelScale}px ${font}`;
     context.textAlign = align;
     context.fillText(text, x, y);
   }
@@ -336,7 +335,7 @@ export function createTheoryRenderer(
         0.9 * frame.loopOpacity * methodOpacity(frame, name);
       const period = compact ? 28 : 16;
       if (methods[name].trajectoryStyle === 'dots') {
-        // Place dots by arc length, in the middle of the green gaps.
+        // Place dots by arc length, centered in the dashed trajectory's gaps.
         const phase = period * 0.75;
         const dotPeriod = period / 2;
         let distance = offset;
@@ -430,13 +429,9 @@ export function createTheoryRenderer(
     const { compact, restart } = frame;
     if (restart) {
       const restartStep = restart.step;
-      const alpha =
-        0.65 *
-        ease(
-          clamp(
-            (restart.duration - restart.elapsed) / TIMING.annotationFadeOut,
-          ),
-        );
+      const alpha = ease(
+        clamp((restart.duration - restart.elapsed) / TIMING.annotationFadeOut),
+      );
       for (const name of methodNames) {
         const preRestartKey = methods[name].preRestartKey;
         const endpoint = preRestartKey && rows[restartStep][preRestartKey];
@@ -450,7 +445,10 @@ export function createTheoryRenderer(
         const length = Math.hypot(dx, dy);
         context.save();
         context.globalAlpha =
-          alpha * frame.loopOpacity * methodOpacity(frame, name);
+          alpha *
+          methods[name].restartArrowOpacity *
+          frame.loopOpacity *
+          methodOpacity(frame, name);
         context.strokeStyle = methods[name].color;
         context.lineWidth = compact ? 2 : 1;
         if (length > 9) {
@@ -536,7 +534,7 @@ export function createTheoryRenderer(
       endY + 3 / pixelScale,
       'right',
       methods.restarted.color,
-      11,
+      TYPE_SIZE.annotation,
     );
     context.restore();
   }
@@ -592,9 +590,9 @@ export function createTheoryRenderer(
     const { compact, pixelScale, playback, restart, loopOpacity } = frame;
     const { annotationOpacity } = frame;
     const { left, right, maxLog, logRange } = RESIDUAL_PLOT;
-    const { top, bottom } = compact
-      ? RESIDUAL_PLOT.compact
-      : RESIDUAL_PLOT.desktop;
+    const plot = compact ? RESIDUAL_PLOT.compact : RESIDUAL_PLOT.desktop;
+    const top = plot.top + 12 / pixelScale;
+    const bottom = plot.bottom;
     const iterationX = (k: number): number =>
       left + ((right - left) * k) / DISPLAY_STEPS;
     const residualY = (logResidual: number): number =>
@@ -619,14 +617,26 @@ export function createTheoryRenderer(
         bottom: Math.min(bottom, Math.max(fromY, toY) + padding),
       };
     }
+    const titleY = plot.panelTop + 25 / pixelScale;
     drawLabel(
       frame,
-      'KKT residual (log scale)',
+      'KKT residual',
       left,
-      top - 30,
+      titleY,
       'left',
       theme.ink,
-      13,
+      TYPE_SIZE.title,
+      theme.headingFont,
+    );
+    const titleWidth = context.measureText('KKT residual').width;
+    drawLabel(
+      frame,
+      'log scale',
+      left + titleWidth + 12 / pixelScale,
+      titleY,
+      'left',
+      theme.muted,
+      TYPE_SIZE.tick,
     );
 
     const residualTicks: Array<[number, string]> = [
@@ -637,13 +647,33 @@ export function createTheoryRenderer(
     ];
     for (const [logResidual, label] of residualTicks) {
       const y = residualY(logResidual);
+      context.save();
+      context.strokeStyle = theme.muted;
+      context.globalAlpha = 0.35;
+      context.lineWidth = 0.6 / pixelScale;
       context.beginPath();
-      context.moveTo(left, y);
-      context.lineTo(right, y);
-      context.strokeStyle = theme.line;
-      context.lineWidth = 0.6;
+      context.moveTo(left - 5 / pixelScale, y);
+      context.lineTo(left, y);
       context.stroke();
-      drawLabel(frame, label, left - 12, y + 4, 'right', theme.muted, 10);
+      if (logResidual === -2 || logResidual === -4) {
+        context.strokeStyle = theme.line;
+        context.globalAlpha = 0.8;
+        context.setLineDash([1 / pixelScale, 4 / pixelScale]);
+        context.beginPath();
+        context.moveTo(left, y);
+        context.lineTo(right, y);
+        context.stroke();
+      }
+      context.restore();
+      drawLabel(
+        frame,
+        label,
+        left - 12,
+        y + 4,
+        'right',
+        theme.muted,
+        TYPE_SIZE.tick,
+      );
     }
     const completedStep = playback.done ? playback.step : playback.step - 1;
     for (let k = 0; k <= DISPLAY_STEPS; k += 10) {
@@ -654,7 +684,7 @@ export function createTheoryRenderer(
         bottom + 25,
         'center',
         theme.muted,
-        10,
+        TYPE_SIZE.tick,
       );
     }
     context.save();
@@ -721,7 +751,7 @@ export function createTheoryRenderer(
           labelY,
           'center',
           methods[name].color,
-          10,
+          TYPE_SIZE.annotation,
         );
       }
       context.restore();
@@ -732,8 +762,8 @@ export function createTheoryRenderer(
       (left + right) / 2,
       bottom + (compact ? 72 : 64),
       'center',
-      theme.muted,
-      10,
+      theme.ink,
+      TYPE_SIZE.axis,
     );
     for (const name of methodNames) {
       context.beginPath();
@@ -796,26 +826,26 @@ export function createTheoryRenderer(
   }) {
     const rect = canvas.getBoundingClientRect();
     // CSS sets the responsive aspect ratio before JavaScript loads.
-    const canvasHeight = Math.round((1000 * rect.height) / rect.width);
+    const canvasHeight = Math.round((CANVAS_WIDTH * rect.height) / rect.width);
     const compact = canvasHeight >= 900;
     const pixelDensity = Math.min(pixelRatio, 2);
     const pixelWidth = Math.round(rect.width * pixelDensity);
     const pixelHeight = Math.round(
-      ((rect.width * canvasHeight) / 1000) * pixelDensity,
+      ((rect.width * canvasHeight) / CANVAS_WIDTH) * pixelDensity,
     );
     if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
       canvas.width = pixelWidth;
       canvas.height = pixelHeight;
     }
     context.setTransform(
-      pixelWidth / 1000,
+      pixelWidth / CANVAS_WIDTH,
       0,
       0,
       pixelHeight / canvasHeight,
       0,
       0,
     );
-    context.clearRect(0, 0, 1000, canvasHeight);
+    context.clearRect(0, 0, CANVAS_WIDTH, canvasHeight);
     context.lineCap = 'round';
     context.lineJoin = 'round';
     const originX = 500;
@@ -824,7 +854,7 @@ export function createTheoryRenderer(
     const annotationOpacity = getAnnotationOpacity(restart);
     const frame: FrameState = {
       compact,
-      pixelScale: rect.width / 1000,
+      pixelScale: rect.width / CANVAS_WIDTH,
       project: (position) => [
         originX + scale * position.x,
         originY - scale * position.y,
@@ -848,16 +878,16 @@ export function createTheoryRenderer(
       xAxisEnd[1] + 4,
       'left',
       theme.muted,
-      13,
+      TYPE_SIZE.axis,
     );
     drawLabel(
       frame,
       'y',
-      yAxisEnd[0],
-      yAxisEnd[1] - 12,
-      'center',
+      yAxisEnd[0] + 8 / frame.pixelScale,
+      yAxisEnd[1] + 4 / frame.pixelScale,
+      'left',
       theme.muted,
-      13,
+      TYPE_SIZE.axis,
     );
     for (const v of [-1, 1]) {
       const tickPosition = frame.project(point(v, 0));
@@ -865,10 +895,10 @@ export function createTheoryRenderer(
         frame,
         String(v),
         tickPosition[0],
-        tickPosition[1] + 20,
+        tickPosition[1] + 10 / frame.pixelScale,
         'center',
         theme.muted,
-        10,
+        TYPE_SIZE.tick,
       );
     }
     drawTrajectories(frame);
@@ -885,7 +915,7 @@ export function createTheoryRenderer(
       start[1] - 10,
       'left',
       theme.muted,
-      12,
+      TYPE_SIZE.annotation,
     );
     drawResidualPlot(frame);
   }

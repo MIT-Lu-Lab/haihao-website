@@ -80,6 +80,9 @@ for (const width of [345, 712]) {
       assert.ok(segments.every(Number.isFinite));
       lineDash = [...segments];
     };
+    context.measureText = (text) => ({
+      width: text.length * Number.parseFloat(context.font) * 0.5,
+    });
     let lastMarkerOpacity;
     let canvasWidth = width;
     const theme = {
@@ -88,6 +91,7 @@ for (const width of [345, 712]) {
       '--line': '#e5e3e0',
       '--surface': '#fff',
       '--sans': 'Arial, sans-serif',
+      '--serif': 'Georgia, serif',
       '--pdhg': '#377aa5',
       '--restarted': '#168675',
       '--halpern': '#750014',
@@ -124,7 +128,7 @@ for (const width of [345, 712]) {
       getContext: () => context,
       getBoundingClientRect: () => ({
         width: canvasWidth,
-        height: (canvasWidth * (canvasWidth < 600 ? 1020 : 820)) / 1000,
+        height: (canvasWidth * (canvasWidth < 600 ? 1060 : 840)) / 1000,
       }),
     };
     const root = {
@@ -158,7 +162,7 @@ for (const width of [345, 712]) {
     assert.ok(context.font.endsWith(theme['--sans']));
     assert.equal(
       canvas.height,
-      Math.round(width * (width < 600 ? 1.02 : 0.82)),
+      Math.round(width * (width < 600 ? 1.06 : 0.84)),
     );
     assert.equal(
       frames.size,
@@ -239,7 +243,7 @@ for (const width of [345, 712]) {
     assert.equal(canvas.width, canvasWidth);
     assert.equal(
       canvas.height,
-      Math.round(canvasWidth * (canvasWidth < 600 ? 1.02 : 0.82)),
+      Math.round(canvasWidth * (canvasWidth < 600 ? 1.06 : 0.84)),
     );
     assert.equal(
       frames.size,
