@@ -1,0 +1,167 @@
+---
+import { sitePath } from '../utils/paths';
+---
+
+<div
+  id="theory-visual"
+  class="theory-visual"
+  data-source={sitePath('pdhg-comparison.json')}
+>
+  <canvas
+    width="1000"
+    height="900"
+    role="img"
+    aria-describedby="comparison-description"
+    aria-label="Three methods on the bilinear saddle-point problem min x max y xy. State trajectories above and KKT residual below. Blue dots: PDHG. Green dashes: restarted averaged PDHG. Burgundy: restarted reflected Halpern PDHG. Small hollow circles mark restart landings; brief arrows indicate resets."
+  ></canvas>
+  <div class="legend">
+    <span class="blue">
+      <span class="swatch dots" aria-hidden="true"></span>PDHG
+    </span>
+    <span class="green">
+      <span class="swatch dash" aria-hidden="true"></span>Restarted averaged
+      PDHG
+    </span>
+    <span class="halpern">
+      <span class="swatch" aria-hidden="true"></span>Restarted reflected Halpern
+      PDHG
+    </span>
+  </div>
+  <div class="controls">
+    <button type="button" disabled>
+      Pause animation
+    </button>
+  </div>
+  <details class="description">
+    <summary>About this comparison</summary>
+    <p id="comparison-description">
+      All three methods start at (1, 1) on the saddle-point problem min x max y
+      xy, whose solution is (0, 0). The upper plot shows their paths; the lower
+      plot shows the Euclidean KKT residual on a logarithmic scale. In this
+      example, restarting every 25 inner updates reduces the residual faster
+      than plain PDHG. Reflected Halpern uses one extra operator evaluation at
+      each restart, so equal iteration counts do not represent equal
+      computational work. Curves between recorded iterates are interpolated for
+      display. This is a controlled illustration, not a runtime benchmark or an
+      adaptive solver run.
+    </p>
+  </details>
+  <p class="error" role="alert" hidden></p>
+</div>
+<script>
+  import { initializeTheoryFigure } from '../lib/research/theory-figure.mjs';
+  const root = document.querySelector<HTMLElement>('#theory-visual');
+  if (root) {
+    initializeTheoryFigure(root, window);
+  }
+</script>
+<style>
+  .theory-visual {
+    --pdhg: #377aa5;
+    --restarted: #168675;
+    --halpern: var(--red);
+    container-type: inline-size;
+    color: var(--ink);
+    font-family: var(--sans);
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1000 / 900;
+    height: auto;
+  }
+  .legend {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 9px 18px;
+    margin: 6px 0 8px;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .legend span {
+    white-space: nowrap;
+  }
+  .swatch {
+    display: inline-block;
+    width: 21px;
+    height: 2px;
+    vertical-align: middle;
+    margin-right: 5px;
+    background: currentColor;
+  }
+  .dash {
+    background: repeating-linear-gradient(
+      90deg,
+      currentColor 0 8px,
+      transparent 8px 16px
+    );
+  }
+  .dots {
+    height: 4px;
+    background: radial-gradient(circle, currentColor 1.3px, transparent 1.5px) 0
+      50%/8px 4px repeat-x;
+  }
+  .blue {
+    color: var(--pdhg);
+  }
+  .green {
+    color: var(--restarted);
+  }
+  .halpern {
+    color: var(--halpern);
+  }
+  .error {
+    font-size: 12px;
+    text-align: center;
+    color: var(--muted);
+  }
+  @container (max-width: 470px) {
+    .legend {
+      gap: 8px 14px;
+      font-size: 11px;
+    }
+    .swatch {
+      width: 16px;
+      margin-right: 3px;
+    }
+  }
+  .description {
+    font-size: 12px;
+    line-height: 1.5;
+    margin-top: 12px;
+  }
+  .description summary {
+    cursor: pointer;
+  }
+  .controls {
+    text-align: center;
+    min-height: 30px;
+  }
+  button {
+    font: inherit;
+    font-size: 12px;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 4px 10px;
+    color: inherit;
+    cursor: pointer;
+  }
+  button:focus-visible {
+    outline: 2px solid var(--halpern);
+    outline-offset: 3px;
+  }
+  [hidden] {
+    display: none !important;
+  }
+
+  @container (min-width: 600px) {
+    canvas {
+      aspect-ratio: 1000 / 820;
+    }
+  }
+  button:disabled {
+    visibility: hidden;
+  }
+</style>

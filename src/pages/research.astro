@@ -3,6 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import PageHeading from '../components/PageHeading.astro';
 import ExternalLink from '../components/ExternalLink.astro';
 import ResearchSection from '../components/ResearchSection.astro';
+import TheoryFigure from '../components/TheoryFigure.astro';
 import { sitePath } from '../utils/paths';
 ---
 <Layout title="Research">
@@ -46,9 +47,9 @@ import { sitePath } from '../utils/paths';
           <li>H. Lu (2022). <ExternalLink href="https://doi.org/10.1007/s10107-021-01669-4" mark={false}>An <em>O</em>(<em>s<sup>r</sup></em>)-Resolution ODE Framework for Understanding Discrete-Time Algorithms and Applications to the Linear Convergence of Minimax Problems</ExternalLink>. <em>Mathematical Programming</em>, 194, 1061–1112.</li>
         </ol>
       </div>
-      <figure slot="figure" class="research-figure">
-        <img src={sitePath('images/research/ode.svg')} alt="Gradient descent–ascent iterates spiraling outward from a saddle point, compared with a closed orbit predicted by a low-resolution ODE" width="320" height="240" loading="lazy" />
-        <figcaption>Schematic. On a min–max problem, the low-resolution ODE predicts a closed orbit; a higher-resolution ODE tracks the iterates as they spiral.</figcaption>
+      <figure slot="figure" class="research-figure theory-figure">
+        <TheoryFigure />
+        <figcaption>PDHG (blue dots) spirals toward the solution. Restarted averaged PDHG (green dashes) periodically restarts from the average of its recent iterates. Restarted reflected Halpern PDHG (burgundy) combines reflected steps with an anchor that is reset at each restart. Hollow circles mark restart locations, and the lower plot shows how the KKT residuals evolve.<span class="theory-sources">Based on <ExternalLink href="https://arxiv.org/abs/2105.12715" mark={false}>Applegate et al.</ExternalLink> and <ExternalLink href="https://arxiv.org/abs/2407.16144" mark={false}>Lu &amp; Yang</ExternalLink>.</span></figcaption>
       </figure>
     </ResearchSection>
     <ResearchSection id="online-decision-making" title="Online decision-making and advertising">
@@ -137,6 +138,8 @@ import { sitePath } from '../utils/paths';
   }
   .research-figure {
     margin: 0;
+    width: 100%;
+    min-width: 0;
     position: sticky;
     top: 30px;
   }
@@ -151,6 +154,11 @@ import { sitePath } from '../utils/paths';
     font-size: var(--text-meta);
     line-height: 1.5;
     color: var(--muted);
+  }
+  .theory-sources {
+    display: block;
+    margin-top: var(--space-xs);
+    font-size: var(--text-label);
   }
   .research-page h3 {
     margin-top: var(--space-xl);
@@ -173,6 +181,9 @@ import { sitePath } from '../utils/paths';
       position: static;
       max-width: 360px;
       margin-top: var(--space-xl);
+    }
+    .theory-figure {
+      max-width: none;
     }
   }
 </style>

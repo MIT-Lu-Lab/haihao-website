@@ -22,6 +22,29 @@ npm run preview
 
 The static build is generated in `dist/`. Hosting and a production domain have not been configured. The current paths assume deployment at the domain root.
 
+## Research figures
+
+Run `npm run research:generate` to regenerate the PDHG comparison. The command runs `scripts/pdhg-study.mjs` before `scripts/pdhg-comparison.mjs`, which reads the first script's output. Paths resolve relative to the scripts, and the generators create their output directories as needed.
+
+- `data/research/`: reproducible research artifacts (trajectory JSON and CSV files); these are not deployed.
+- `public/pdhg-comparison.json`: the comparison data fetched by the research page.
+- `src/components/TheoryFigure.astro`: canvas markup, text alternative, controls, and styles.
+- `src/lib/research/`: playback, drawing, and interpolation modules bundled through the component's Astro script.
+- `scripts/research-figures.mjs`: generator for the other research SVG illustrations.
+
+`npm test` includes the research interpolation and playback tests, plus an independent exact-arithmetic audit. The audit requires Python 3, available as `python` on Windows or `python3` elsewhere. `src/data/` holds site content; `data/research/` holds generated research artifacts.
+
+## Formatting
+
+Format only the files changed for a task; keep unrelated formatting out of functional changes. Pass explicit file paths to these commands:
+
+```sh
+npm run format -- src/components/TheoryFigure.astro src/lib/research/theory-figure.mjs
+npm run format:check -- src/components/TheoryFigure.astro src/lib/research/theory-figure.mjs
+```
+
+The repository has not undergone a full Prettier migration, so a repository-wide format check is not a CI requirement. Prettier uses `.prettierrc.json` and the Astro plugin.
+
 ## Adding a publication
 
 Paste the paper's BibTeX entry into `src/data/publications.bib`. Publishers,
@@ -43,21 +66,21 @@ formatting are all derived at build time.
 
 The entry type sets how the paper is presented:
 
-| Entry type | Venue field | Shown as |
-| --- | --- | --- |
-| `@article` | `journal` | the journal name |
+| Entry type       | Venue field | Shown as             |
+| ---------------- | ----------- | -------------------- |
+| `@article`       | `journal`   | the journal name     |
 | `@inproceedings` | `booktitle` | the proceedings name |
-| `@unpublished` | none | "Under review" |
+| `@unpublished`   | none        | "Under review"       |
 
 Links are built from the fields, so record identifiers rather than URLs:
 
-| Field | Becomes | Note |
-| --- | --- | --- |
-| `doi` | "Paper" | bare DOI, not a `doi.org` URL |
-| `url` | "Paper" | only for venues with no DOI, such as PMLR |
-| `eprint` + `archiveprefix = {arXiv}` | "arXiv" | bare id, e.g. `2409.14715` |
-| `code` | "Code" | repository URL |
-| `supplement`, `ssrn`, `conference`, `pdf` | their own labels | one-off extras |
+| Field                                     | Becomes          | Note                                      |
+| ----------------------------------------- | ---------------- | ----------------------------------------- |
+| `doi`                                     | "Paper"          | bare DOI, not a `doi.org` URL             |
+| `url`                                     | "Paper"          | only for venues with no DOI, such as PMLR |
+| `eprint` + `archiveprefix = {arXiv}`      | "arXiv"          | bare id, e.g. `2409.14715`                |
+| `code`                                    | "Code"           | repository URL                            |
+| `supplement`, `ssrn`, `conference`, `pdf` | their own labels | one-off extras                            |
 
 Titles appear exactly as written, so capitalise them the way they should read.
 Haihao's name is detected and emphasised automatically. Run `npm test` after
@@ -72,7 +95,7 @@ editing; it checks the file still parses and that the derived links are right.
 - `src/data/software.ts`: the repositories listed on the Software page, each with a name, a one-line description and a GitHub URL.
 - `src/pages/index.astro`: homepage biography, research summaries, selected honors.
 - `src/pages/value.astro`: placeholder for Haihao's text.
-- `src/pages/research.astro`, `people.astro`, `software.astro`, `teaching.astro`: secondary pages. Research reads as a single column; Software lays its repositories out in a two-column grid.
+- `src/pages/research.astro`, `people.astro`, `software.astro`, `teaching.astro`: secondary pages. Each research section pairs text with a figure on desktop and stacks them on mobile; Software lays its repositories out in a two-column grid.
 - `src/styles/global.css`: shared typography, colors and responsive layouts.
 - `docs/DESIGN-GUIDE.md`: the shared text roles, font sizes, spacing, and design references.
 - `public/images/haihao-lu.webp`: official MIT portrait, served locally.

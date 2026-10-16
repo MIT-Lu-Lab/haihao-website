@@ -13,17 +13,17 @@ These references inform the principles. The values below are this site's choices
 
 All sizes live as role-based CSS custom properties in `src/styles/global.css`. Values below assume the browser's default 16px root size; implementation uses rem so user font preferences remain effective.
 
-| Role | Desktop | Mobile | Usage |
-| --- | --- | --- | --- |
-| Display | 48px | 40px | Haihao's name on the homepage only |
-| Brand | 28px | 28px | Name in site navigation |
-| Page title | 36px | 32px | Research, People, Publications, etc. |
-| Section heading | 24px | 24px | Research interests, honors, research directions, publication years |
-| Subheading | 20px | 20px | Research summaries and people categories |
-| Body | 18px | 16px | Biography, research text, publication titles, people names |
-| Interface / supporting text | 16px | 16px | Navigation, authors, venues, contact information |
-| Metadata | 14px | 14px | Short captions and less prominent links |
-| Label | 12px | 12px | Short status badges and eyebrow labels only |
+| Role                        | Desktop | Mobile | Usage                                                              |
+| --------------------------- | ------- | ------ | ------------------------------------------------------------------ |
+| Display                     | 48px    | 40px   | Haihao's name on the homepage only                                 |
+| Brand                       | 28px    | 28px   | Name in site navigation                                            |
+| Page title                  | 36px    | 32px   | Research, People, Publications, etc.                               |
+| Section heading             | 24px    | 24px   | Research interests, honors, research directions, publication years |
+| Subheading                  | 20px    | 20px   | Research summaries and people categories                           |
+| Body                        | 18px    | 16px   | Biography, research text, publication titles, people names         |
+| Interface / supporting text | 16px    | 16px   | Navigation, authors, venues, contact information                   |
+| Metadata                    | 14px    | 14px   | Short captions and less prominent links                            |
+| Label                       | 12px    | 12px   | Short status badges and eyebrow labels only                        |
 
 - Use the system sans-serif family for content, headings, and navigation. Content headings use weight 600. Keep Georgia for the personal name/wordmark only.
 - Keep body line height at 1.7 and headings around 1.3. Do not enlarge headings to compensate for weak layout.
@@ -35,7 +35,7 @@ All sizes live as role-based CSS custom properties in `src/styles/global.css`. V
 
 - Keep the burgundy site header compact, at approximately 80px tall. The current navigation item has a white underline.
 - The overall container is capped at 1248px including gutters. Use the narrower reading measure for prose.
-- Research uses the full content grid: an introductory paragraph spans the width, followed by two equal research-direction columns. At 760px and below, the directions stack vertically.
+- Research uses the full content grid: an introductory paragraph spans the width, followed by sections with text and figure columns in a 1.05:1 ratio. The column gap scales from 28px to 56px. At 760px and below, each section stacks vertically. This shared ratio applies to the animated comparison, SVG illustrations, and video; inspect all four figures when changing it.
 - Use the spacing scale: 8, 12, 16, 24, 32, 48, and 64px. Section headings sit closer to their own text than to the previous section.
 - Use larger gaps between sections and smaller gaps within related information. Avoid oversized empty hero areas on content pages.
 - On narrower screens, stack columns and wrap navigation rather than shrinking all text to fit.

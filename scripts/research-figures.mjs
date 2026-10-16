@@ -4,7 +4,6 @@ const W = 320;
 const H = 240;
 const RED = '#750014';
 const GRAY = '#9a9ca1';
-const INK = '#26272b';
 const MUTED = '#595b61';
 const FONT = `-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif`;
 
@@ -21,30 +20,6 @@ function random(seed) {
     seed = (seed * 1664525 + 1013904223) % 4294967296;
     return seed / 4294967296;
   };
-}
-
-function ode() {
-  const center = [160, 118];
-  const r0 = 22;
-  const step = 0.3;
-  const growth = Math.sqrt(1 + step * step);
-  const angle = Math.atan(step);
-  const n = 30;
-  const iterates = Array.from({ length: n }, (_, k) => [center[0] + r0 * growth ** k * Math.cos(k * angle), center[1] - r0 * growth ** k * Math.sin(k * angle)]);
-  const flow = Array.from({ length: (n - 1) * 8 + 1 }, (_, j) => {
-    const t = j / 8;
-    return [center[0] + r0 * growth ** t * Math.cos(t * angle), center[1] - r0 * growth ** t * Math.sin(t * angle)];
-  });
-  return svg('Gradient descent-ascent iterates spiral outward while the classical ODE predicts a closed orbit',
-    `<circle cx="${center[0]}" cy="${center[1]}" r="${r0}" fill="none" stroke="${GRAY}" stroke-width="1.5" stroke-dasharray="4 3"/>` +
-    `<path d="${path(flow)}" fill="none" stroke="${RED}" stroke-width="1.2" opacity=".55"/>` + dots(iterates, RED, 2.6) +
-    `<circle cx="${center[0]}" cy="${center[1]}" r="3.5" fill="${INK}"/>` +
-    `<path d="M${center[0] + 3} ${center[1] + 3} L262 206" stroke="${GRAY}" stroke-width="1"/>` +
-    text(300, 220, 'saddle point', { fill: INK, anchor: 'end', size: 11 }) +
-    text(20, 22, 'discrete iterates', { fill: RED, weight: 600 }) +
-    text(20, 37, 'and high-resolution ODE', { fill: RED, size: 11 }) +
-    `<path d="M${center[0] - 16} ${center[1] + 15} L70 206" stroke="${GRAY}" stroke-width="1"/>` +
-    text(20, 220, 'low-resolution ODE', { fill: MUTED, size: 11 }));
 }
 
 function dual() {
@@ -95,6 +70,6 @@ function tax() {
 
 const out = new URL('../public/images/research/', import.meta.url);
 mkdirSync(out, { recursive: true });
-for (const [name, make] of [['ode', ode], ['dual-price', dual], ['property-tax', tax]]) {
+for (const [name, make] of [['dual-price', dual], ['property-tax', tax]]) {
   writeFileSync(new URL(`${name}.svg`, out), make());
 }
