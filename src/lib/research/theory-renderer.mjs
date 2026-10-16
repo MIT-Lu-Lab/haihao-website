@@ -38,10 +38,10 @@ export const TIMING = {
   restartLabelFade: 300,
 };
 const RESIDUAL_PLOT = {
-  left: 175,
-  right: 855,
+  left: 95,
+  right: 940,
   desktop: { top: 610, bottom: 752 },
-  compact: { top: 650, bottom: 810 },
+  compact: { top: 760, bottom: 920 },
   maxLog: 0.2,
   logRange: 6.5,
 };
@@ -837,7 +837,7 @@ export function createTheoryRenderer(canvas, rows, styles) {
     const rect = canvas.getBoundingClientRect();
     // CSS sets the responsive aspect ratio before JavaScript loads.
     const canvasHeight = Math.round((1000 * rect.height) / rect.width);
-    const compact = canvasHeight === 900;
+    const compact = canvasHeight >= 900;
     const pixelDensity = Math.min(pixelRatio, 2);
     const pixelWidth = Math.round(rect.width * pixelDensity);
     const pixelHeight = Math.round(
@@ -859,8 +859,8 @@ export function createTheoryRenderer(canvas, rows, styles) {
     context.lineCap = 'round';
     context.lineJoin = 'round';
     const originX = 500;
-    const originY = compact ? 300 : 280;
-    const scale = compact ? 220 : 200;
+    const originY = compact ? 365 : 280;
+    const scale = compact ? 270 : 200;
     const annotationOpacity = getAnnotationOpacity(restart);
     /** @type {FrameState} */
     const frame = {

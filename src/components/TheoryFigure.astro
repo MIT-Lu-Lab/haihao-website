@@ -10,7 +10,7 @@ const { descriptionId = 'comparison-description' } = Astro.props;
 <div class="theory-visual" data-source={sitePath('pdhg-comparison.json')}>
   <canvas
     width="1000"
-    height="900"
+    height="1020"
     role="img"
     aria-describedby={descriptionId}
     aria-label="Three methods on the bilinear saddle-point problem min x max y xy. State trajectories above and KKT residual below. Blue dots: PDHG. Green dashes: restarted averaged PDHG. Burgundy: restarted reflected Halpern PDHG. Small hollow markers mark restart landings; brief arrows indicate resets."
@@ -48,7 +48,7 @@ const { descriptionId = 'comparison-description' } = Astro.props;
   canvas {
     display: block;
     width: 100%;
-    aspect-ratio: 1000 / 900;
+    aspect-ratio: 1000 / 1020;
     height: auto;
   }
   .legend {
