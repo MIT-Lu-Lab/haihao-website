@@ -3,7 +3,9 @@ import { Image } from 'astro:assets';
 import residentialPhoto from '../assets/research/chicago-residences.jpg';
 import results from '../../data/research/property-profiles.json';
 import {
-  getPropertyArrow,
+  getPropertyPaths,
+  getPropertyFocus,
+  createPropertyMetrics,
   type PropertyData,
 } from '../lib/research/property-animation';
 
@@ -31,19 +33,6 @@ const px = (price: number) =>
 const py = (ratio: number) =>
   plot.bottom -
   ((ratio - plot.ymin) / (plot.ymax - plot.ymin)) * (plot.bottom - plot.top);
-const path = (points: { salePrice: number; ratio: number }[]) =>
-  points
-    .map(
-      (point, i) =>
-        `${i ? 'L' : 'M'}${px(point.salePrice).toFixed(3)},` +
-        py(point.ratio).toFixed(3),
-    )
-    .join(' ');
-const difference = (profile: typeof baseline) =>
-  path(baseline.points) +
-  ' ' +
-  path([...profile.points].reverse()).replace(/^M/, 'L') +
-  ' Z';
 const groupIndex = baseline.points.findIndex(
   (point) => Math.abs(point.salePrice - 100000) < 1,
 );
@@ -62,21 +51,22 @@ const data: PropertyData = {
   metrics: profiles.map(({ prd, prb, priceR2 }) => ({ prd, prb, priceR2 })),
   penalties: profiles.map(({ nominalRho }) => nominalRho),
 };
-const before = baseline.points[groupIndex];
-const groupX = px(before.salePrice);
-const initialArrow = getPropertyArrow(
-  curvePoints[0][groupIndex][0],
-  curvePoints[0][groupIndex][1],
-  curvePoints[1][groupIndex][1],
-);
+const baselinePaths = getPropertyPaths(curvePoints, [1, 0, 0]);
+const initialPaths = getPropertyPaths(curvePoints, [0, 1, 0]);
+const baselineFocus = getPropertyFocus(curvePoints, data.focus, [1, 0, 0]);
+const initialFocus = getPropertyFocus(curvePoints, data.focus, [0, 1, 0]);
+const sampleMetrics = createPropertyMetrics(data.metrics);
+const baselineMetrics = sampleMetrics([1, 0, 0]);
+const initialMetrics = sampleMetrics([0, 1, 0]);
+const fairnessMetrics = [
+  { key: 'prd', label: 'PRD', title: 'Price-related differential', neutral: 1 },
+  { key: 'prb', label: 'PRB', title: 'Price-related bias', neutral: 0 },
+] as const;
 const penaltyDescription =
   `Burgundy cycles through nominal ρ values of ${profiles[1].nominalRho}` +
   ` and ${profiles[2].nominalRho}. The nominal ρ = ` +
   `${profiles[1].nominalRho} setting was evaluated at ρ = ` +
   `${profiles[1].rho}.`;
-const percent = (ratio: number) => `${Math.round(ratio * 100)}%`;
-const signed = (value: number) =>
-  (value > 0 ? '+' : '') + value.toFixed(3).replace('-', '−');
 const ticks = [
   { value: 100000, label: '$100k' },
   { value: 300000, label: '$300k' },
@@ -169,16 +159,16 @@ const ticks = [
     <text class="reference-label" x="584" y={py(1) - 10} text-anchor="end">
       100% = sale price
     </text>
-    <path class="profile baseline" d={path(baseline.points)} />
+    <path class="profile baseline" d={baselinePaths.curve} />
     <path
       class="difference"
       data-property-live-difference
-      d={difference(profiles[1])}
+      d={initialPaths.difference}
     />
     <path
       class="profile corrected"
       data-property-live-curve
-      d={path(profiles[1].points)}
+      d={initialPaths.curve}
     />
     <g class="curve-key" transform="translate(416 314)">
       <path class="profile baseline" d="M0 -4H22" />
@@ -198,34 +188,39 @@ const ticks = [
         Lower-priced homes
       </text>
       <text class="focus-before" x="230" y="381">
-        {percent(before.ratio)}
+        {baselineFocus.value}
       </text>
       <path
         class="change-arrow focus-comparison-arrow"
         d="M314 370H336m-5-4 5 4-5 4"
       />
       <text class="focus-after" x="354" y="381" data-property-focus-value>
-        {percent(profiles[1].points[groupIndex].ratio)}
+        {initialFocus.value}
       </text>
       <text class="focus-detail" x="230" y="409">
         Near $100k · median ratio
       </text>
       <path
         class="leader"
-        d={`M216 371H169L${groupX + 7} ${py(before.ratio)}`}
+        d={`M216 371H169L${baselineFocus.x + 7} ${baselineFocus.y}`}
       />
-      <circle class="baseline-dot" cx={groupX} cy={py(before.ratio)} r="3.5" />
+      <circle
+        class="baseline-dot"
+        cx={initialFocus.x}
+        cy={baselineFocus.y}
+        r="3.5"
+      />
       <path
         class="change-arrow"
         data-property-focus-arrow
-        d={initialArrow.arrow}
-        opacity={initialArrow.arrowOpacity}
+        d={initialFocus.arrow}
+        opacity={initialFocus.arrowOpacity}
       />
       <circle
         class="corrected-dot"
         data-property-focus-point
-        cx={groupX}
-        cy={py(profiles[1].points[groupIndex].ratio)}
+        cx={initialFocus.x}
+        cy={initialFocus.y}
         r="3.5"
       />
     </g>
@@ -242,76 +237,51 @@ const ticks = [
     <div class="fairness-results">
       <p class="result-heading">Price-related regressivity</p>
       <div class="fairness-pair">
-        <div class="result">
-          <p class="result-label">
-            <abbr title="Price-related differential">PRD</abbr>
-            <span>neutral: 1</span>
-          </p>
-          <p class="result-values">
-            <span class="baseline-value">{baseline.prd.toFixed(3)}</span>
-            <svg class="result-arrow" viewBox="0 0 14 10" aria-hidden="true">
-              <path d="M1 5H12m-3-3 3 3-3 3" />
-            </svg>
-            <strong data-property-metric="prd">
-              {profiles[1].prd.toFixed(3)}
-            </strong>
-            <span class="baseline-caption">No penalty</span>
-            <span class="current-caption">
-              Penalty
-              <svg
-                class="metric-trend"
-                data-property-trend="prd"
-                data-direction="flat"
-                viewBox="0 0 12 12"
-                aria-hidden="true"
-              >
-                <path class="trend-up" d="M6 1L11 6H8V11H4V6H1Z" />
-                <path class="trend-down" d="M6 11L1 6H4V1H8V6H11Z" />
+        {fairnessMetrics.map((metric) => (
+          <div class="result">
+            <p class="result-label">
+              <abbr title={metric.title}>{metric.label}</abbr>
+              <span>neutral: {metric.neutral}</span>
+            </p>
+            <p class="result-values">
+              <span class="baseline-value">
+                {baselineMetrics[metric.key].text}
+              </span>
+              <svg class="result-arrow" viewBox="0 0 14 10" aria-hidden="true">
+                <path d="M1 5H12m-3-3 3 3-3 3" />
               </svg>
-            </span>
-          </p>
-        </div>
-        <div class="result">
-          <p class="result-label">
-            <abbr title="Price-related bias">PRB</abbr>
-            <span>neutral: 0</span>
-          </p>
-          <p class="result-values">
-            <span class="baseline-value">{signed(baseline.prb)}</span>
-            <svg class="result-arrow" viewBox="0 0 14 10" aria-hidden="true">
-              <path d="M1 5H12m-3-3 3 3-3 3" />
-            </svg>
-            <strong data-property-metric="prb">
-              {signed(profiles[1].prb)}
-            </strong>
-            <span class="baseline-caption">No penalty</span>
-            <span class="current-caption">
-              Penalty
-              <svg
-                class="metric-trend"
-                data-property-trend="prb"
-                data-direction="flat"
-                viewBox="0 0 12 12"
-                aria-hidden="true"
-              >
-                <path class="trend-up" d="M6 1L11 6H8V11H4V6H1Z" />
-                <path class="trend-down" d="M6 11L1 6H4V1H8V6H11Z" />
-              </svg>
-            </span>
-          </p>
-        </div>
+              <strong data-property-metric={metric.key}>
+                {initialMetrics[metric.key].text}
+              </strong>
+              <span class="baseline-caption">No penalty</span>
+              <span class="current-caption">
+                Penalty
+                <svg
+                  class="metric-trend"
+                  data-property-trend={metric.key}
+                  data-direction={initialMetrics[metric.key].direction}
+                  viewBox="0 0 12 12"
+                  aria-hidden="true"
+                >
+                  <path class="trend-up" d="M6 1L11 6H8V11H4V6H1Z" />
+                  <path class="trend-down" d="M6 11L1 6H4V1H8V6H11Z" />
+                </svg>
+              </span>
+            </p>
+          </div>
+        ))}
       </div>
     </div>
     <div class="accuracy-result">
       <p class="result-heading">Predictive accuracy</p>
       <p class="result-label">Price-scale R²</p>
       <p class="result-values">
-        <span class="baseline-value">{baseline.priceR2.toFixed(3)}</span>
+        <span class="baseline-value">{baselineMetrics.priceR2.text}</span>
         <svg class="result-arrow" viewBox="0 0 14 10" aria-hidden="true">
           <path d="M1 5H12m-3-3 3 3-3 3" />
         </svg>
         <strong data-property-metric="priceR2">
-          {profiles[1].priceR2.toFixed(3)}
+          {initialMetrics.priceR2.text}
         </strong>
         <span class="baseline-caption">No penalty</span>
         <span class="current-caption">
@@ -319,7 +289,7 @@ const ticks = [
           <svg
             class="metric-trend"
             data-property-trend="priceR2"
-            data-direction="flat"
+            data-direction={initialMetrics.priceR2.direction}
             viewBox="0 0 12 12"
             aria-hidden="true"
           >

@@ -9,6 +9,7 @@ export const RULER = {
   labelMinimum: 450,
   labelMaximum: 566,
 } as const;
+export const PRICE_MARKER = { top: 94, bottom: 123 } as const;
 export const DIAL = { startAngle: 180, sweepAngle: 180, maximum: 1 } as const;
 export const REELS = { rowHeight: 36, baseline: 381 } as const;
 

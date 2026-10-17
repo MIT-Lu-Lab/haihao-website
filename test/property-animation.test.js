@@ -6,7 +6,7 @@ import {
   getPropertyPaths,
   getPropertyFocus,
   getPropertyArrow,
-  getPropertyMetrics,
+  createPropertyMetrics,
   initializePropertyFigure,
   PROPERTY_CYCLE_MS,
 } from '../src/lib/research/property-animation.ts';
@@ -33,6 +33,7 @@ const metrics = profiles.map(({ prd, prb, priceR2 }) => ({
   prb,
   priceR2,
 }));
+const sampleMetrics = createPropertyMetrics(metrics);
 const parsePath = (value) =>
   value.replace(/[MLZ]/g, ' ').trim().split(/\s+/).map(Number);
 
@@ -171,13 +172,17 @@ test('metrics preserve endpoints and follow the transition weights', () => {
     [17600, 0],
   ]) {
     assert.deepEqual(
-      getPropertyMetrics(metrics, getPropertyPhase(time).weights),
+      Object.fromEntries(
+        Object.entries(sampleMetrics(getPropertyPhase(time).weights)).map(
+          ([key, metric]) => [key, metric.text],
+        ),
+      ),
       endpoints[index],
     );
   }
   for (let time = 0; time <= PROPERTY_CYCLE_MS; time += 37) {
     const { weights } = getPropertyPhase(time);
-    const display = getPropertyMetrics(metrics, weights);
+    const display = sampleMetrics(weights);
     for (const key of metricKeys) {
       const expected = metrics.reduce(
         (sum, metric, index) => sum + metric[key] * weights[index],
@@ -187,9 +192,9 @@ test('metrics preserve endpoints and follow the transition weights', () => {
         key === 'prb'
           ? `${expected < 0 ? '−' : ''}${Math.abs(expected).toFixed(3)}`
           : expected.toFixed(3);
-      assert.equal(display[key], formatted);
+      assert.equal(display[key].text, formatted);
     }
-    assert.match(display.prb, /^−?0\.\d{3}$/);
+    assert.match(display.prb.text, /^−?0\.\d{3}$/);
   }
 });
 
@@ -375,14 +380,14 @@ test('SVG paths, labels and metrics stay synchronized across loops', () => {
     assert.deepEqual(focusValue.attributes, {});
     assert.deepEqual(focusValue.style, {});
     assert.equal(focusPoint.attributes.opacity, undefined);
-    const currentMetrics = getPropertyMetrics(metrics, phase.weights);
+    const currentMetrics = sampleMetrics(phase.weights);
     for (const key of metricKeys) {
       const element = metricElements[key];
-      assert.equal(element.textContent, currentMetrics[key]);
+      assert.equal(element.textContent, currentMetrics[key].text);
       assert.equal(
         element.writes,
         previousMetrics[key].writes +
-          Number(previousMetrics[key].text !== currentMetrics[key]),
+          Number(previousMetrics[key].text !== currentMetrics[key].text),
       );
       assert.deepEqual(element.attributes, {});
       assert.deepEqual(element.style, {});

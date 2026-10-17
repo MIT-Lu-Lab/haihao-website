@@ -126,25 +126,35 @@ export function getPropertyFocus(
   };
 }
 
-/** Intermediate values show transitions, not additional fitted results. */
-export function getPropertyMetrics(
-  metrics: PropertyMetrics,
-  weights: StateValues,
-) {
-  return Object.fromEntries(
-    METRIC_KEYS.map((key) => {
-      const value = metrics.reduce(
-        (sum, metric, state) => sum + metric[key] * weights[state],
-        0,
-      );
-      return [
-        key,
-        key === 'prb'
-          ? `${value < 0 ? '−' : ''}${Math.abs(value).toFixed(3)}`
-          : value.toFixed(3),
-      ];
-    }),
-  ) as Record<MetricKey, string>;
+interface MetricDisplay {
+  text: string;
+  direction: 'up' | 'down' | 'flat';
+}
+
+/** Prepare fixed baselines once; sample text and trends at display precision. */
+export function createPropertyMetrics(metrics: PropertyMetrics) {
+  const baselines = METRIC_KEYS.map((key) =>
+    Number(metrics[0][key].toFixed(3)),
+  );
+  return (weights: StateValues): Record<MetricKey, MetricDisplay> =>
+    Object.fromEntries(
+      METRIC_KEYS.map((key, index) => {
+        const value = metrics.reduce(
+          (sum, metric, state) => sum + metric[key] * weights[state],
+          0,
+        );
+        const rounded = Number(value.toFixed(3));
+        const baseline = baselines[index];
+        return [
+          key,
+          {
+            text: value.toFixed(3).replace('-', '−'),
+            direction:
+              rounded > baseline ? 'up' : rounded < baseline ? 'down' : 'flat',
+          },
+        ];
+      }),
+    ) as Record<MetricKey, MetricDisplay>;
 }
 
 /** Initialize one figure from the data serialized by PropertyFigure. */
@@ -154,6 +164,7 @@ export function initializePropertyFigure(
   browser: PlaybackBrowser,
 ) {
   const { curves, focus, metrics, penalties } = data;
+  const sampleMetrics = createPropertyMetrics(metrics);
 
   function requireElement(selector: string): Element {
     const element = root.querySelector(selector);
@@ -193,18 +204,14 @@ export function initializePropertyFigure(
     focusPoint.setAttribute('cy', String(currentFocus.y));
     focusArrow.setAttribute('d', currentFocus.arrow);
     focusArrow.setAttribute('opacity', String(currentFocus.arrowOpacity));
-    const currentMetrics = getPropertyMetrics(metrics, phase.weights);
+    const currentMetrics = sampleMetrics(phase.weights);
     for (const { element, key, trend } of metricElements) {
-      // Compare displayed precision with the unchanged no-penalty baseline.
-      const current = Number(currentMetrics[key].replace('−', '-'));
-      const baseline = Number(metrics[0][key].toFixed(3));
-      const direction =
-        current > baseline ? 'up' : current < baseline ? 'down' : 'flat';
+      const { text, direction } = currentMetrics[key];
       if (trend.getAttribute('data-direction') !== direction) {
         trend.setAttribute('data-direction', direction);
       }
-      if (element.textContent !== currentMetrics[key]) {
-        element.textContent = currentMetrics[key];
+      if (element.textContent !== text) {
+        element.textContent = text;
       }
     }
   });

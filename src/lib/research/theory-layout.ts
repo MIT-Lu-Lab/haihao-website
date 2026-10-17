@@ -1,5 +1,6 @@
 /** Shared canvas coordinates for the HTML panel and its plotted contents. */
 export const CANVAS_WIDTH = 1000;
+export const CANVAS_HEIGHT = { compact: 1140, desktop: 840 };
 export const RESIDUAL_PLOT = {
   left: 95,
   right: 940,

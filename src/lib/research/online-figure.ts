@@ -5,6 +5,7 @@ import type simulation from '../../../data/research/online-allocation.json';
 import {
   DISPLAY_START,
   RULER,
+  PRICE_MARKER,
   DIAL,
   REELS,
   onlineChart,
@@ -299,9 +300,17 @@ export function initializeOnlineFigure(
     set('price-marker', 'x1', priceX);
     set('price-marker', 'x2', priceX);
     // Reveal the fixed-price marker downward before the outcome appears.
-    set('price-marker', 'y1', 94);
-    set('price-marker', 'y2', mix(94, 123, market));
-    set('price-marker', 'opacity', Math.min(1, market * REVEAL_OPACITY_RATE) * roundOpacity);
+    set('price-marker', 'y1', PRICE_MARKER.top);
+    set(
+      'price-marker',
+      'y2',
+      mix(PRICE_MARKER.top, PRICE_MARKER.bottom, market),
+    );
+    set(
+      'price-marker',
+      'opacity',
+      Math.min(1, market * REVEAL_OPACITY_RATE) * roundOpacity,
+    );
     element('price-label').textContent = `Price ${round.price.toFixed(2)}`;
     set('price-tag', 'transform', 'translate(' + labelX(priceX) + ' 0)');
     set('price-tag', 'opacity', market * roundOpacity);

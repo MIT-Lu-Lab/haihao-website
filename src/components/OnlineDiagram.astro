@@ -3,6 +3,7 @@ import data from '../../data/research/online-allocation.json';
 import {
   DISPLAY_START,
   RULER,
+  PRICE_MARKER,
   REELS,
   onlineChart,
 } from '../lib/research/online-layout';
@@ -198,8 +199,8 @@ const finalState = finalRound.after;
           data-part="auction-bid-label"
         />
         <line
-          y1="94"
-          y2="123"
+          y1={PRICE_MARKER.top}
+          y2={PRICE_MARKER.bottom}
           stroke="var(--red)"
           stroke-width="3"
           data-part="price-marker"
@@ -408,7 +409,7 @@ const finalState = finalRound.after;
         <text
           transform={`translate(16 ${plot.bottom - plot.height / 2}) rotate(-90)`}
           text-anchor="middle"
-          class="small"
+          class="small utility-axis-title"
         >
           Cumulative net utility
         </text>
@@ -493,6 +494,7 @@ const finalState = finalRound.after;
   }
   svg {
     width: 100%;
+    aspect-ratio: 640 / 420;
     display: block;
     font-family: var(--sans);
     overflow: visible;
@@ -649,6 +651,7 @@ const finalState = finalRound.after;
   @container (max-width: 420px) {
     svg {
       width: 95%;
+      aspect-ratio: 384 / 778;
       margin-inline: auto;
     }
     .formula,
@@ -683,6 +686,9 @@ const finalState = finalRound.after;
     }
     .utility-chart {
       transform: translate(-18px, 329px) scale(1.2, 1.1);
+    }
+    .utility-axis-title {
+      translate: 12px 0;
     }
   }
 </style>

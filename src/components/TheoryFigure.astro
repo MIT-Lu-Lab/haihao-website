@@ -1,6 +1,10 @@
 ---
 import { sitePath } from '../utils/paths';
-import { CANVAS_WIDTH, RESIDUAL_PLOT } from '../lib/research/theory-layout';
+import {
+  CANVAS_WIDTH,
+  CANVAS_HEIGHT,
+  RESIDUAL_PLOT,
+} from '../lib/research/theory-layout';
 interface Props {
   descriptionId?: string;
 }
@@ -12,6 +16,8 @@ const { descriptionId = 'comparison-description' } = Astro.props;
   class="theory-visual"
   data-source={sitePath('pdhg-comparison.json')}
   style={{
+    '--canvas-compact': `${CANVAS_WIDTH} / ${CANVAS_HEIGHT.compact}`,
+    '--canvas-desktop': `${CANVAS_WIDTH} / ${CANVAS_HEIGHT.desktop}`,
     '--plot-left': `${(100 * RESIDUAL_PLOT.left) / CANVAS_WIDTH}%`,
     '--plot-right': `${100 * (1 - RESIDUAL_PLOT.right / CANVAS_WIDTH)}%`,
     '--panel-compact': `${(100 * RESIDUAL_PLOT.compact.panelTop) / CANVAS_WIDTH}cqw`,
@@ -27,7 +33,7 @@ const { descriptionId = 'comparison-description' } = Astro.props;
     <div class="convergence-field" aria-hidden="true"></div>
     <canvas
       width={CANVAS_WIDTH}
-      height="1060"
+      height={CANVAS_HEIGHT.compact}
       role="img"
       aria-describedby={descriptionId}
       aria-label="State trajectories and KKT residuals for three methods solving min x max y xy."
@@ -140,7 +146,7 @@ const { descriptionId = 'comparison-description' } = Astro.props;
     position: relative;
     display: block;
     width: 100%;
-    aspect-ratio: 1000 / 1140;
+    aspect-ratio: var(--canvas-compact);
     height: auto;
   }
   .legend {
@@ -241,7 +247,7 @@ const { descriptionId = 'comparison-description' } = Astro.props;
       top: var(--panel-desktop);
     }
     canvas {
-      aspect-ratio: 1000 / 840;
+      aspect-ratio: var(--canvas-desktop);
     }
   }
 </style>
