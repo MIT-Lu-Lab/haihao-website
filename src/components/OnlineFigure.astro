@@ -1,6 +1,7 @@
 ---
-import { sitePath } from '../utils/paths';
+import { Image } from 'astro:assets';
 import OnlineDiagram from './OnlineDiagram.astro';
+import commercePhoto from '../assets/research/online-commerce.webp';
 interface Props {
   id?: string;
 }
@@ -9,11 +10,13 @@ const { id = 'online-comparison' } = Astro.props;
 
 <div class="online-art" data-online-art>
   <div class="commerce-photo">
-    <img
-      src={sitePath('images/research/online-commerce.webp')}
+    <Image
+      src={commercePhoto}
+      widths={[640, 1120]}
+      sizes="(max-width: 760px) 100vw, 560px"
+      format="webp"
+      quality={80}
       alt="Online shopping on a laptop"
-      width="1120"
-      height="747"
       loading="lazy"
       decoding="async"
     />
@@ -36,7 +39,7 @@ const { id = 'online-comparison' } = Astro.props;
     position: relative;
     overflow: hidden;
   }
-  .commerce-photo img {
+  .commerce-photo :global(img) {
     width: 100%;
     height: 100%;
     object-fit: cover;

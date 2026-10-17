@@ -1,7 +1,9 @@
 ---
-import { sitePath } from '../utils/paths';
+import { Image } from 'astro:assets';
 import GpuMatrixAnimation from './GpuMatrixAnimation.astro';
 import matrix from '../../data/research/rail4284-figure.json';
+import railwayPhoto from '../assets/research/railway-oakland.webp';
+import gpuPlatform from '../assets/research/gpu-platform.webp';
 
 interface Props {
   id?: string;
@@ -18,11 +20,14 @@ const nonzeros = (matrix.nonzeros / 1_000_000).toFixed(2);
 <div class="gpu-container">
   <div class="gpu-composition">
     <div class="rail-scene">
-      <img
-        src={sitePath('images/research/railway-oakland.webp')}
-        width="1280"
-        height="823"
+      <Image
+        src={railwayPhoto}
+        widths={[640, 1280]}
+        sizes="(max-width: 760px) 100vw, 560px"
+        format="webp"
+        quality={80}
         alt="Aerial view of railway tracks and yards in West Oakland."
+        loading="eager"
         decoding="async"
       />
     </div>
@@ -50,10 +55,12 @@ const nonzeros = (matrix.nonzeros / 1_000_000).toFixed(2);
       </div>
     </div>
     <div class="gpu-platform">
-      <img
-        src={sitePath('images/research/gpu-platform.webp')}
-        width="800"
-        height="533"
+      <Image
+        src={gpuPlatform}
+        widths={[400, 800]}
+        sizes="(max-width: 760px) 56vw, 315px"
+        format="webp"
+        quality={80}
         alt="Illustration of a multi-GPU computing platform."
         loading="lazy"
         decoding="async"
@@ -174,7 +181,7 @@ const nonzeros = (matrix.nonzeros / 1_000_000).toFixed(2);
     height: 58.5%;
     overflow: hidden;
   }
-  .rail-scene img {
+  .rail-scene :global(img) {
     display: block;
     width: 100%;
     height: 100%;
@@ -288,7 +295,7 @@ const nonzeros = (matrix.nonzeros / 1_000_000).toFixed(2);
     width: 56%;
     text-align: right;
   }
-  .gpu-platform img {
+  .gpu-platform :global(img) {
     display: block;
     width: 100%;
     height: auto;

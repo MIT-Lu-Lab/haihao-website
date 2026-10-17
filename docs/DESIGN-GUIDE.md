@@ -35,7 +35,7 @@ All sizes live as role-based CSS custom properties in `src/styles/global.css`. V
 
 - Keep the burgundy site header compact, at approximately 80px tall. The current navigation item has a white underline.
 - The overall container is capped at 1248px including gutters. Use the narrower reading measure for prose.
-- Research uses the full content grid: an introductory paragraph spans the width, followed by sections with text and figure columns in a 1.05:1 ratio. The column gap scales from 28px to 56px. At 760px and below, each section stacks vertically. This shared ratio applies to the animated comparison, SVG illustrations, and video; inspect all four figures when changing it.
+- Research uses text and figure columns in a 1.05:1 ratio, with a gap from 28px to 56px. Sections stack at widths of 760px or less. On wider screens, figures are sticky when the viewport is at least 720px tall. Check all four figures when changing this layout.
 - Use the spacing scale: 8, 12, 16, 24, 32, 48, and 64px. Section headings sit closer to their own text than to the previous section.
 - Use larger gaps between sections and smaller gaps within related information. Avoid oversized empty hero areas on content pages.
 - On narrower screens, stack columns and wrap navigation rather than shrinking all text to fit.
@@ -46,6 +46,16 @@ All sizes live as role-based CSS custom properties in `src/styles/global.css`. V
 - Main text is `#26272b`; secondary text is `#595b61`. Small labels should remain legible.
 - Use thin rules to separate content. Avoid extra cards, category numbers, or repeated subtitles when headings already explain the structure.
 - Do not repeat “Haihao Lu · MIT Sloan” above each page title.
+
+## Research figures
+
+Use these conventions when editing or adding Research figures.
+
+- Color: use `--red` for the primary series, `--chart-baseline` for the comparison gray, and `--chart-emphasis` for the dark neutral series. Use `--muted` and `--ink` for labels. Define additional accents on the component root.
+- Type: check SVG text at its rendered size on narrow screens. Use shared text tokens for HTML labels.
+- Motion: use `src/lib/research/playback.ts` for autoplay, visibility handling, and a static state under `prefers-reduced-motion`.
+- Text alternatives: give SVG figures a short `<title>` and a `<desc>` explaining the data and comparison. Connect canvas figures to a descriptive caption with `aria-describedby`. Cite sources and photo licenses.
+- Structure: keep markup in `src/components`, animation logic in `src/lib/research`, data in `data/research` or `public`, and tests in `test`. Share coordinates between markup and scripts. Store research photos in `src/assets/research` and render them through `astro:assets`. Record sources in `data/research/image-sources.json`.
 
 ## Review checklist
 

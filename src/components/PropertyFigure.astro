@@ -100,15 +100,15 @@ const ticks = [
   >
     <title id={`${id}-title`}>Fairer property valuation</title>
     <desc id={`${id}-description`}>
-      Held-out Surrogate results from Acevedo, Lu, Wagner and Sparer's
-      unpublished manuscript. Gray shows the same model implementation without a
-      penalty. {penaltyDescription} All three curves preserve the original
-      median valuation-to-sale ratios in 30 equal-count price groups. Near a
-      median sale price of $100,000, the ratios are 129.7, 117.9 and 96.5
-      percent. Strong correction moves PRD closer to one but reverses the sign
-      of PRB and lowers price-scale R squared. Local valuation differences
-      remain. These are comparisons of fitted settings, not training iterations
-      or a selected deployment parameter.
+      Held-out results for the surrogate-loss penalty from Acevedo, Lu, Wagner
+      and Sparer's unpublished manuscript. Gray shows the same model
+      implementation without a penalty. {penaltyDescription} All three curves
+      preserve the original median valuation-to-sale ratios in 30 equal-count
+      price groups. Near a median sale price of $100,000, the ratios are 129.7,
+      117.9 and 96.5 percent. Strong correction moves PRD closer to one but
+      reverses the sign of PRB and lowers price-scale R squared. Local valuation
+      differences remain. These are comparisons of fitted settings, not training
+      iterations or a selected deployment parameter.
     </desc>
     <path class="paper title-paper" d="M0 0H282L306 24V116L282 140H0Z" />
     <path class="paper" d="M0 211L600 290V532H0Z" />
@@ -553,7 +553,7 @@ const ticks = [
     font-weight: 500;
   }
   .result-label span {
-    font-size: 11px;
+    font-size: var(--text-label);
   }
   .result-strip .result-values {
     display: grid;
@@ -600,7 +600,7 @@ const ticks = [
   }
   .baseline-caption,
   .current-caption {
-    font-size: 11px;
+    font-size: var(--text-label);
     line-height: 14px;
     letter-spacing: 0;
     color: var(--muted);

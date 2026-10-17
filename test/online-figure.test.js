@@ -475,7 +475,7 @@ test('missing SVG parts report the component contract error', () => {
   );
 });
 
-test('loop stops at the last gain and fits the axes without changing data', () => {
+test('loop stops at the last gain and keeps the axes and data', () => {
   const { events, tick, elements } = setup();
   const lastGain = data.rounds.findLastIndex(
     (r) =>
@@ -509,7 +509,7 @@ test('loop stops at the last gain and fits the axes without changing data', () =
   );
 });
 
- test('current impression and stored shadow price arrive together before bidding', () => {
+test('impression and stored shadow price arrive before bidding', () => {
   const { events, tick, elements } = setup();
   events.visible([{ isIntersecting: true }]);
   tick(0);
@@ -518,7 +518,9 @@ test('loop stops at the last gain and fits the axes without changing data', () =
     for (const name of ['to-input', 'to-bid']) {
       assert.ok(Number(elements.get(name).attributes.opacity) > 0.9);
     }
-    assert.equal(elements.get('shadow-price').textContent,
-      data.rounds[23 + start / 3390].before.mu.toFixed(2));
+    assert.equal(
+      elements.get('shadow-price').textContent,
+      data.rounds[23 + start / 3390].before.mu.toFixed(2),
+    );
   }
 });

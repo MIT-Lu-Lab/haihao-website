@@ -131,7 +131,9 @@ interface MetricDisplay {
   direction: 'up' | 'down' | 'flat';
 }
 
-/** Prepare fixed baselines once; sample text and trends at display precision. */
+/**
+ * Prepare fixed baselines once; sample text and trends at display precision.
+ */
 export function createPropertyMetrics(metrics: PropertyMetrics) {
   const baselines = METRIC_KEYS.map((key) =>
     Number(metrics[0][key].toFixed(3)),

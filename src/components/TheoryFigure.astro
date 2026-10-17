@@ -38,6 +38,12 @@ const { descriptionId = 'comparison-description' } = Astro.props;
       aria-describedby={descriptionId}
       aria-label="State trajectories and KKT residuals for three methods solving min x max y xy."
     ></canvas>
+    <noscript>
+      <p class="error">
+        The animation requires JavaScript. The caption describes the comparison
+        and its final residuals.
+      </p>
+    </noscript>
     <ul class="legend" aria-label="Methods">
       <li class="legend-item">
         <svg class="swatch pdhg" viewBox="0 0 42 14" aria-hidden="true">
@@ -111,7 +117,7 @@ const { descriptionId = 'comparison-description' } = Astro.props;
 <style>
   .theory-visual {
     --pdhg: var(--chart-baseline);
-    --restarted: #303238;
+    --restarted: var(--chart-emphasis);
     --halpern: var(--red);
     position: relative;
     container-type: inline-size;

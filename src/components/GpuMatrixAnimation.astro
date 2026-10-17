@@ -11,8 +11,20 @@ const { maskId } = Astro.props;
   <svg
     viewBox="0 85 600 365"
     role="img"
-    aria-label="Matrix products Ax and A transpose y on rail4284. Bars show RMS magnitudes of contiguous entries with a fixed logarithmic scale per vector. The y input is perturbed for illustration, not a continuous solver trajectory."
+    aria-labelledby={`${maskId}-title`}
+    aria-describedby={`${maskId}-desc`}
   >
+    <title id={`${maskId}-title`}>
+      Matrix products Ax and Aᵀy on the rail4284 linear program
+    </title>
+    <desc id={`${maskId}-desc`}>
+      Bars show RMS magnitudes of contiguous entries in x, Ax, y and Aᵀy on a
+      fixed logarithmic scale per vector, for eight saved iterations of a
+      reference reflected Halpern PDHG run. A scan band sweeps the nonzero
+      pattern of the 4,284 by 1,096,894 matrix before each product appears. The
+      y input is perturbed for illustration; this is not a continuous solver
+      trajectory.
+    </desc>
     <defs>
       <mask id={maskId}>
         <image
@@ -132,7 +144,7 @@ const { maskId } = Astro.props;
         />
       ))}
     </g>
-    <g data-flow="a" fill="none" stroke="#9d5b65" stroke-width=".85">
+    <g data-flow="a" fill="none" stroke="var(--flow)" stroke-width=".85">
       {Array.from({ length: 10 }, (_, i) => (
         <g stroke-linecap="round" stroke-linejoin="round">
           <path
@@ -156,7 +168,7 @@ const { maskId } = Astro.props;
         </g>
       ))}
     </g>
-    <g data-flow="at" fill="none" stroke="#9d5b65" stroke-width=".85">
+    <g data-flow="at" fill="none" stroke="var(--flow)" stroke-width=".85">
       {Array.from({ length: 8 }, (_, i) => (
         <g stroke-linecap="round" stroke-linejoin="round">
           <path
@@ -198,6 +210,7 @@ const { maskId } = Astro.props;
   }
   .gpu-study {
     --scan: #a30b2e;
+    --flow: #9d5b65;
     width: 100%;
     margin-top: 0;
   }
@@ -207,8 +220,7 @@ const { maskId } = Astro.props;
     font-family: inherit;
   }
   text {
-    fill: #777276;
-    font-size: 12px;
+    fill: var(--muted);
   }
 
   .formula {

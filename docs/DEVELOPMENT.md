@@ -33,7 +33,7 @@ Run `npm run research:generate` to regenerate the PDHG comparison and online all
 
 - `data/research/`: reproducible research artifacts (JSON and CSV files); imported data is bundled into the page, while the source directory is not copied to the site.
 - `public/pdhg-comparison.json`: the comparison data fetched by the research page.
-- `src/components/TheoryFigure.astro`: canvas markup, text alternative, controls, and styles.
+- `src/components/TheoryFigure.astro`: canvas markup, text alternative, legend, and styles.
 - `src/lib/research/`: playback, drawing, and interpolation modules bundled through the component's Astro script.
 - `src/components/PropertyFigure.astro`: property valuation curves and metrics,
   with playback in `src/lib/research/property-animation.ts`.
@@ -53,11 +53,11 @@ This script requires Python 3.11 or later, NumPy, and Pillow (`python3` may be
 needed outside Windows). It writes `public/images/research/rail4284-density.png`
 and `data/research/rail4284-figure.json`; it does not modify image attribution.
 The matrix PNG uses a 128-color palette without dithering; this only quantizes
-display colors, not matrix counts. The railway and commerce photographs and GPU illustration use WebP quality 80,
-method 6, with embedded metadata removed. The commerce photo is 1120 pixels
-wide; the GPU illustration is 800 pixels wide and retains its alpha channel.
-The residential source photo is a metadata-free 1800 x 1200 JPEG. Astro
-outputs a 1200-pixel WebP at quality 80 for the property figure.
+display colors, not matrix counts. Research photos and the GPU illustration
+live in `src/assets/research`. Astro emits WebP at quality 80, with two widths
+for the railway photo (640 and 1280), commerce photo (640 and 1120), and GPU
+illustration (400 and 800). The property photo uses a single 1200px image.
+Sources, licenses, and encoding details are in `data/research/image-sources.json`.
 
 `GpuMatrixAnimation.astro` supplies the matrix SVG; the parent GPU component
 initializes `src/lib/research/gpu-matrix-animation.ts` with the saved products.
