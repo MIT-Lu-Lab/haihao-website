@@ -15,18 +15,19 @@ interface MethodStyle {
   residualDash: number[];
   preRestartKey: 'preRestart' | 'preHalpern' | null;
   restartLabelPosition: 'above' | 'below' | null;
-  restartArrowOpacity: number;
+
   separation: number;
   extraWidth: number;
   explain: boolean;
 }
 
-export const DISPLAY_STEPS = 55;
+export const DISPLAY_STEPS = 57;
+const KKT_STEPS = 55;
 // All playback durations are in milliseconds.
 export const TIMING = {
   step: 240,
   fade: 300,
-  endHold: 2400,
+  endHold: 300,
   explanationBefore: 900,
   explanationAfter: 1300,
   annotationFadeIn: 220,
@@ -109,7 +110,7 @@ export function createTheoryRenderer(
       residualDash: [1, 4],
       preRestartKey: null,
       restartLabelPosition: null,
-      restartArrowOpacity: 0.65,
+
       separation: 0,
       extraWidth: 0,
       explain: false,
@@ -121,7 +122,7 @@ export function createTheoryRenderer(
       residualDash: [7, 4],
       preRestartKey: 'preRestart',
       restartLabelPosition: 'above',
-      restartArrowOpacity: 0.85,
+
       separation: 0,
       extraWidth: 0,
       explain: true,
@@ -133,7 +134,7 @@ export function createTheoryRenderer(
       residualDash: [],
       preRestartKey: 'preHalpern',
       restartLabelPosition: 'below',
-      restartArrowOpacity: 0.65,
+
       separation: 0,
       extraWidth: 0.25,
       explain: false,
@@ -388,10 +389,52 @@ export function createTheoryRenderer(
     for (const name of methodNames) {
       drawTrace(frame, name);
     }
+    drawRestartConnections(frame, completedStep);
     drawRestartLandings(frame, completedStep);
-    drawRestartArrows(frame);
     drawCurrentPositions(frame, completedStep);
     drawAverageLabel(frame);
+  }
+
+  function drawRestartConnections(frame: FrameState, completedStep: number) {
+    // Hold the reset connection briefly, then fade as iteration resumes.
+    // Draw straight connections only after the shared restart event occurs.
+    const iteration = frame.playback.done
+      ? frame.playback.step
+      : frame.playback.step - 1 + frame.playback.fraction;
+    context.save();
+    context.setLineDash([]);
+    for (const step of restartSteps.filter((k) => k <= completedStep)) {
+      const opacity = 1 - ease(clamp((iteration - step - 1) / 4));
+      if (opacity <= 0) continue;
+      for (const name of restartedMethods) {
+        const key = methods[name].preRestartKey;
+        const before = key && rows[step][key];
+        if (!before) continue;
+        const from = frame.project(before);
+        const to = frame.project(rows[step][name]);
+        if (
+          Math.hypot(to[0] - from[0], to[1] - from[1]) <
+          0.5 / frame.pixelScale
+        )
+          continue;
+        context.strokeStyle = methods[name].color;
+        context.lineWidth =
+          (frame.compact ? 3.8 : 2.05) + methods[name].extraWidth;
+        const period = frame.compact ? 28 : 16;
+        context.setLineDash(
+          methods[name].trajectoryStyle === 'dash'
+            ? [period * 0.5, period * 0.5]
+            : [],
+        );
+        context.globalAlpha =
+          0.9 * opacity * frame.loopOpacity * methodOpacity(frame, name);
+        context.beginPath();
+        context.moveTo(...from);
+        context.lineTo(...to);
+        context.stroke();
+      }
+    }
+    context.restore();
   }
 
   function drawRestartLandings(frame: FrameState, completedStep: number) {
@@ -421,71 +464,6 @@ export function createTheoryRenderer(
         context.lineWidth = compact ? 1.7 : 1.1;
         context.stroke();
         context.globalAlpha = 1;
-      }
-    }
-  }
-
-  function drawRestartArrows(frame: FrameState) {
-    // Arrows fade before iteration resumes; markers never follow the arrows.
-    const { compact, restart } = frame;
-    if (restart) {
-      const restartStep = restart.step;
-      const alpha = ease(
-        clamp((restart.duration - restart.elapsed) / TIMING.annotationFadeOut),
-      );
-      for (const name of methodNames) {
-        const preRestartKey = methods[name].preRestartKey;
-        const endpoint = preRestartKey && rows[restartStep][preRestartKey];
-        if (!endpoint) {
-          continue;
-        }
-        const from = frame.project(endpoint);
-        const to = frame.project(rows[restartStep][name]);
-        const dx = to[0] - from[0];
-        const dy = to[1] - from[1];
-        const length = Math.hypot(dx, dy);
-        context.save();
-        context.globalAlpha =
-          alpha *
-          methods[name].restartArrowOpacity *
-          frame.loopOpacity *
-          methodOpacity(frame, name);
-        context.strokeStyle = methods[name].color;
-        context.lineWidth = compact ? 2 : 1;
-        if (length > 9) {
-          const directionX = dx / length;
-          const directionY = dy / length;
-          const tip: Coordinates = [
-            to[0] - directionX * 4,
-            to[1] - directionY * 4,
-          ];
-          context.setLineDash([2, 4]);
-          context.beginPath();
-          context.moveTo(...from);
-          context.lineTo(...tip);
-          context.stroke();
-          context.setLineDash([]);
-          const size = Math.min(compact ? 7 : 4, length * 0.22);
-          context.beginPath();
-          context.moveTo(
-            tip[0] - directionX * size - directionY * size * 0.55,
-            tip[1] - directionY * size + directionX * size * 0.55,
-          );
-          context.lineTo(...tip);
-          context.lineTo(
-            tip[0] - directionX * size + directionY * size * 0.55,
-            tip[1] - directionY * size - directionX * size * 0.55,
-          );
-          context.stroke();
-        }
-        markerPath(
-          from[0],
-          from[1],
-          methods[name].marker,
-          compact ? 3.15 : 1.8,
-        );
-        context.stroke();
-        context.restore();
       }
     }
   }
@@ -595,7 +573,7 @@ export function createTheoryRenderer(
     const top = plot.top + 12 / pixelScale;
     const bottom = plot.bottom;
     const iterationX = (k: number): number =>
-      left + ((right - left) * k) / DISPLAY_STEPS;
+      left + ((right - left) * k) / KKT_STEPS;
     const residualY = (logResidual: number): number =>
       top + ((maxLog - logResidual) / logRange) * (bottom - top);
     /**
@@ -676,7 +654,7 @@ export function createTheoryRenderer(
       );
     }
     const completedStep = playback.done ? playback.step : playback.step - 1;
-    for (let k = 0; k <= DISPLAY_STEPS; k += 10) {
+    for (let k = 0; k <= KKT_STEPS; k += 10) {
       drawLabel(
         frame,
         String(k),
@@ -688,7 +666,7 @@ export function createTheoryRenderer(
       );
     }
     context.save();
-    for (const k of restartSteps.filter((step) => step <= DISPLAY_STEPS)) {
+    for (const k of restartSteps.filter((step) => step <= KKT_STEPS)) {
       const active = restart?.step === k;
       if (k > completedStep && !active) {
         continue;
@@ -932,7 +910,17 @@ export function createTheoryRenderer(
       theme.muted,
       TYPE_SIZE.annotation,
     );
-    drawResidualPlot(frame);
+    // The residual comparison ends at 55. Let the state trajectory finish
+    // two more evaluations, then fade immediately into the next cycle.
+    drawResidualPlot(
+      frame.playback.step > KKT_STEPS
+        ? {
+            ...frame,
+            playback: { step: KKT_STEPS, fraction: 1, done: true },
+            restart: null,
+          }
+        : frame,
+    );
   }
   return render;
 }
