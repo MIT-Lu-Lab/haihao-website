@@ -102,17 +102,14 @@ export function makeComparisonCurves(rows: ComparisonRow[]): ComparisonCurves {
     restarted: makeCurves(rows, 'restarted', 'preRestart'),
     halpern: makeCurves(rows, 'halpern', 'preHalpern'),
   };
-  // Both PDHG methods share the first epoch and its pre-restart endpoint.
-  // Reuse the same segments so their display paths also coincide exactly.
+  // The current iterates share the first PDHG epoch, including the pre-reset
+  // endpoint. Share interpolation too, so there is no artificial separation.
   const firstRestart = rows.find((row) => row.restart);
-  if (!firstRestart) {
-    return curves;
-  }
-  for (const [step, segment] of curves.last) {
-    if (step > firstRestart.k) {
-      break;
+  if (firstRestart) {
+    for (const [step, segment] of curves.last) {
+      if (step > firstRestart.k) break;
+      curves.restarted.set(step, segment);
     }
-    curves.restarted.set(step, segment);
   }
   return curves;
 }

@@ -20,41 +20,38 @@ def check(point, expected):
     checks += 1
     assert error < 2e-12, (checks, error)
 
-blue = green = anchor = (F(1), F(1))
-green_epoch, all_blue = [], []
+import math
+beta2 = math.exp(-2)
+def square(z): return sum(v*v for v in z)
+def metric_square(z): return z[0]**2+z[1]**2-F(2,5)*z[0]*z[1]
+blue = raw = anchor = a_anchor = (F(1), F(1))
+epoch, all_blue = [], []
 reflection_powers = [anchor]
+a_epoch = h_epoch = 0
 for k, row in enumerate(rows):
-    assert row['k'] == k
-    assert row['restart'] == (k > 0 and k % 25 == 0)
-    assert row['halpernCalls'] == k + k//14
+    assert row['k'] == k and row['halpernCalls'] == k
     if k:
-        blue = mul(M, blue)
-        all_blue.append(blue)
-        green = mul(M, green)
-        green_epoch.append(green)
-        # Closed form, not the generator's weighted recurrence:
-        # z_j = (I + R + ... + R^j) anchor / (j+1).
-        reflection_powers.append(mul(R, reflection_powers[-1]))
-        halpern = mean(reflection_powers)
-        check(row['average'], mean(all_blue))
-        if k % 25 == 0:
-            check(row['preRestart'], green)
-            green = mean(green_epoch)
-            green_epoch = []
+        blue = mul(M, blue); all_blue.append(blue)
+        raw = mul(M, raw); epoch.append(raw)
+        average = mean(epoch)
+        ar = len(epoch)>=1 if a_epoch==0 else float(square(average)/square(a_anchor))<=beta2
+        assert row['restart'] == ar
+        check(row['epochAverage'],average)
+        if ar:
+            check(row['preRestart'],raw)
+            raw = a_anchor = average; epoch=[]; a_epoch+=1
+        else: assert row['preRestart'] is None
+        # Independent reflected-power mean, not the generator recurrence.
+        current=mean(reflection_powers)
+        hr = len(reflection_powers)-1>1 if h_epoch==0 else float(metric_square(current)/metric_square(anchor))<=beta2
+        assert bool(row['preHalpern']) == hr
+        if hr:
+            halpern=mul(M,current); check(row['preHalpern'],halpern)
+            anchor=halpern;reflection_powers=[anchor];h_epoch+=1
         else:
-            assert row['preRestart'] is None
-        if k % 14 == 0:
-            check(row['preHalpern'], halpern)
-            halpern = mul(M, halpern)
-            anchor = halpern
-            reflection_powers = [anchor]
-        else:
-            assert row['preHalpern'] is None
-    else:
-        halpern = anchor
-    for key, value in [('last',blue), ('restarted',green), ('halpern',halpern), ('anchor',anchor)]:
-        check(row[key], value)
-print(json.dumps({'point_checks':checks, 'max_absolute_error':max_error,
-                  'iterations_per_method':len(rows)-1,
-                  'averaged_restarts':sum(row['restart'] for row in rows),
-                  'halpern_restarts':sum(row['preHalpern'] is not None for row in rows)}))
+            reflection_powers.append(mul(R,reflection_powers[-1]))
+            halpern=mean(reflection_powers)
+        check(row['average'],mean(all_blue))
+    else: halpern=anchor
+    for key,value in [('last',blue),('restarted',raw),('halpern',halpern),('anchor',anchor)]:check(row[key],value)
+print(json.dumps({'point_checks':checks,'max_absolute_error':max_error,'operator_evaluations_per_method':len(rows)-1}))

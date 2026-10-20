@@ -7,5 +7,5 @@ export const RESIDUAL_PLOT = {
   desktop: { panelTop: 540, top: 600, bottom: 772 },
   compact: { panelTop: 710, top: 770, bottom: 1050 },
   maxLog: 0.2,
-  logRange: 6.5,
+  logRange: 2.5,
 };

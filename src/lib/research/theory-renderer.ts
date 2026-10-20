@@ -21,7 +21,7 @@ interface MethodStyle {
   explain: boolean;
 }
 
-export const DISPLAY_STEPS = 60;
+export const DISPLAY_STEPS = 55;
 // All playback durations are in milliseconds.
 export const TIMING = {
   step: 240,
@@ -110,7 +110,7 @@ export function createTheoryRenderer(
       preRestartKey: null,
       restartLabelPosition: null,
       restartArrowOpacity: 0.65,
-      separation: 1,
+      separation: 0,
       extraWidth: 0,
       explain: false,
     },
@@ -122,7 +122,7 @@ export function createTheoryRenderer(
       preRestartKey: 'preRestart',
       restartLabelPosition: 'above',
       restartArrowOpacity: 0.85,
-      separation: -1,
+      separation: 0,
       extraWidth: 0,
       explain: true,
     },
@@ -530,7 +530,7 @@ export function createTheoryRenderer(
     );
     drawLabel(
       frame,
-      'Average',
+      'Restart from average',
       endX - 5 / pixelScale,
       endY + 3 / pixelScale,
       'right',
@@ -642,9 +642,8 @@ export function createTheoryRenderer(
 
     const residualTicks: Array<[number, string]> = [
       [0, '1'],
+      [-1, '10⁻¹'],
       [-2, '10⁻²'],
-      [-4, '10⁻⁴'],
-      [-6, '10⁻⁶'],
     ];
     for (const [logResidual, label] of residualTicks) {
       const y = residualY(logResidual);
@@ -717,7 +716,7 @@ export function createTheoryRenderer(
     context.restore();
     drawLabel(
       frame,
-      'Iterations',
+      'PDHG evaluations',
       (left + right) / 2,
       bottom + (compact ? 72 : 64),
       'center',

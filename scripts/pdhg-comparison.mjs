@@ -1,144 +1,140 @@
 import fs from 'node:fs';
-import assert from 'node:assert/strict';
-const baseTrajectories = JSON.parse(
+const base = JSON.parse(
   fs.readFileSync(
     new URL('../data/research/pdhg-trajectories.json', import.meta.url),
     'utf8',
   ),
 );
-const {
-  eta: STEP_SIZE,
-  period: RESTART_PERIOD,
-  steps: STEPS,
-  initial: INITIAL_POINT,
-} = baseTrajectories.metadata;
-const HALPERN_PERIOD = 14;
-const T = ([x, y]) => [
-  x - STEP_SIZE * y,
-  STEP_SIZE * x + (1 - 2 * STEP_SIZE * STEP_SIZE) * y,
-];
-const R = (z) => T(z).map((value, i) => 2 * value - z[i]);
+const { eta, steps, initial } = base.metadata;
+const beta = Math.exp(-1),
+  firstEpoch = 1;
+const T = ([x, y]) => [x - eta * y, eta * x + (1 - 2 * eta * eta) * y];
+// Scaling P_eta by eta leaves all restart ratios unchanged.
+const metric = ([x, y]) =>
+  Math.sqrt(Math.max(0, x * x + y * y - 2 * eta * x * y));
 const pack = (z) => ({ x: z[0], y: z[1], distance: Math.hypot(...z) });
-const close = (a, b) =>
-  a.forEach((value, i) => assert.ok(Math.abs(value - b[i]) < 2e-12));
-let z = INITIAL_POINT.slice();
-let anchor = INITIAL_POINT.slice();
-let local = 0;
-let power = anchor.slice();
-let sum = anchor.slice();
-let calls = 0;
-const rows = baseTrajectories.rows.map((row) => {
-  if (row.k === 0) {
+let raw = initial.slice(),
+  h = initial.slice(),
+  anchor = initial.slice(),
+  sum = [0, 0];
+let aLocal = 0,
+  aEpoch = 0,
+  aAnchor = initial.slice();
+let hLocal = 0,
+  hEpoch = 0,
+  hBaseline = 0;
+const rows = base.rows.map((row) => {
+  const k = row.k;
+  if (!k)
     return {
       ...row,
-      halpern: pack(z),
+      restarted: pack(raw),
+      halpern: pack(h),
+      preRestart: null,
       preHalpern: null,
       anchor: pack(anchor),
       halpernCalls: 0,
     };
+  raw = T(raw);
+  aLocal++;
+  sum = sum.map((v, i) => v + raw[i]);
+  const average = sum.map((v) => v / aLocal);
+  // For unconstrained xy in the Euclidean trust region, normalized duality
+  // gap = ||(y,-x)||_2, independent of the radius. No extra T call is needed.
+  const restart =
+    aEpoch === 0
+      ? aLocal >= firstEpoch
+      : Math.hypot(...average) <= beta * Math.hypot(...aAnchor);
+  const preRestart = restart ? pack(raw) : null;
+  if (restart) {
+    raw = average.slice();
+    aAnchor = raw.slice();
+    sum = [0, 0];
+    aLocal = 0;
+    aEpoch++;
   }
-  const reflected = R(z);
-  calls++;
-  z = reflected.map(
-    (value, i) => ((local + 1) * value + anchor[i]) / (local + 2),
-  );
-  local++;
-  // Independent closed form for a linear reflected operator:
-  // mean of R^j anchor, j=0..local.
-  power = R(power);
-  sum = sum.map((value, i) => value + power[i]);
-  close(
-    z,
-    sum.map((value) => value / (local + 1)),
-  );
-  const preHalpern = local === HALPERN_PERIOD ? pack(z) : null;
-  if (local === HALPERN_PERIOD) {
-    const before = z;
-    z = T(z);
-    calls++;
-    close(z, [
-      before[0] - STEP_SIZE * before[1],
-      before[1] + STEP_SIZE * (2 * z[0] - before[0]),
-    ]);
-    anchor = z.slice();
-    local = 0;
-    power = anchor.slice();
-    sum = anchor.slice();
+  // Evaluate T exactly once. Reuse it for the residual check AND the update
+  // or reset. The reset therefore occupies its own horizontal-axis unit.
+  const th = T(h);
+  const residual = metric(h.map((v, i) => v - th[i]));
+  if (hLocal === 0) hBaseline = residual;
+  const halpernRestart =
+    hEpoch === 0 ? hLocal > firstEpoch : residual <= beta * hBaseline;
+  if (halpernRestart) {
+    h = th;
+    anchor = h.slice();
+    hLocal = 0;
+    hEpoch++;
+  } else {
+    h = th.map(
+      (v, i) => ((hLocal + 1) * (2 * v - h[i]) + anchor[i]) / (hLocal + 2),
+    );
+    hLocal++;
   }
   return {
     ...row,
-    halpern: pack(z),
-    preHalpern,
+    restart,
+    restarted: pack(raw),
+    epochAverage: pack(average),
+    halpern: pack(h),
+    preRestart,
+    preHalpern: halpernRestart ? pack(h) : null,
+    halpernInner: hLocal,
     anchor: pack(anchor),
-    halpernCalls: calls,
+    halpernCalls: k,
   };
 });
-close([rows[1].halpern.x, rows[1].halpern.y], [rows[1].last.x, rows[1].last.y]);
-for (const row of rows) {
-  assert.equal(row.halpernCalls, row.k + Math.floor(row.k / HALPERN_PERIOD));
-  if (row.preHalpern) {
-    close(
-      [row.halpern.x, row.halpern.y],
-      T([row.preHalpern.x, row.preHalpern.y]),
-    );
-  }
-}
 const metadata = {
-  problem: 'min_x max_y xy; x,y in R; solution (0,0)',
-  eta: STEP_SIZE,
-  period: RESTART_PERIOD,
-  halpernPeriod: HALPERN_PERIOD,
-  initial: INITIAL_POINT,
-  steps: STEPS,
-  halpern: `Paper 2407.16144v2 Eq26 and Algorithm2: z_next=((j+1)(2T(z)-z)+anchor)/(j+2); restart at j=${HALPERN_PERIOD} to T(z), reset j=0.`,
+  problem: base.metadata.problem,
+  eta,
+  beta,
+  firstEpoch,
+  steps,
+  initial,
+  average:
+    'Current PDHG iterate within each epoch. At restart, replace it with the mean of the current epoch new iterates, excluding the epoch anchor, as in Applegate et al. Algorithm 1. epochAverage stores the mean separately.',
+  halpern:
+    'Reflected Halpern, Lu & Yang Eq. 26 / Algorithm 2. Adaptive Eq. 10 with the PDHG canonical norm and a separately counted T reset.',
+  counting:
+    'k counts PDHG operator evaluations for every method, including the Halpern reset. Equal operator counts, not a runtime benchmark.',
   restartPolicy:
-    'Averaged PDHG: fixed 25 inner updates. Reflected Halpern: fixed 14, ceil(e/0.2), using the exact PDHG-norm sharpness constant of this bilinear operator. Not cuPDLPx adaptive policy.',
-  counting: `k counts inner updates. Halpern restart uses one additional T evaluation; halpernCalls=k+floor(k/${HALPERN_PERIOD}). Not an equal-compute or runtime benchmark.`,
+    'Adaptive. Average: Applegate Eq. 30, Euclidean normalized gap, beta=1/e, first epoch t>=1. Reflected Halpern: Lu & Yang Eq. 10, canonical fixed-point residual, beta=1/e, first epoch k>1. Checked each evaluation, not the production solver heuristics.',
   provenance:
-    'Independent deterministic numerical calculation. No cuPDLPx solver run, presolve, adaptive weights or industrial data.',
+    'Independent deterministic calculation on min_x max_y xy. No parameter selection to obtain a visual advantage.',
   sources: [
-    'https://arxiv.org/html/2105.12715v4#S5.SS2',
+    'https://arxiv.org/html/2105.12715v4#S4',
     'https://arxiv.org/html/2407.16144v2#S6',
   ],
 };
-fs.mkdirSync(new URL('../public/', import.meta.url), { recursive: true });
 fs.writeFileSync(
   new URL('../public/pdhg-comparison.json', import.meta.url),
   JSON.stringify({ metadata, rows }, null, 2),
 );
 fs.writeFileSync(
   new URL('../data/research/pdhg-comparison.csv', import.meta.url),
-  'k,PDHG_x,PDHG_y,raPDHG_x,raPDHG_y,r2HPDHG_x,r2HPDHG_y,average_x,average_y,restart,halpern_restart,halpern_T_calls\n' +
+  'operator_evaluations,PDHG_x,PDHG_y,raPDHG_current_x,raPDHG_current_y,r2HPDHG_x,r2HPDHG_y,restart,halpern_T_calls\n' +
     rows
-      .map((row) =>
+      .map((r) =>
         [
-          row.k,
-          row.last.x,
-          row.last.y,
-          row.restarted.x,
-          row.restarted.y,
-          row.halpern.x,
-          row.halpern.y,
-          row.average?.x ?? '',
-          row.average?.y ?? '',
-          row.restart,
-          Boolean(row.preHalpern),
-          row.halpernCalls,
+          r.k,
+          r.last.x,
+          r.last.y,
+          r.restarted.x,
+          r.restarted.y,
+          r.halpern.x,
+          r.halpern.y,
+          r.restart,
+          r.halpernCalls,
         ].join(','),
       )
       .join('\n'),
 );
 console.log(
-  `Verified ${STEPS} reflected Halpern steps against independent closed form, ${rows.filter((row) => row.preHalpern).length} exact T(z) resets, initial overlap and operator counts.`,
-);
-console.log(
   JSON.stringify(
-    [25, 50, 75].map((k) => ({
+    [25, 50, 60].map((k) => ({
       k,
-      pdhg: rows[k].last.distance,
-      ra: rows[k].restarted.distance,
-      r2: rows[k].halpern.distance,
-      calls: rows[k].halpernCalls,
+      average: rows[k].restarted.distance,
+      halpern: rows[k].halpern.distance,
     })),
   ),
 );

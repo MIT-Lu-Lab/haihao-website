@@ -26,12 +26,15 @@ test('display interpolation preserves endpoints and restart boundaries', () => {
       same(sample(curves[name].get(k), 1), end);
     }
   }
-  for (let k = 1; k <= rows.find((row) => row.restart).k; k++) {
-    for (let i = 0; i <= 100; i++) {
-      same(
-        sample(curves.last.get(k), i / 100),
-        sample(curves.restarted.get(k), i / 100),
-      );
-    }
+  for (const row of rows.filter((r) => r.restart)) {
+    same(row.restarted, row.epochAverage);
+  }
+  for (const row of rows.filter((r) => r.preHalpern)) {
+    assert.equal(row.halpernCalls, row.k);
+    const before = rows[row.k - 1].halpern;
+    same(row.halpern, {
+      x: before.x - 0.2 * before.y,
+      y: 0.2 * before.x + 0.92 * before.y,
+    });
   }
 });

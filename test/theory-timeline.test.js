@@ -3,15 +3,15 @@ import test from 'node:test';
 import { createTheoryTimeline } from '../src/lib/research/theory-timeline.ts';
 import { TIMING, DISPLAY_STEPS } from '../src/lib/research/theory-renderer.ts';
 
-const timeline = createTheoryTimeline(DISPLAY_STEPS, TIMING, 25);
+const timeline = createTheoryTimeline(DISPLAY_STEPS, TIMING, 20);
 
-// Reset steps shown in the figure; only the averaged reset at 25 holds.
+// Reset steps shown in the figure; only the averaged reset at 20 holds.
 
 test('only the first averaged reset pauses playback', () => {
   let previousHolds = 0;
-  for (const step of [14, 25, 28, 42, 50, 56]) {
-    const before = step === 25 ? 900 : 0;
-    const duration = step === 25 ? 2200 : 0;
+  for (const step of [3, 14, 20, 25, 36, 41, 47]) {
+    const before = step === 20 ? 900 : 0;
+    const duration = step === 20 ? 2200 : 0;
     const start = step * TIMING.step + previousHolds;
     assert.equal(timeline.sample(start - 1).time, step * TIMING.step - 1);
     for (const elapsed of duration
@@ -25,7 +25,7 @@ test('only the first averaged reset pauses playback', () => {
           phase: elapsed < before ? 'before' : 'after',
           elapsed,
           duration,
-          explain: step === 25,
+          explain: step === 20,
         },
       });
     }
@@ -78,3 +78,4 @@ test('without an explained reset, iteration time never holds', () => {
     }
   }
 });
+

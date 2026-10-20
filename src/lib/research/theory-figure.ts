@@ -27,11 +27,19 @@ export function initializeTheoryFigure(
     rows,
     browser.getComputedStyle(root),
   );
-  // Only the first averaged reset pauses, to explain restarting from a mean.
+  // The initialization reset at t=1 has no displacement. Explain the first
+  // nontrivial average reset instead; both plots use the same hold.
   const timeline = createTheoryTimeline(
     DISPLAY_STEPS,
     TIMING,
-    rows.find((row) => row.preRestart)?.k,
+    rows.find(
+      (row) =>
+        row.preRestart &&
+        Math.hypot(
+          row.preRestart.x - row.restarted.x,
+          row.preRestart.y - row.restarted.y,
+        ) > 1e-12,
+    )?.k,
   );
   const cycleDuration = timeline.duration + TIMING.endHold;
   const playback = createPlayback(
