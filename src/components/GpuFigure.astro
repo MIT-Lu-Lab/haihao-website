@@ -1,0 +1,347 @@
+---
+import { Image } from 'astro:assets';
+import GpuMatrixAnimation from './GpuMatrixAnimation.astro';
+import matrix from '../../data/research/rail4284-figure.json';
+import railwayPhoto from '../assets/research/railway-oakland.webp';
+import gpuPlatform from '../assets/research/gpu-platform.webp';
+
+interface Props {
+  id?: string;
+}
+const { id = 'gpu-comparison' } = Astro.props;
+const spillId = `${id}-spill`;
+const reflectionId = `${id}-reflection`;
+
+const variables = (matrix.columns / 1_000_000).toFixed(2);
+const constraints = matrix.rows.toLocaleString('en-US');
+const nonzeros = (matrix.nonzeros / 1_000_000).toFixed(2);
+---
+
+<div class="gpu-container">
+  <div class="gpu-composition">
+    <div class="rail-scene">
+      <Image
+        src={railwayPhoto}
+        widths={[640, 1280]}
+        sizes="(max-width: 760px) 100vw, 560px"
+        format="webp"
+        quality={80}
+        alt="Aerial view of railway tracks and yards in West Oakland."
+        loading="eager"
+        decoding="async"
+      />
+    </div>
+    <p class="scene-title">
+      <span>Optimization</span>
+      <span>at scale.</span>
+    </p>
+    <div class="matrix-panel">
+      <div class="matrix-artwork">
+        <GpuMatrixAnimation maskId={`${id}-density`} />
+        <div class="matrix-title">
+          Railway Set-Covering LP <span>rail4284</span>
+        </div>
+      </div>
+      <div class="matrix-stats">
+        <span>
+          {variables}M <small>variables</small>
+        </span>
+        <span>
+          {constraints} <small>constraints</small>
+        </span>
+        <span>
+          {nonzeros}M <small>nonzeros</small>
+        </span>
+      </div>
+    </div>
+    <div class="gpu-platform">
+      <Image
+        src={gpuPlatform}
+        widths={[400, 800]}
+        sizes="(max-width: 760px) 56vw, 315px"
+        format="webp"
+        quality={80}
+        alt="Illustration of a multi-GPU computing platform."
+        loading="lazy"
+        decoding="async"
+      />
+      <svg class="gpu-lights" viewBox="0 0 1536 1024" aria-hidden="true">
+        <defs>
+          <radialGradient id={spillId}>
+            <stop offset="0" stop-color="#b8d7bd" stop-opacity=".5" />
+            <stop offset=".35" stop-color="#9fc6a7" stop-opacity=".16" />
+            <stop offset="1" stop-color="#9fc6a7" stop-opacity="0" />
+          </radialGradient>
+          <linearGradient id={reflectionId} x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stop-color="#57cdb8" stop-opacity=".75" />
+            <stop offset=".55" stop-color="#9af1d7" stop-opacity=".95" />
+            <stop offset="1" stop-color="#e2fff2" stop-opacity="1" />
+          </linearGradient>
+        </defs>
+        {/* Matching activity on the outer PCB edge beside each exposed chip; illustrative, not a routing diagram. */}
+        <g data-gpu-bus opacity="0" fill="none" stroke-linecap="round">
+          {[
+            { x: 0, y: 0 },
+            { x: 296, y: -196 },
+          ].map(({ x, y }) => (
+            <g transform={`translate(${x} ${y})`}>
+              <path
+                d="M962 748 L1063 687"
+                pathLength="100"
+                stroke="#9ce7ce"
+                stroke-width="8"
+                opacity=".15"
+                stroke-dasharray="18 120"
+                data-bus-pulse
+              />
+              <path
+                d="M962 748 L1063 687"
+                pathLength="100"
+                stroke="#cef9e5"
+                stroke-width="3.5"
+                stroke-dasharray="18 120"
+                data-bus-pulse
+              />
+              <path
+                d="M967 756 L1068 695"
+                pathLength="100"
+                stroke="#9ce7ce"
+                stroke-width="2.5"
+                opacity=".55"
+                stroke-dasharray="12 120"
+                data-bus-pulse
+              />
+            </g>
+          ))}
+        </g>
+        <g data-gpu-chips opacity="0">
+          {/* Insets follow the two silver die faces; no light spills beyond their packages. */}
+          <g fill="#b0e4dc" opacity=".12">
+            <polygon points="1047,494 1128,445 1217,502 1132,552" />
+            <polygon points="746,678 831,627 920,684 829,744" />
+          </g>
+          <g fill={`url(#${reflectionId})`}>
+            <polygon points="1087,494 1127,469 1170,499 1132,524" />
+            <polygon points="789,680 832,653 876,683 831,711" />
+          </g>
+        </g>
+        <g data-gpu-lights opacity="0">
+          {/* Paired indicators follow the matching dark front bevel on each module. */}
+          {[
+            { x: 512, y: 426 },
+            { x: 777, y: 267 },
+            { x: 712, y: 565 },
+            { x: 980, y: 397 },
+          ].map(({ x, y }) => (
+            <g transform={`translate(${x} ${y}) rotate(-29)`}>
+              {[-17, 17].map((offset) => (
+                <g transform={`translate(${offset} 0)`}>
+                  <ellipse rx="25" ry="14" fill={`url(#${spillId})`} />
+                  <rect
+                    x="-10"
+                    y="-4"
+                    width="20"
+                    height="8"
+                    rx="4"
+                    fill="#b5edc2"
+                  />
+                </g>
+              ))}
+            </g>
+          ))}
+        </g>
+      </svg>
+    </div>
+  </div>
+</div>
+<script>
+  import products from '../../data/research/rail4284-products.json';
+  import { initializeGpuFigure } from '../lib/research/gpu-matrix-animation.ts';
+  for (const root of document.querySelectorAll<HTMLElement>(
+    '.gpu-composition',
+  )) {
+    initializeGpuFigure(root, products, window);
+  }
+</script>
+<style>
+  .gpu-container {
+    container-type: inline-size;
+  }
+  .gpu-composition {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1.02;
+    margin-top: 12px;
+    margin-bottom: clamp(-40px, -7cqw, -24px);
+    isolation: isolate;
+  }
+  .rail-scene {
+    position: absolute;
+    inset: 0 0 auto 7%;
+    height: 58.5%;
+    overflow: hidden;
+  }
+  .rail-scene :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 48% 48%;
+    filter: saturate(0.3) contrast(1.06);
+    -webkit-mask-image: linear-gradient(
+      180deg,
+      #000 43%,
+      rgb(0 0 0 / 0.5) 64%,
+      transparent 91%
+    );
+    mask-image: linear-gradient(
+      180deg,
+      #000 43%,
+      rgb(0 0 0 / 0.5) 64%,
+      transparent 91%
+    );
+  }
+  .rail-scene::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgb(0 0 0 / 0.18), transparent 35%);
+    -webkit-mask-image: linear-gradient(#000, transparent 65%);
+    mask-image: linear-gradient(#000, transparent 65%);
+    pointer-events: none;
+  }
+  .scene-title {
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    margin: 0;
+    padding: 0;
+    color: var(--red);
+    font-family: var(--serif);
+    font-size: clamp(28px, 6.5cqw, 38px);
+    font-weight: 400;
+    line-height: 1.06;
+    letter-spacing: -0.035em;
+  }
+  .scene-title span {
+    display: table;
+    padding: 3px 17px 5px 0;
+    background: var(--surface);
+  }
+  .scene-title span + span {
+    box-shadow: 0 -1px 0 var(--surface);
+    padding-top: 0;
+    padding-bottom: 11px;
+  }
+  .matrix-panel {
+    z-index: 2;
+    position: absolute;
+    left: -5.466667%;
+    top: 29%;
+    width: 88%;
+  }
+  .matrix-artwork {
+    position: relative;
+  }
+  .matrix-title {
+    position: absolute;
+    left: 14.1667%;
+    bottom: 17.8%;
+    display: grid;
+    gap: 2px;
+    padding: 4px 7px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.3;
+    background: var(--red);
+    color: white;
+  }
+  .matrix-title span {
+    font-size: 11.5px;
+    font-weight: 400;
+    color: white;
+  }
+
+  .matrix-stats {
+    display: grid;
+    grid-template-columns: repeat(3, max-content);
+    column-gap: clamp(12px, 3cqw, 20px);
+    width: max-content;
+    margin-top: -10px;
+    margin-left: 14.1667%;
+    color: var(--red);
+    font-size: 16px;
+    line-height: 1.25;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.25px;
+  }
+  .matrix-stats > span {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    white-space: nowrap;
+  }
+  .matrix-stats small {
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 0;
+  }
+  .gpu-platform {
+    position: absolute;
+    z-index: 3;
+    right: -2%;
+    top: 55.5%;
+    width: 56%;
+    text-align: right;
+  }
+  .gpu-platform :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .gpu-lights {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  @container (max-width: 480px) {
+    .gpu-composition {
+      margin-bottom: -10px;
+    }
+    .scene-title span {
+      padding-right: 12px;
+    }
+    .matrix-title {
+      font-size: 11px;
+      gap: 2px;
+      padding: 4px 6px;
+    }
+    .matrix-stats {
+      font-size: 14px;
+      margin-top: -8px;
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+    .matrix-stats > span {
+      flex-direction: row;
+      align-items: baseline;
+      gap: 8px;
+    }
+  }
+  @container (max-width: 320px) {
+    .gpu-composition {
+      aspect-ratio: 1 / 1.3;
+    }
+    .matrix-stats {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+    .matrix-stats > span {
+      flex-direction: row;
+      gap: 8px;
+    }
+  }
+</style>

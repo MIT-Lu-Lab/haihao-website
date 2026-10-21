@@ -1,0 +1,105 @@
+---
+import { Image } from 'astro:assets';
+import OnlineDiagram from './OnlineDiagram.astro';
+import commercePhoto from '../assets/research/online-commerce.webp';
+interface Props {
+  id?: string;
+}
+const { id = 'online-comparison' } = Astro.props;
+---
+
+<div class="online-art" data-online-art>
+  <div class="commerce-photo">
+    <Image
+      src={commercePhoto}
+      widths={[640, 1120]}
+      sizes="(max-width: 760px) 100vw, 560px"
+      format="webp"
+      quality={80}
+      alt="Online shopping on a laptop"
+      loading="lazy"
+      decoding="async"
+    />
+    <span>Online advertising</span>
+  </div>
+  <div class="online-heading">
+    <span>Bidding with a budget.</span>
+    <p>Dual mirror descent</p>
+  </div>
+  <OnlineDiagram id={id} />
+</div>
+<style>
+  .online-art {
+    width: 100%;
+    color: var(--ink);
+    container-type: inline-size;
+  }
+  .commerce-photo {
+    height: 193px;
+    position: relative;
+    overflow: hidden;
+  }
+  .commerce-photo :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 48%;
+  }
+  .commerce-photo span {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    background: var(--red);
+    color: var(--surface);
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+  .online-heading {
+    position: relative;
+    display: flex;
+    width: fit-content;
+    flex-direction: column;
+    margin-top: -78px;
+    box-shadow: -1px 0 0 var(--surface);
+    background: var(--surface);
+    padding: 14px 26px 4px 18px;
+    max-width: calc(100% - 24px);
+    gap: 7px;
+  }
+  .online-heading > span {
+    font-family: var(--serif);
+    font-size: clamp(28px, 6.5cqw, 38px);
+    line-height: 1.06;
+    letter-spacing: -0.035em;
+    color: var(--red);
+  }
+  .online-heading p {
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+    margin: 0;
+  }
+  @container (max-width: 420px) {
+    .commerce-photo {
+      height: 185px;
+    }
+    .online-heading {
+      padding-left: 12px;
+      padding-right: 18px;
+      max-width: calc(100% - 12px);
+      margin-top: -66px;
+    }
+    .online-heading > span {
+      font-size: 28px;
+    }
+  }
+</style>
+<script>
+  import { initializeOnlineFigure } from '../lib/research/online-figure';
+  import simulation from '../../data/research/online-allocation.json';
+  document
+    .querySelectorAll<HTMLElement>('[data-online-art]')
+    .forEach((root) => {
+      initializeOnlineFigure(root, simulation);
+    });
+</script>

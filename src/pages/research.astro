@@ -3,7 +3,10 @@ import Layout from '../layouts/Layout.astro';
 import PageHeading from '../components/PageHeading.astro';
 import ExternalLink from '../components/ExternalLink.astro';
 import ResearchSection from '../components/ResearchSection.astro';
-import { sitePath } from '../utils/paths';
+import TheoryFigure from '../components/TheoryFigure.astro';
+import GpuFigure from '../components/GpuFigure.astro';
+import OnlineFigure from '../components/OnlineFigure.astro';
+import PropertyFigure from '../components/PropertyFigure.astro';
 ---
 <Layout title="Research">
   <PageHeading title="Research"><p>I develop optimization theory, algorithms, and software for large-scale decision-making. My research connects mathematical foundations with practical questions: how to exploit modern computing architectures, explain and improve algorithmic performance, allocate scarce resources under uncertainty, and make data-driven decisions fairer. These questions unite the four research areas below and guide collaborations with industry and public agencies.</p></PageHeading>
@@ -24,9 +27,12 @@ import { sitePath } from '../utils/paths';
           <li>L. Ding, H. Lu, and J. Yang (2025). <ExternalLink href="https://arxiv.org/abs/2505.15775" mark={false}>New Understandings and Computation on Augmented Lagrangian Methods for Low-Rank Semidefinite Programming</ExternalLink>. Working paper.</li>
         </ol>
       </div>
-      <figure slot="figure" class="research-figure">
-        <video src={sitePath('images/research/pdlp-spiral.mp4')} poster={sitePath('images/research/pdlp-spiral.png')} width="720" height="690" muted loop playsinline preload="none" data-autoplay aria-label="Animation: PDHG last iterate, PDHG average iterate, and restarted PDHG converging to the optimal solution"></video>
-        <figcaption>PDHG's last iterate spirals slowly toward the optimum and its average moves faster; restarting from the average (green, dashed) gets there fastest. Animation: <ExternalLink href="https://research.google/blog/scaling-up-linear-programming-with-pdlp/" mark={false}>Google Research</ExternalLink>.</figcaption>
+      <figure slot="figure" class="research-figure gpu-figure">
+        <GpuFigure />
+        <figcaption>GPU-accelerated first-order methods rely on sparse matrix–vector products. The animation shows Ax and Aᵀy on rail4284, a railway set-covering problem. The highlights illustrate the two multiplication directions.<span class="theory-sources gpu-sources">
+          <span>Matrix: <ExternalLink href="https://sparse.tamu.edu/Mittelmann/rail4284" mark={false}>SuiteSparse</ExternalLink></span>
+          <span>Photo: <ExternalLink href="https://commons.wikimedia.org/wiki/File:Aerial_view_of_West_Oakland_rail_yards,_December_2022.JPG" mark={false}>Pi.1415926535</ExternalLink> / <ExternalLink href="https://creativecommons.org/licenses/by-sa/4.0/" mark={false}>CC BY-SA 4.0</ExternalLink>; cropped and color-adjusted.</span>
+        </span></figcaption>
       </figure>
     </ResearchSection>
     <ResearchSection id="first-order-theory" title="Theoretical foundations of first-order optimization">
@@ -46,9 +52,16 @@ import { sitePath } from '../utils/paths';
           <li>H. Lu (2022). <ExternalLink href="https://doi.org/10.1007/s10107-021-01669-4" mark={false}>An <em>O</em>(<em>s<sup>r</sup></em>)-Resolution ODE Framework for Understanding Discrete-Time Algorithms and Applications to the Linear Convergence of Minimax Problems</ExternalLink>. <em>Mathematical Programming</em>, 194, 1061–1112.</li>
         </ol>
       </div>
-      <figure slot="figure" class="research-figure">
-        <img src={sitePath('images/research/ode.svg')} alt="Gradient descent–ascent iterates spiraling outward from a saddle point, compared with a closed orbit predicted by a low-resolution ODE" width="320" height="240" loading="lazy" />
-        <figcaption>Schematic. On a min–max problem, the low-resolution ODE predicts a closed orbit; a higher-resolution ODE tracks the iterates as they spiral.</figcaption>
+      <figure slot="figure" class="research-figure theory-figure">
+        <TheoryFigure />
+        <figcaption id="comparison-description">
+          Adaptive restarting accelerates convergence in this constrained
+          bilinear example. Dark gray follows the current epoch average of PDHG,
+          while burgundy follows reflected Halpern PDHG. Each averaged-PDHG
+          restart begins a new epoch from the displayed average. The
+          trajectories and KKT residuals follow the same 220 PDHG evaluations,
+          including the Halpern reset steps.
+          <span class="theory-sources">Based on <ExternalLink href="https://arxiv.org/abs/2105.12715" mark={false}>Applegate et al.</ExternalLink> and <ExternalLink href="https://arxiv.org/abs/2407.16144" mark={false}>Lu &amp; Yang</ExternalLink>.</span></figcaption>
       </figure>
     </ResearchSection>
     <ResearchSection id="online-decision-making" title="Online decision-making and advertising">
@@ -66,9 +79,9 @@ import { sitePath } from '../utils/paths';
           <li>S. R. Balseiro, H. Lu, V. Mirrokni, and B. Sivan (2026). <ExternalLink href="https://arxiv.org/abs/2202.06152" mark={false}>Analysis of Dual-Based PID Controllers through Convolutional Mirror Descent</ExternalLink>. <em>Operations Research</em>, forthcoming.</li>
         </ol>
       </div>
-      <figure slot="figure" class="research-figure">
-        <img src={sitePath('images/research/dual-price.svg')} alt="Shadow price learned by dual mirror descent rising and settling near its optimal value" width="320" height="240" loading="lazy" />
-        <figcaption>Schematic. Dual mirror descent learns the shadow price of a budget from streaming requests and settles near its optimal value.</figcaption>
+      <figure slot="figure" class="research-figure online-figure">
+        <OnlineFigure />
+        <figcaption>Dual mirror descent updates the budget shadow price using observed payments. The curves compare its cumulative net utility (value minus payment) with bidding each impression’s value. Both bidders face the same auctions and budget.<span class="theory-sources">Framework: <ExternalLink href="https://arxiv.org/abs/2011.10124" mark={false}>Balseiro, Lu &amp; Mirrokni</ExternalLink>. Photo: <ExternalLink href="https://www.pexels.com/photo/person-purchasing-goods-online-6612276/" mark={false}>Mikhail Nilov / Pexels</ExternalLink>.</span></figcaption>
       </figure>
     </ResearchSection>
     <ResearchSection id="property-taxation" title="Addressing regressivity in property taxation">
@@ -82,9 +95,12 @@ import { sitePath } from '../utils/paths';
           <li>N. Acevedo, H. Lu, M. Wagner, and T. Sparer. Fair Property Tax: Targeting Regressivity in Machine Learning-Based Valuation. Unpublished manuscript.</li>
         </ol>
       </div>
-      <figure slot="figure" class="research-figure">
-        <img src={sitePath('images/research/property-tax.svg')} alt="Assessment ratio by home value: a standard model declines with value while a regressivity-penalized model stays flat" width="320" height="240" loading="lazy" />
-        <figcaption>Schematic. A standard valuation model over-assesses lower-valued homes; penalizing regressivity during training flattens the ratio.</figcaption>
+      <figure slot="figure" class="research-figure property-figure">
+        <PropertyFigure />
+        <figcaption>Regularization reduces the overvaluation of lower-priced homes in this Cook County example. Gray shows the model without a penalty, and burgundy shows the results as the surrogate-loss penalty increases. The measures below compare price-related regressivity (PRD and PRB) and predictive accuracy (R²) on held-out data.<span class="theory-sources">
+          Results: Acevedo, Lu, Wagner &amp; Sparer, <em>Fair Property Tax</em> (unpublished manuscript).
+          <br />Photo: <ExternalLink href="https://commons.wikimedia.org/wiki/File:Bissell_Street_District_4.JPG" mark={false}>Thshriver</ExternalLink> / <ExternalLink href="https://creativecommons.org/licenses/by-sa/3.0/" mark={false}>CC BY-SA 3.0</ExternalLink>; cropped and color-adjusted.
+        </span></figcaption>
       </figure>
     </ResearchSection>
     <ResearchSection id="other-research" title="Other research I have been working on">
@@ -116,19 +132,6 @@ import { sitePath } from '../utils/paths';
   revealLinkedSection();
   window.addEventListener('hashchange', revealLinkedSection);
 
-  const video = document.querySelector<HTMLVideoElement>('video[data-autoplay]');
-  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  const updateVideo = () => {
-    if (!video) return;
-    if (!reducedMotion.matches) {
-      video.preload = 'auto';
-      video.play().catch(() => {});
-    } else {
-      video.pause();
-    }
-  };
-  reducedMotion.addEventListener('change', updateVideo);
-  updateVideo();
 </script>
 
 <style>
@@ -137,11 +140,16 @@ import { sitePath } from '../utils/paths';
   }
   .research-figure {
     margin: 0;
-    position: sticky;
-    top: 30px;
+    width: 100%;
+    min-width: 0;
   }
-  .research-figure img,
-  .research-figure video {
+  @media (min-height: 720px) {
+    .research-figure {
+      position: sticky;
+      top: 30px;
+    }
+  }
+  .research-figure img {
     display: block;
     width: 100%;
     height: auto;
@@ -152,6 +160,13 @@ import { sitePath } from '../utils/paths';
     line-height: 1.5;
     color: var(--muted);
   }
+  .theory-sources {
+    display: block;
+    margin-top: var(--space-xs);
+    font-size: var(--text-label);
+  }
+  .gpu-sources { display: grid; gap: 3px; line-height: 1.45; }
+  .gpu-data-note { margin-top: 2px; }
   .research-page h3 {
     margin-top: var(--space-xl);
     margin-bottom: var(--space-sm);
@@ -173,6 +188,12 @@ import { sitePath } from '../utils/paths';
       position: static;
       max-width: 360px;
       margin-top: var(--space-xl);
+    }
+    .theory-figure,
+    .gpu-figure,
+    .online-figure,
+    .property-figure {
+      max-width: none;
     }
   }
 </style>

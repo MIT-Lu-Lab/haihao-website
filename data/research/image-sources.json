@@ -1,0 +1,36 @@
+{
+  "railwayPhoto": {
+    "file": "src/assets/research/railway-oakland.webp",
+    "source": "https://commons.wikimedia.org/wiki/File:Aerial_view_of_West_Oakland_rail_yards,_December_2022.JPG",
+    "author": "Pi.1415926535",
+    "license": "CC BY-SA 4.0",
+    "changes": "CSS crop and saturation/contrast adjustment; this photographic adaptation remains CC BY-SA 4.0.",
+    "context": "West Oakland, illustrative railway setting, not geographic data for rail4284",
+    "encoding": "Stored as 1280 x 823 WebP quality 80 without metadata. Astro Image emits 640 and 1280 pixel WebP candidates at quality 80."
+  },
+  "note": "The rail4284 matrix is real; the railway photograph illustrates the application context.",
+  "commercePhoto": {
+    "file": "src/assets/research/online-commerce.webp",
+    "source": "https://www.pexels.com/photo/person-purchasing-goods-online-6612276/",
+    "author": "Mikhail Nilov",
+    "license": "Pexels License",
+    "licenseUrl": "https://www.pexels.com/license/",
+    "changes": "Resized to 1120 x 747; cropped in CSS.",
+    "encoding": "Stored as 1120 x 747 WebP quality 80 without metadata. Astro Image emits 640 and 1120 pixel WebP candidates at quality 80."
+  },
+  "gpuIllustration": {
+    "file": "src/assets/research/gpu-platform.webp",
+    "source": "Original illustration supplied by the project owner, who confirmed creating it.",
+    "changes": "Resized to 800 x 533.",
+    "encoding": "Stored as 800 x 533 WebP quality 80 with alpha, without metadata. Astro Image emits 400 and 800 pixel WebP candidates at quality 80."
+  },
+  "residentialPhoto": {
+    "file": "src/assets/research/chicago-residences.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Bissell_Street_District_4.JPG",
+    "author": "Thshriver",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "changes": "Resized and encoded as WebP by Astro; CSS crop and color adjustment. This photographic adaptation remains CC BY-SA 3.0.",
+    "encoding": "Source: 1800 x 1200 JPEG quality 85, embedded metadata removed. Astro Image: 1200 pixels wide, WebP quality 80."
+  }
+}

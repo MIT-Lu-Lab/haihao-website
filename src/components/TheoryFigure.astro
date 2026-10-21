@@ -1,0 +1,265 @@
+---
+import { sitePath } from '../utils/paths';
+import {
+  CANVAS_WIDTH,
+  CANVAS_HEIGHT,
+  RESIDUAL_PLOT,
+} from '../lib/research/theory-layout';
+interface Props {
+  descriptionId?: string;
+}
+
+const { descriptionId = 'comparison-description' } = Astro.props;
+---
+
+<div
+  class="theory-visual"
+  data-source={sitePath('pdhg-comparison.json')}
+  style={{
+    '--canvas-compact': `${CANVAS_WIDTH} / ${CANVAS_HEIGHT.compact}`,
+    '--canvas-desktop': `${CANVAS_WIDTH} / ${CANVAS_HEIGHT.desktop}`,
+    '--plot-left': `${(100 * RESIDUAL_PLOT.left) / CANVAS_WIDTH}%`,
+    '--plot-right': `${100 * (1 - RESIDUAL_PLOT.right / CANVAS_WIDTH)}%`,
+    '--panel-compact': `${(100 * RESIDUAL_PLOT.compact.panelTop) / CANVAS_WIDTH}cqw`,
+    '--panel-desktop': `${(100 * RESIDUAL_PLOT.desktop.panelTop) / CANVAS_WIDTH}cqw`,
+  }}
+>
+  <div class="figure-heading">
+    <p class="headline">
+      <span>Paths to</span> <span>convergence.</span>
+    </p>
+  </div>
+  <div class="plot-body">
+    <div class="convergence-field" aria-hidden="true"></div>
+    <canvas
+      width={CANVAS_WIDTH}
+      height={CANVAS_HEIGHT.compact}
+      role="img"
+      aria-describedby={descriptionId}
+      aria-label="State trajectories and KKT residuals for three methods solving min x greater than or equal to zero max y (x minus 1)y."
+    ></canvas>
+    <noscript>
+      <p class="error">
+        The animation requires JavaScript. The caption describes the comparison
+        and its final residuals.
+      </p>
+    </noscript>
+    <ul class="legend" aria-label="Methods">
+      <li class="legend-item">
+        <svg class="swatch pdhg" viewBox="0 0 42 14" aria-hidden="true">
+          <path
+            d="M2 7H40"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-dasharray=".1 5.9"
+          />
+          <circle
+            cx="21"
+            cy="7"
+            r="3.4"
+            fill="currentColor"
+            stroke="var(--surface)"
+            stroke-width="1"
+          />
+        </svg>
+        <span>PDHG</span>
+      </li>
+      <li class="legend-item">
+        <svg class="swatch restarted" viewBox="0 0 42 14" aria-hidden="true">
+          <path
+            d="M2 7H40"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-dasharray="7 5"
+          />
+          <rect
+            x="17.6"
+            y="3.6"
+            width="6.8"
+            height="6.8"
+            rx=".6"
+            fill="currentColor"
+            stroke="var(--surface)"
+            stroke-width="1"
+          />
+        </svg>
+        <span>Restarted Average PDHG</span>
+      </li>
+      <li class="legend-item">
+        <svg class="swatch halpern" viewBox="0 0 42 14" aria-hidden="true">
+          <path
+            d="M2 7H40"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+          <path
+            d="m21 2.5 4 4.5-4 4.5-4-4.5Z"
+            fill="currentColor"
+            stroke="var(--surface)"
+            stroke-width="1"
+          />
+        </svg>
+        <span>Restarted reflected Halpern PDHG</span>
+      </li>
+    </ul>
+  </div>
+  <p class="error" role="alert" hidden></p>
+</div>
+<script>
+  import { loadTheoryFigure } from '../lib/research/theory-figure.ts';
+  for (const root of document.querySelectorAll<HTMLElement>('.theory-visual')) {
+    loadTheoryFigure(root, window);
+  }
+</script>
+<style>
+  .theory-visual {
+    --pdhg: var(--chart-baseline);
+    --restarted: var(--chart-emphasis);
+    --halpern: var(--red);
+    position: relative;
+    container-type: inline-size;
+    color: var(--ink);
+    font-family: var(--sans);
+  }
+  .figure-heading {
+    z-index: 2;
+    margin: 0 var(--plot-right) 8px var(--plot-left);
+    color: var(--red);
+    font-family: var(--serif);
+    font-size: clamp(26px, 5.5cqw, 30px);
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+  }
+  .headline {
+    margin: 0;
+  }
+  .headline > span {
+    display: block;
+  }
+  .plot-body {
+    position: relative;
+    isolation: isolate;
+  }
+  .convergence-field {
+    position: absolute;
+    inset: var(--panel-compact) 0 0;
+    background: var(--soft);
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+    pointer-events: none;
+  }
+  canvas {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: var(--canvas-compact);
+    height: auto;
+  }
+  .legend {
+    position: relative;
+    display: grid;
+    gap: 5px;
+    margin: 10px var(--plot-right) 0 var(--plot-left);
+    padding: 0 0 16px;
+    list-style: none;
+    color: var(--ink);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .legend-item {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr);
+    align-items: center;
+    gap: 11px;
+    min-height: 19px;
+  }
+  .swatch {
+    display: block;
+    width: 38px;
+    height: 14px;
+    overflow: visible;
+  }
+  .pdhg {
+    color: var(--pdhg);
+  }
+  .restarted {
+    color: var(--restarted);
+  }
+  .halpern {
+    color: var(--halpern);
+  }
+  .error {
+    font-size: 12px;
+    text-align: center;
+    color: var(--muted);
+  }
+  @container (max-width: 470px) {
+    .legend {
+      font-size: 12px;
+      gap: 6px;
+    }
+    .legend-item {
+      grid-template-columns: 34px minmax(0, 1fr);
+      gap: 9px;
+    }
+    .swatch {
+      width: 34px;
+    }
+  }
+  [hidden] {
+    display: none !important;
+  }
+
+  @container (min-width: 440px) {
+    .figure-heading {
+      position: absolute;
+      top: -24px;
+      left: 0;
+      margin: 0;
+      font-size: clamp(28px, 6cqw, 35px);
+      line-height: 1.06;
+      letter-spacing: -0.035em;
+    }
+    .legend {
+      position: absolute;
+      top: calc(var(--panel-desktop) - 7px);
+      right: 12px;
+      width: max-content;
+      max-width: 50%;
+      margin: 0;
+      padding: 0;
+      transform: translateY(-100%);
+    }
+    .legend-item {
+      grid-template-columns: 32px minmax(0, 1fr);
+      gap: 9px;
+    }
+    .swatch {
+      width: 32px;
+    }
+    .convergence-field {
+      top: var(--panel-desktop);
+    }
+    canvas {
+      aspect-ratio: var(--canvas-desktop);
+    }
+  }
+
+  @container (min-width: 440px) and (max-width: 599px) {
+    .legend {
+      font-size: 10.5px;
+      gap: 3px;
+    }
+    .legend-item {
+      grid-template-columns: 28px minmax(0, 1fr);
+      gap: 7px;
+      min-height: 17px;
+    }
+    .swatch {
+      width: 28px;
+    }
+  }
+</style>

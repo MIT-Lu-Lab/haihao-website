@@ -1,0 +1,427 @@
+{
+  "source": {
+    "title": "Fair Property Tax: Targeting Regressivity in Machine Learning-Based Valuation",
+    "status": "Unpublished manuscript supplied by the author/user",
+    "figure": "Figure 2, PDF page 28, upper-right panel",
+    "metrics": "Table 6, PDF page 26; PRB cross-check from Table 7, PDF page 27",
+    "family": "Surrogate",
+    "evaluation": "Held-out",
+    "profileMeaning": "Median valuation-to-sale ratios in 30 equal-count sale-price bins; scalar metrics are computed on the full held-out sample, not from these bin medians.",
+    "extraction": "Curve vertices extracted directly from PDF vector paths with PyMuPDF. No raster digitization, interpolation, smoothing, or invented samples.",
+    "reference": "Custom-objective rho=0 path origin, not ordinary native LightGBM. Only within-path comparisons isolate penalty activation.",
+    "anchorMeaning": "Three descriptive display anchors from the same final augmented path, not selected or recommended operating points. The nominal rho=1 anchor is tested at approximately 0.954095.",
+    "prdMeaning": "Price-related differential: mean ratio divided by price-weighted mean ratio. Neutral reference is 1. A movement toward 1 does not establish complete fairness or eliminate local bias.",
+    "accuracyMeaning": "Price-scale R squared. Values reproduce the three-decimal precision of Table 6.",
+    "limitations": "Strong correction has a non-monotone ratio trough; PRB crosses from negative to positive, and price-scale R squared decreases at rho=100. No chosen penalty, deployment, compliance, or universal improvement claim."
+  },
+  "calibration": {
+    "coordinateUnits": "PDF points",
+    "xScale": "log10 sale price",
+    "x100000": 347.858154296875,
+    "x1000000": 455.4266052246094,
+    "yScale": "linear valuation-to-sale ratio",
+    "yRatio1": 323.16265869140625,
+    "yRatio2": 235.54718017578125,
+    "formulaSalePrice": "10 ** (5 + (pdfX - x100000)/(x1000000 - x100000))",
+    "formulaRatio": "1 + (yRatio1 - pdfY)/(yRatio1 - yRatio2)",
+    "floatingPointUncertainty": "PDF path coordinates stored as floats; calibration is exact to displayed tick locations, typical numerical uncertainty is well below 0.00001 ratio."
+  },
+  "profiles": [
+    {
+      "id": "baseline",
+      "label": "No penalty",
+      "rho": 0,
+      "nominalRho": 0,
+      "drawingIndex": 239,
+      "prd": 1.069,
+      "priceR2": 0.893,
+      "prb": -0.088,
+      "points": [
+        {
+          "salePrice": 63800.027,
+          "ratio": 1.7089263
+        },
+        {
+          "salePrice": 100000.0,
+          "ratio": 1.2967498
+        },
+        {
+          "salePrice": 130000.011,
+          "ratio": 1.09309
+        },
+        {
+          "salePrice": 155999.983,
+          "ratio": 0.9949244
+        },
+        {
+          "salePrice": 179999.966,
+          "ratio": 0.9505755
+        },
+        {
+          "salePrice": 200000.074,
+          "ratio": 0.9626017
+        },
+        {
+          "salePrice": 223999.961,
+          "ratio": 0.9320407
+        },
+        {
+          "salePrice": 240000.043,
+          "ratio": 0.9194576
+        },
+        {
+          "salePrice": 254999.992,
+          "ratio": 0.9300337
+        },
+        {
+          "salePrice": 269999.949,
+          "ratio": 0.9183102
+        },
+        {
+          "salePrice": 285000.088,
+          "ratio": 0.9247004
+        },
+        {
+          "salePrice": 299500.007,
+          "ratio": 0.9268247
+        },
+        {
+          "salePrice": 310000.168,
+          "ratio": 0.9248916
+        },
+        {
+          "salePrice": 324999.999,
+          "ratio": 0.9240456
+        },
+        {
+          "salePrice": 340000.115,
+          "ratio": 0.9191392
+        },
+        {
+          "salePrice": 351000.193,
+          "ratio": 0.9247624
+        },
+        {
+          "salePrice": 369000.184,
+          "ratio": 0.9330662
+        },
+        {
+          "salePrice": 385000.066,
+          "ratio": 0.9231532
+        },
+        {
+          "salePrice": 400000.036,
+          "ratio": 0.9282998
+        },
+        {
+          "salePrice": 425000.226,
+          "ratio": 0.9133503
+        },
+        {
+          "salePrice": 445000.2,
+          "ratio": 0.9073753
+        },
+        {
+          "salePrice": 472000.068,
+          "ratio": 0.90657
+        },
+        {
+          "salePrice": 504999.815,
+          "ratio": 0.8954076
+        },
+        {
+          "salePrice": 549899.901,
+          "ratio": 0.8959197
+        },
+        {
+          "salePrice": 600000.054,
+          "ratio": 0.8898942
+        },
+        {
+          "salePrice": 665000.346,
+          "ratio": 0.8897037
+        },
+        {
+          "salePrice": 749999.723,
+          "ratio": 0.9030305
+        },
+        {
+          "salePrice": 875000.108,
+          "ratio": 0.8912735
+        },
+        {
+          "salePrice": 1129999.958,
+          "ratio": 0.8829774
+        },
+        {
+          "salePrice": 1740000.327,
+          "ratio": 0.8632016
+        }
+      ]
+    },
+    {
+      "id": "moderate",
+      "label": "Penalty applied",
+      "rho": 0.954095,
+      "nominalRho": 1,
+      "drawingIndex": 332,
+      "prd": 1.049,
+      "priceR2": 0.897,
+      "prb": -0.045,
+      "points": [
+        {
+          "salePrice": 63800.027,
+          "ratio": 1.529601
+        },
+        {
+          "salePrice": 100000.0,
+          "ratio": 1.1792459
+        },
+        {
+          "salePrice": 130000.011,
+          "ratio": 1.0170931
+        },
+        {
+          "salePrice": 155999.983,
+          "ratio": 0.9338934
+        },
+        {
+          "salePrice": 179999.966,
+          "ratio": 0.9119285
+        },
+        {
+          "salePrice": 200000.074,
+          "ratio": 0.9313845
+        },
+        {
+          "salePrice": 223999.961,
+          "ratio": 0.9051778
+        },
+        {
+          "salePrice": 240000.043,
+          "ratio": 0.9103248
+        },
+        {
+          "salePrice": 254999.992,
+          "ratio": 0.9243848
+        },
+        {
+          "salePrice": 269999.949,
+          "ratio": 0.9129403
+        },
+        {
+          "salePrice": 285000.088,
+          "ratio": 0.924474
+        },
+        {
+          "salePrice": 299500.007,
+          "ratio": 0.9256969
+        },
+        {
+          "salePrice": 310000.168,
+          "ratio": 0.9221319
+        },
+        {
+          "salePrice": 324999.999,
+          "ratio": 0.9223531
+        },
+        {
+          "salePrice": 340000.115,
+          "ratio": 0.9137571
+        },
+        {
+          "salePrice": 351000.193,
+          "ratio": 0.9235708
+        },
+        {
+          "salePrice": 369000.184,
+          "ratio": 0.9345914
+        },
+        {
+          "salePrice": 385000.066,
+          "ratio": 0.9238512
+        },
+        {
+          "salePrice": 400000.036,
+          "ratio": 0.9337802
+        },
+        {
+          "salePrice": 425000.226,
+          "ratio": 0.9189679
+        },
+        {
+          "salePrice": 445000.2,
+          "ratio": 0.9121535
+        },
+        {
+          "salePrice": 472000.068,
+          "ratio": 0.9166157
+        },
+        {
+          "salePrice": 504999.815,
+          "ratio": 0.9108111
+        },
+        {
+          "salePrice": 549899.901,
+          "ratio": 0.9115962
+        },
+        {
+          "salePrice": 600000.054,
+          "ratio": 0.9069932
+        },
+        {
+          "salePrice": 665000.346,
+          "ratio": 0.9136279
+        },
+        {
+          "salePrice": 749999.723,
+          "ratio": 0.9166279
+        },
+        {
+          "salePrice": 875000.108,
+          "ratio": 0.9075188
+        },
+        {
+          "salePrice": 1129999.958,
+          "ratio": 0.9015244
+        },
+        {
+          "salePrice": 1740000.327,
+          "ratio": 0.891316
+        }
+      ]
+    },
+    {
+      "id": "strong",
+      "label": "Stronger penalty",
+      "rho": 100,
+      "nominalRho": 100,
+      "drawingIndex": 394,
+      "prd": 1.01,
+      "priceR2": 0.889,
+      "prb": 0.042,
+      "points": [
+        {
+          "salePrice": 63800.027,
+          "ratio": 1.2864844
+        },
+        {
+          "salePrice": 100000.0,
+          "ratio": 0.9648765
+        },
+        {
+          "salePrice": 130000.011,
+          "ratio": 0.8290095
+        },
+        {
+          "salePrice": 155999.983,
+          "ratio": 0.7594762
+        },
+        {
+          "salePrice": 179999.966,
+          "ratio": 0.7361177
+        },
+        {
+          "salePrice": 200000.074,
+          "ratio": 0.75693
+        },
+        {
+          "salePrice": 223999.961,
+          "ratio": 0.7409258
+        },
+        {
+          "salePrice": 240000.043,
+          "ratio": 0.7526353
+        },
+        {
+          "salePrice": 254999.992,
+          "ratio": 0.7895314
+        },
+        {
+          "salePrice": 269999.949,
+          "ratio": 0.7947888
+        },
+        {
+          "salePrice": 285000.088,
+          "ratio": 0.843825
+        },
+        {
+          "salePrice": 299500.007,
+          "ratio": 0.8713668
+        },
+        {
+          "salePrice": 310000.168,
+          "ratio": 0.9013293
+        },
+        {
+          "salePrice": 324999.999,
+          "ratio": 0.9297373
+        },
+        {
+          "salePrice": 340000.115,
+          "ratio": 0.9363396
+        },
+        {
+          "salePrice": 351000.193,
+          "ratio": 0.9694829
+        },
+        {
+          "salePrice": 369000.184,
+          "ratio": 0.9834712
+        },
+        {
+          "salePrice": 385000.066,
+          "ratio": 0.9851911
+        },
+        {
+          "salePrice": 400000.036,
+          "ratio": 0.987598
+        },
+        {
+          "salePrice": 425000.226,
+          "ratio": 0.9762064
+        },
+        {
+          "salePrice": 445000.2,
+          "ratio": 0.964957
+        },
+        {
+          "salePrice": 472000.068,
+          "ratio": 0.9674028
+        },
+        {
+          "salePrice": 504999.815,
+          "ratio": 0.9550085
+        },
+        {
+          "salePrice": 549899.901,
+          "ratio": 0.9512226
+        },
+        {
+          "salePrice": 600000.054,
+          "ratio": 0.9398332
+        },
+        {
+          "salePrice": 665000.346,
+          "ratio": 0.9376973
+        },
+        {
+          "salePrice": 749999.723,
+          "ratio": 0.9298526
+        },
+        {
+          "salePrice": 875000.108,
+          "ratio": 0.9222385
+        },
+        {
+          "salePrice": 1129999.958,
+          "ratio": 0.910516
+        },
+        {
+          "salePrice": 1740000.327,
+          "ratio": 0.8833421
+        }
+      ]
+    }
+  ]
+}
