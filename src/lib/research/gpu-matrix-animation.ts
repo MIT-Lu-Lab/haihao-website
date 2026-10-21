@@ -145,15 +145,49 @@ export function initializeGpuFigure(
           (MATRIX.width + SCAN_BAND.width) * scanProgress,
       ),
     );
-    setOpacity(scanDown, scanning && phase === 0 ? 1 : 0);
-    setOpacity(scanRight, scanning && phase === 1 ? 1 : 0);
+    const scanAlpha =
+      smooth((seconds - SCAN.start) / 0.18) *
+      (1 - smooth((seconds - (SCAN.start + SCAN.duration - 0.18)) / 0.18));
+    setOpacity(scanDown, scanning && phase === 0 ? scanAlpha : 0);
+    setOpacity(scanRight, scanning && phase === 1 ? scanAlpha : 0);
     for (const arrow of outputArrows) {
       setOpacity(
         arrow,
         reducedMotion
           ? 0
-          : smooth((seconds - SCAN.resultStart) / SCAN.arrowFadeDuration),
+          : smooth((seconds - SCAN.resultStart) / SCAN.arrowFadeDuration) *
+              (1 -
+                smooth(
+                  (seconds - ENVELOPE.fadeOutStart) / ENVELOPE.fadeDuration,
+                )),
       );
+    }
+
+    // Reveal shaft then tip along the path; one restrained directional gesture.
+    for (const [flow, downInput] of [
+      [flowA, true],
+      [flowAT, false],
+    ] as const) {
+      for (const group of flow.querySelectorAll<SVGGElement>(':scope > g')) {
+        const output = group.hasAttribute('data-flow-output');
+        const age =
+          seconds - (output ? SCAN.resultStart : ENVELOPE.arrowsStart);
+        const reveal = reducedMotion ? 0 : smooth(age / 0.38);
+        const nudge =
+          age > 0.38 && age < 0.94
+            ? 1.5 * Math.sin((Math.PI * (age - 0.38)) / 0.56) ** 2
+            : 0;
+        const down = output ? !downInput : downInput;
+        group.setAttribute(
+          'transform',
+          `translate(${down ? 0 : nudge} ${down ? nudge : 0})`,
+        );
+        for (const path of group.querySelectorAll('path')) {
+          path.setAttribute('pathLength', '1');
+          path.setAttribute('stroke-dasharray', '1 1');
+          path.setAttribute('stroke-dashoffset', String(1 - reveal));
+        }
+      }
     }
 
     const breath = reducedMotion

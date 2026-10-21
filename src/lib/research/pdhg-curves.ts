@@ -1,14 +1,35 @@
 export type Point = { x: number; y: number };
+export type MeasuredPoint = Point & { residual: number };
 export type MethodName = 'last' | 'restarted' | 'halpern';
 export interface ComparisonRow {
   k: number;
-  last: Point & { distance: number };
-  restarted: Point & { distance: number };
-  halpern: Point & { distance: number };
+  last: MeasuredPoint;
+  restarted: MeasuredPoint;
+  epochAverage?: MeasuredPoint;
+  halpern: MeasuredPoint;
   restart: boolean;
   preRestart: Point | null;
   preHalpern: Point | null;
 }
+/**
+ * Select epoch averages for both charts without changing saved algorithm states.
+ * At a reset the mean is already the new anchor, so its two display endpoints
+ * coincide. Retain that boundary to avoid smoothing tangents across epochs.
+ */
+export function makeAverageDisplayRows(rows: ComparisonRow[]): ComparisonRow[] {
+  return rows.map((row) => {
+    if (row.k === 0) return row;
+    if (!row.epochAverage) {
+      throw new Error(`Missing epoch average at evaluation ${row.k}`);
+    }
+    return {
+      ...row,
+      restarted: row.epochAverage,
+      preRestart: row.restart ? row.epochAverage : null,
+    };
+  });
+}
+
 export type Segment = {
   start: Point;
   end: Point;
@@ -48,8 +69,12 @@ function makeCurves(
       const left = points[Math.max(0, index - 1)];
       const right = points[Math.min(points.length - 1, index + 1)];
       const stepSpan = right.step - left.step;
+      // A horizontal tangent at x=0 keeps the display curve on the boundary.
       return {
-        x: (right.point.x - left.point.x) / stepSpan,
+        x:
+          points[index].point.x === 0
+            ? 0
+            : (right.point.x - left.point.x) / stepSpan,
         y: (right.point.y - left.point.y) / stepSpan,
       };
     };
@@ -102,8 +127,8 @@ export function makeComparisonCurves(rows: ComparisonRow[]): ComparisonCurves {
     restarted: makeCurves(rows, 'restarted', 'preRestart'),
     halpern: makeCurves(rows, 'halpern', 'preHalpern'),
   };
-  // The current iterates share the first PDHG epoch, including the pre-reset
-  // endpoint. Share interpolation too, so there is no artificial separation.
+  // Share the initial one-step epoch where the current and average points
+  // coincide. This avoids artificial separation from interpolation alone.
   const firstRestart = rows.find((row) => row.restart);
   if (firstRestart) {
     for (const [step, segment] of curves.last) {

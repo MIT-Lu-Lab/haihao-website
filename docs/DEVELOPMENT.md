@@ -29,7 +29,34 @@ The static build is generated in `dist/`. Hosting and a production domain have n
 
 ## Research figures
 
-Run `npm run research:generate` to regenerate the PDHG comparison and online allocation data. The command runs `scripts/pdhg-study.mjs` before `scripts/pdhg-comparison.mjs`, which reads the first script's output, then runs `scripts/online-allocation.mjs`. Paths resolve relative to the scripts, and the generators create their output directories as needed.
+Run `npm run research:generate` to regenerate the PDHG comparison and online allocation data. The command runs the two independent generators `scripts/pdhg-comparison.mjs` and `scripts/online-allocation.mjs`. Paths resolve relative to each script. To regenerate only the theory figure, run `node scripts/pdhg-comparison.mjs`.
+
+The theory figure uses the constrained problem `min_{x >= 0} max_y (x - 1)y`
+from Lu & Yang, Figure 1, starting at `(2, 2)` with step size `0.2`.
+It is an independent calculation on that problem, not an exact reproduction
+of the paper's unspecified figure settings. The saved JSON records the
+parameters, restart rules, and sources.
+
+- Plain PDHG and reflected Halpern display current iterates. Restarted Average
+  PDHG displays the mean of its current epoch's new iterates, excluding the
+  anchor. Its lower curve is the KKT residual of that mean, not the mean of
+  individual residuals. At restart the displayed mean becomes the new anchor,
+  so there is no instantaneous jump. Saved `restarted` states remain current
+  iterates; `makeAverageDisplayRows` selects `epochAverage` for both charts.
+- Average PDHG uses the constrained Euclidean normalized duality gap.
+  Reflected Halpern uses the canonical fixed-point residual. Both use
+  adaptive restarts with `beta = 1/e`.
+- Each horizontal unit is one PDHG evaluation, including Halpern reset
+  evaluations. Both plots share the same 220-evaluation clock at 100 ms per
+  evaluation. Restarts do not pause playback. A 300 ms fade ends each 22.3-second
+  cycle. Each restart is marked in the KKT plot by a 5px solid vertical tick
+  in the method's color.
+- `residual` stores the natural KKT residual
+  `hypot(x - max(0, x - y), x - 1)`, not distance to the solution.
+
+The earlier unconstrained study (`scripts/pdhg-study.mjs` and
+`data/research/pdhg-trajectories.*`) remains a historical reference and is
+not used by the page or the current generation command.
 
 - `data/research/`: reproducible research artifacts (JSON and CSV files); imported data is bundled into the page, while the source directory is not copied to the site.
 - `public/pdhg-comparison.json`: the comparison data fetched by the research page.

@@ -1,81 +1,30 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import test from 'node:test';
 import { createTheoryTimeline } from '../src/lib/research/theory-timeline.ts';
-import { TIMING, DISPLAY_STEPS } from '../src/lib/research/theory-renderer.ts';
+import { DISPLAY_STEPS, TIMING } from '../src/lib/research/theory-renderer.ts';
 
-const timeline = createTheoryTimeline(DISPLAY_STEPS, TIMING, 20);
-
-// Reset steps shown in the figure; only the averaged reset at 20 holds.
-
-test('only the first averaged reset pauses playback', () => {
-  let previousHolds = 0;
-  for (const step of [3, 14, 20, 25, 36, 41, 47]) {
-    const before = step === 20 ? 900 : 0;
-    const duration = step === 20 ? 2200 : 0;
-    const start = step * TIMING.step + previousHolds;
-    assert.equal(timeline.sample(start - 1).time, step * TIMING.step - 1);
-    for (const elapsed of duration
-      ? [0, before - 1, before, duration - 1]
-      : []) {
-      assert.deepEqual(timeline.sample(start + elapsed), {
-        time: step * TIMING.step,
-        endHold: 0,
-        restart: {
-          step,
-          phase: elapsed < before ? 'before' : 'after',
-          elapsed,
-          duration,
-          explain: step === 20,
-        },
-      });
-    }
-    assert.equal(timeline.sample(start + duration).restart, null);
-    assert.equal(
-      timeline.sample(start + duration + 1).time,
-      step * TIMING.step + 1,
-    );
-    previousHolds += duration;
-  }
+test('shared progress reaches the high-accuracy comparison before looping', () => {
+  const clock = createTheoryTimeline(DISPLAY_STEPS, TIMING);
+  assert.equal(clock.duration, 22000);
+  assert.equal(clock.sample(11000).time / TIMING.step, 110);
+  assert.equal(clock.sample(20100).time / TIMING.step, 201);
+  assert.deepEqual(clock.sample(22000), { time: 22000, endHold: 0 });
+  assert.deepEqual(clock.sample(22150), { time: 22000, endHold: 150 });
 });
 
-test('explanation holds preserve iterations and the full final hold', () => {
-  assert.equal(timeline.duration, DISPLAY_STEPS * TIMING.step + 2200);
-  assert.deepEqual(timeline.sample(timeline.duration), {
-    time: DISPLAY_STEPS * TIMING.step,
-    endHold: 0,
-    restart: null,
-  });
-  assert.equal(timeline.sample(timeline.duration + 2399).endHold, 2399);
-});
-
-test('a reset at the final displayed step finishes before the end hold', () => {
-  const finalReset = createTheoryTimeline(25, TIMING, 25);
-  const boundary = 25 * TIMING.step;
-  assert.equal(finalReset.sample(boundary).restart.phase, 'before');
-  assert.equal(
-    finalReset.sample(boundary + TIMING.explanationBefore).restart.phase,
-    'after',
+test('both algorithms restart without a presentation pause', () => {
+  const clock = createTheoryTimeline(DISPLAY_STEPS, TIMING);
+  const { rows } = JSON.parse(
+    fs.readFileSync(new URL('../public/pdhg-comparison.json', import.meta.url)),
   );
-  assert.equal(finalReset.sample(finalReset.duration - 1).endHold, 0);
-  assert.deepEqual(finalReset.sample(finalReset.duration), {
-    time: boundary,
-    endHold: 0,
-    restart: null,
-  });
-  assert.equal(finalReset.sample(finalReset.duration + 1).endHold, 1);
-});
-
-test('without an explained reset, iteration time never holds', () => {
-  for (const step of [undefined, 0, DISPLAY_STEPS + 1]) {
-    const plain = createTheoryTimeline(DISPLAY_STEPS, TIMING, step);
-    assert.equal(plain.duration, DISPLAY_STEPS * TIMING.step);
-    for (const elapsed of [0, 25 * TIMING.step, plain.duration - 1]) {
-      assert.deepEqual(plain.sample(elapsed), {
-        time: elapsed,
-        endHold: 0,
-        restart: null,
-      });
+  const resets = rows.filter((row) => row.preRestart || row.preHalpern);
+  assert.ok(resets.length > 0);
+  for (const row of resets) {
+    const boundary = row.k * TIMING.step;
+    for (const elapsed of [boundary - 1, boundary, boundary + 1]) {
+      if (elapsed > clock.duration) continue;
+      assert.deepEqual(clock.sample(elapsed), { time: elapsed, endHold: 0 });
     }
   }
 });
-

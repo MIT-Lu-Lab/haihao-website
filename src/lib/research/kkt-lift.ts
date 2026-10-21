@@ -4,9 +4,8 @@ import type {
   Point,
   Segment,
 } from './pdhg-curves.ts';
-// For unconstrained L(x,y)=xy: F=(dL/dx,-dL/dy)=(y,-x).
-// This is the absolute Euclidean stationarity residual, not a solver's
-// normalized stopping test and not ||z-T(z)||.
+// Natural KKT residual for min_{x>=0} max_y (x-1)y.
+// This measures feasibility and projected stationarity, not a solver stopping test.
 import { sample } from './pdhg-curves.ts';
 export type ResidualSegment = Segment & {
   startLog: number;
@@ -17,11 +16,11 @@ export type ResidualSegment = Segment & {
 export type ResidualCurves = Record<MethodName, Map<number, ResidualSegment>>;
 
 /**
- * @param position State for L(x,y)=xy.
- * @returns Absolute Euclidean KKT residual.
+ * @param position State for L(x,y)=(x-1)y with x >= 0.
+ * @returns Natural KKT residual.
  */
 export const kktResidual = (position: Point): number =>
-  Math.hypot(position.y, -position.x);
+  Math.hypot(position.x - Math.max(0, position.x - position.y), position.x - 1);
 /**
  * @param position Nonzero state.
  * @returns Base-10 logarithm of the residual.

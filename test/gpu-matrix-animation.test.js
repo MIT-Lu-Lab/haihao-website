@@ -17,10 +17,28 @@ test('GPU playback respects visibility and reduced motion', () => {
       elements.set(selector, {
         attributes: {},
         setAttribute(name, value) {
-          assert.ok(Number.isFinite(Number(value)), `${name}: ${value}`);
+          if (name === 'transform') {
+            assert.match(value, /^translate\([-\d.]+ [-\d.]+\)$/);
+          } else if (name === 'stroke-dasharray') {
+            assert.equal(value, '1 1');
+          } else {
+            assert.ok(Number.isFinite(Number(value)), `${name}: ${value}`);
+          }
           this.attributes[name] = value;
         },
-        querySelectorAll: () => [element('pulse')],
+        hasAttribute(name) {
+          return name === 'data-flow-output' && selector.startsWith('output-');
+        },
+        querySelectorAll(query) {
+          if (query === ':scope > g') {
+            return [
+              element(`${selector}-input`),
+              element(selector.includes('"at"') ? 'output-at' : 'output-a'),
+            ];
+          }
+          if (query === 'path') return [element(`${selector}-path`)];
+          return [element('pulse')];
+        },
       });
     }
     return elements.get(selector);

@@ -1,109 +1,136 @@
 import fs from 'node:fs';
-const base = JSON.parse(
-  fs.readFileSync(
-    new URL('../data/research/pdhg-trajectories.json', import.meta.url),
-    'utf8',
-  ),
-);
-const { eta, steps, initial } = base.metadata;
-const beta = Math.exp(-1),
+
+// Same problem as Lu & Yang Fig. 1. These are independently calculated
+// trajectories, not recovered settings or digitized curves from that figure.
+const eta = 0.2,
+  steps = 220,
+  initial = [2, 2],
+  beta = Math.exp(-1),
   firstEpoch = 1;
-const T = ([x, y]) => [x - eta * y, eta * x + (1 - 2 * eta * eta) * y];
-// Scaling P_eta by eta leaves all restart ratios unchanged.
-const metric = ([x, y]) =>
+const T = ([x, y]) => {
+  const u = Math.max(0, x - eta * y);
+  return [u, y + eta * (2 * u - x - 1)];
+};
+const norm = (z) => Math.hypot(...z);
+const difference = (a, b) => a.map((v, i) => v - b[i]);
+const canonicalNorm = ([x, y]) =>
   Math.sqrt(Math.max(0, x * x + y * y - 2 * eta * x * y));
-const pack = (z) => ({ x: z[0], y: z[1], distance: Math.hypot(...z) });
-let raw = initial.slice(),
-  h = initial.slice(),
-  anchor = initial.slice(),
+const pack = ([x, y]) => ({
+  x,
+  y,
+  residual: Math.hypot(x - Math.max(0, x - y), x - 1),
+});
+// Euclidean normalized duality gap over the ball intersected with x >= 0.
+function normalizedGap([x, y], radius) {
+  const n = Math.hypot(y, x - 1);
+  if (!n) return 0;
+  if (radius < 1e-14) return Math.hypot(x < 1e-14 ? Math.max(-y, 0) : y, x - 1);
+  if ((-radius * y) / n >= -x) return n;
+  return (
+    (y * x +
+      Math.abs(x - 1) * Math.sqrt(Math.max(0, radius * radius - x * x))) /
+    radius
+  );
+}
+let last = [...initial],
+  current = [...initial],
+  aAnchor = [...initial],
+  previousAnchor = [...initial];
+let h = [...initial],
+  hAnchor = [...initial],
   sum = [0, 0];
 let aLocal = 0,
   aEpoch = 0,
-  aAnchor = initial.slice();
-let hLocal = 0,
+  hLocal = 0,
   hEpoch = 0,
   hBaseline = 0;
-const rows = base.rows.map((row) => {
-  const k = row.k;
-  if (!k)
-    return {
-      ...row,
-      restarted: pack(raw),
-      halpern: pack(h),
-      preRestart: null,
-      preHalpern: null,
-      anchor: pack(anchor),
-      halpernCalls: 0,
-    };
-  raw = T(raw);
+const rows = [
+  {
+    k: 0,
+    last: pack(last),
+    restarted: pack(current),
+    halpern: pack(h),
+    restart: false,
+    preRestart: null,
+    preHalpern: null,
+    anchor: pack(hAnchor),
+    halpernCalls: 0,
+  },
+];
+for (let k = 1; k <= steps; k++) {
+  last = T(last);
+  current = T(current);
   aLocal++;
-  sum = sum.map((v, i) => v + raw[i]);
+  sum = sum.map((v, i) => v + current[i]);
   const average = sum.map((v) => v / aLocal);
-  // For unconstrained xy in the Euclidean trust region, normalized duality
-  // gap = ||(y,-x)||_2, independent of the radius. No extra T call is needed.
   const restart =
     aEpoch === 0
       ? aLocal >= firstEpoch
-      : Math.hypot(...average) <= beta * Math.hypot(...aAnchor);
-  const preRestart = restart ? pack(raw) : null;
+      : normalizedGap(average, norm(difference(average, aAnchor))) <=
+        beta *
+          normalizedGap(aAnchor, norm(difference(aAnchor, previousAnchor)));
+  const preRestart = restart ? pack(current) : null;
   if (restart) {
-    raw = average.slice();
-    aAnchor = raw.slice();
+    previousAnchor = [...aAnchor];
+    current = [...average];
+    aAnchor = [...current];
     sum = [0, 0];
     aLocal = 0;
     aEpoch++;
   }
-  // Evaluate T exactly once. Reuse it for the residual check AND the update
-  // or reset. The reset therefore occupies its own horizontal-axis unit.
+  // One T call serves both the residual check and update/reset. A Halpern
+  // reset uses its own horizontal-axis unit, just like every other T call.
   const th = T(h);
-  const residual = metric(h.map((v, i) => v - th[i]));
+  const residual = canonicalNorm(difference(h, th));
   if (hLocal === 0) hBaseline = residual;
   const halpernRestart =
     hEpoch === 0 ? hLocal > firstEpoch : residual <= beta * hBaseline;
   if (halpernRestart) {
     h = th;
-    anchor = h.slice();
+    hAnchor = [...h];
     hLocal = 0;
     hEpoch++;
   } else {
     h = th.map(
-      (v, i) => ((hLocal + 1) * (2 * v - h[i]) + anchor[i]) / (hLocal + 2),
+      (v, i) => ((hLocal + 1) * (2 * v - h[i]) + hAnchor[i]) / (hLocal + 2),
     );
     hLocal++;
   }
-  return {
-    ...row,
-    restart,
-    restarted: pack(raw),
+  rows.push({
+    k,
+    last: pack(last),
+    restarted: pack(current),
     epochAverage: pack(average),
     halpern: pack(h),
+    restart,
     preRestart,
     preHalpern: halpernRestart ? pack(h) : null,
+    anchor: pack(hAnchor),
     halpernInner: hLocal,
-    anchor: pack(anchor),
     halpernCalls: k,
-  };
-});
+  });
+}
 const metadata = {
-  problem: base.metadata.problem,
+  problem: 'min_{x>=0} max_y (x-1)y',
   eta,
-  beta,
-  firstEpoch,
   steps,
   initial,
+  beta,
+  firstEpoch,
   average:
-    'Current PDHG iterate within each epoch. At restart, replace it with the mean of the current epoch new iterates, excluding the epoch anchor, as in Applegate et al. Algorithm 1. epochAverage stores the mean separately.',
+    'Current PDHG iterate. Restart to the mean of new iterates in the epoch, excluding its anchor (Applegate et al. Algorithm 1).',
   halpern:
-    'Reflected Halpern, Lu & Yang Eq. 26 / Algorithm 2. Adaptive Eq. 10 with the PDHG canonical norm and a separately counted T reset.',
-  counting:
-    'k counts PDHG operator evaluations for every method, including the Halpern reset. Equal operator counts, not a runtime benchmark.',
+    'Reflected Halpern (Lu & Yang Eq. 26), with Eq. 10 adaptive restarts in the canonical PDHG norm.',
   restartPolicy:
-    'Adaptive. Average: Applegate Eq. 30, Euclidean normalized gap, beta=1/e, first epoch t>=1. Reflected Halpern: Lu & Yang Eq. 10, canonical fixed-point residual, beta=1/e, first epoch k>1. Checked each evaluation, not the production solver heuristics.',
+    'Average: Eq. 30 with the constrained Euclidean normalized gap. Reflected Halpern: canonical fixed-point residual. beta=1/e; first epochs t>=1 and k>1 respectively.',
+  counting:
+    'Each horizontal-axis unit is one PDHG operator evaluation, including Halpern reset steps. This is not a runtime benchmark.',
+  residual: 'Natural KKT residual: hypot(x-max(0,x-y),x-1).',
   provenance:
-    'Independent deterministic calculation on min_x max_y xy. No parameter selection to obtain a visual advantage.',
+    'Independent calculation on the problem in Lu & Yang Fig. 1. Start (2,2), step 0.2. Not an exact reproduction of their figure or its unspecified settings.',
   sources: [
-    'https://arxiv.org/html/2105.12715v4#S4',
-    'https://arxiv.org/html/2407.16144v2#S6',
+    'https://arxiv.org/abs/2105.12715',
+    'https://arxiv.org/abs/2407.16144',
   ],
 };
 fs.writeFileSync(
@@ -129,12 +156,4 @@ fs.writeFileSync(
       )
       .join('\n'),
 );
-console.log(
-  JSON.stringify(
-    [25, 50, 60].map((k) => ({
-      k,
-      average: rows[k].restarted.distance,
-      halpern: rows[k].halpern.distance,
-    })),
-  ),
-);
+console.log(`Generated ${rows.length} constrained-example states per method.`);

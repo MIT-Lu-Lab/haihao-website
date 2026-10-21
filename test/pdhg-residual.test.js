@@ -39,8 +39,14 @@ test('residual curves preserve endpoints without extra extrema', () => {
   }
   for (const row of rows) {
     for (const name of ['last', 'restarted', 'halpern']) {
-      assert.ok(Math.abs(kktResidual(row[name]) - row[name].distance) < 1e-14);
+      assert.ok(Math.abs(kktResidual(row[name]) - row[name].residual) < 1e-14);
     }
   }
-  assert.throws(() => logResidual({ x: 0, y: 0 }));
+  assert.throws(() => logResidual({ x: 1, y: 0 }));
+});
+
+test('natural KKT residual respects the nonnegative constraint', () => {
+  assert.equal(kktResidual({ x: 1, y: 0 }), 0);
+  assert.equal(kktResidual({ x: 0, y: 2 }), 1);
+  assert.equal(kktResidual({ x: 0, y: -2 }), Math.sqrt(5));
 });

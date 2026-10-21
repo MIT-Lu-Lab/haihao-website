@@ -54,7 +54,14 @@ import PropertyFigure from '../components/PropertyFigure.astro';
       </div>
       <figure slot="figure" class="research-figure theory-figure">
         <TheoryFigure />
-        <figcaption id="comparison-description">Adaptive restarting accelerates convergence in this bilinear example. Dark gray follows PDHG iterates that restart from their cycle average, while burgundy follows reflected Halpern PDHG. At an averaged-PDHG restart, the current point moves to its cycle average. The lower plot compares KKT residuals at equal numbers of PDHG evaluations, including the extra Halpern restart steps.<span class="theory-sources">Based on <ExternalLink href="https://arxiv.org/abs/2105.12715" mark={false}>Applegate et al.</ExternalLink> and <ExternalLink href="https://arxiv.org/abs/2407.16144" mark={false}>Lu &amp; Yang</ExternalLink>.</span></figcaption>
+        <figcaption id="comparison-description">
+          Adaptive restarting accelerates convergence in this constrained
+          bilinear example. Dark gray follows the current epoch average of PDHG,
+          while burgundy follows reflected Halpern PDHG. Each averaged-PDHG
+          restart begins a new epoch from the displayed average. The
+          trajectories and KKT residuals follow the same 220 PDHG evaluations,
+          including the Halpern reset steps.
+          <span class="theory-sources">Based on <ExternalLink href="https://arxiv.org/abs/2105.12715" mark={false}>Applegate et al.</ExternalLink> and <ExternalLink href="https://arxiv.org/abs/2407.16144" mark={false}>Lu &amp; Yang</ExternalLink>.</span></figcaption>
       </figure>
     </ResearchSection>
     <ResearchSection id="online-decision-making" title="Online decision-making and advertising">

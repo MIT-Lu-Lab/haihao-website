@@ -1,9 +1,13 @@
 import type { ComparisonRow, MethodName, Point } from './pdhg-curves.ts';
 import type { ResidualSegment } from './kkt-lift.ts';
-import type { RestartState, TimelineSample } from './theory-timeline.ts';
+import type { TimelineSample } from './theory-timeline.ts';
 import { smootherstep as ease, clamp } from './easing.ts';
-import { makeComparisonCurves } from './pdhg-curves.ts';
-import { makeLiftedCurves, sampleLifted as sample } from './kkt-lift.ts';
+import { makeAverageDisplayRows, makeComparisonCurves } from './pdhg-curves.ts';
+import {
+  kktResidual,
+  makeLiftedCurves,
+  sampleLifted as sample,
+} from './kkt-lift.ts';
 import { CANVAS_WIDTH, RESIDUAL_PLOT } from './theory-layout.ts';
 
 type Coordinates = [number, number];
@@ -14,43 +18,33 @@ interface MethodStyle {
   trajectoryStyle: 'dots' | 'dash' | 'solid';
   residualDash: number[];
   preRestartKey: 'preRestart' | 'preHalpern' | null;
-  restartLabelPosition: 'above' | 'below' | null;
-
-  separation: number;
   extraWidth: number;
-  explain: boolean;
 }
 
-export const DISPLAY_STEPS = 57;
-const KKT_STEPS = 55;
+// Both panels share one evaluation index and presentation clock.
+export const DISPLAY_STEPS = 220;
+const KKT_STEPS = DISPLAY_STEPS;
 // All playback durations are in milliseconds.
 export const TIMING = {
-  step: 240,
+  step: 100,
   fade: 300,
   endHold: 300,
-  explanationBefore: 900,
-  explanationAfter: 1300,
-  annotationFadeIn: 220,
-  annotationFadeOut: 300,
-  averageLabelDelay: 220,
-  restartLabelHold: 1000,
-  restartLabelFade: 300,
 };
 
 // Text sizes are CSS pixels, independent of the responsive canvas scale.
-const TYPE_SIZE = { title: 18, axis: 13, annotation: 12, tick: 12 };
+const TYPE_SIZE = { axis: 13, annotation: 12, tick: 12 };
+const KKT_TYPE_SIZE = {
+  title: 17,
+  axis: 12.5,
+  tick: 12,
+  hint: 11,
+};
 
 const DURATION = DISPLAY_STEPS * TIMING.step;
-const EXPLANATION_DIMMING = 0.62;
-const AVERAGE_LABEL = {
-  offsetX: -28,
-  offsetY: 40,
-  referenceScale: 0.45,
-};
-const RESTART_GUIDE = {
-  restingOpacity: 0.4,
-  emphasisOpacity: 0.35,
-  activeOpacity: 0.75,
+const RESTART_MARKER = {
+  opacity: 0.4,
+  height: 5,
+  width: 1.2,
 };
 
 /**
@@ -61,11 +55,7 @@ interface FrameState {
   pixelScale: number;
   project: (position: Point) => Coordinates;
   playback: { step: number; fraction: number; done: boolean };
-  restart: RestartState | null;
-  endHold: number;
   loopOpacity: number;
-  annotationOpacity: number;
-  explanationOpacity: number;
 }
 
 /**
@@ -74,13 +64,13 @@ interface FrameState {
  * Styles must provide --ink, --muted, --line, --surface, --sans, --serif,
  * --pdhg, --restarted, and --halpern from the figure's computed styles.
  * @param canvas Canvas with a 2D rendering context.
- * @param rows Saved iterates.
+ * @param sourceRows Saved iterates.
  * @param styles Computed styles of the owning figure.
  * @returns Draw one frame.
  */
 export function createTheoryRenderer(
   canvas: HTMLCanvasElement,
-  rows: ComparisonRow[],
+  sourceRows: ComparisonRow[],
   styles: CSSStyleDeclaration,
 ): (
   input: TimelineSample & {
@@ -88,12 +78,12 @@ export function createTheoryRenderer(
     pixelRatio: number;
   },
 ) => void {
+  const rows = makeAverageDisplayRows(sourceRows);
   const theme = {
     ink: styles.getPropertyValue('--ink').trim(),
     muted: styles.getPropertyValue('--muted').trim(),
     line: styles.getPropertyValue('--line').trim(),
     surface: styles.getPropertyValue('--surface').trim(),
-    soft: styles.getPropertyValue('--soft').trim(),
     font: styles.getPropertyValue('--sans').trim(),
     headingFont: styles.getPropertyValue('--serif').trim(),
   };
@@ -109,11 +99,7 @@ export function createTheoryRenderer(
       trajectoryStyle: 'dots',
       residualDash: [1, 4],
       preRestartKey: null,
-      restartLabelPosition: null,
-
-      separation: 0,
       extraWidth: 0,
-      explain: false,
     },
     restarted: {
       color: styles.getPropertyValue('--restarted').trim(),
@@ -121,11 +107,7 @@ export function createTheoryRenderer(
       trajectoryStyle: 'dash',
       residualDash: [7, 4],
       preRestartKey: 'preRestart',
-      restartLabelPosition: 'above',
-
-      separation: 0,
       extraWidth: 0,
-      explain: true,
     },
     halpern: {
       color: styles.getPropertyValue('--halpern').trim(),
@@ -133,11 +115,7 @@ export function createTheoryRenderer(
       trajectoryStyle: 'solid',
       residualDash: [],
       preRestartKey: 'preHalpern',
-      restartLabelPosition: 'below',
-
-      separation: 0,
       extraWidth: 0.25,
-      explain: false,
     },
   };
   const methodNames = Object.keys(methods) as MethodName[];
@@ -147,7 +125,6 @@ export function createTheoryRenderer(
   const restartSteps = rows
     .filter((row) => row.preRestart || row.preHalpern)
     .map((row) => row.k);
-  const firstRestart = rows.find((row) => row.preRestart)?.k ?? Infinity;
   const curves = makeLiftedCurves(makeComparisonCurves(rows));
 
   function getLoopOpacity(
@@ -168,26 +145,7 @@ export function createTheoryRenderer(
     return 1 - ease(clamp((endHold - fadeStart) / TIMING.fade));
   }
   const point = (x: number, y: number): Point => ({ x, y });
-  const methodOpacity = (frame: FrameState, name: MethodName): number =>
-    methods[name].explain
-      ? 1
-      : 1 - EXPLANATION_DIMMING * frame.explanationOpacity;
-
-  function getAnnotationOpacity(restart: RestartState | null) {
-    if (!restart) {
-      return 0;
-    }
-    const fadeIn = ease(clamp(restart.elapsed / TIMING.annotationFadeIn));
-    const fadeOut = ease(
-      clamp((restart.duration - restart.elapsed) / TIMING.annotationFadeOut),
-    );
-    return fadeIn * fadeOut;
-  }
-
-  function getProgress(time: number, restart: RestartState | null) {
-    if (restart?.phase === 'before') {
-      return { step: restart.step, fraction: 1, done: false };
-    }
+  function getProgress(time: number) {
     if (time >= DURATION) {
       return { step: DISPLAY_STEPS, fraction: 1, done: true };
     }
@@ -274,15 +232,12 @@ export function createTheoryRenderer(
     point: Point,
     color: string,
     shape: MarkerShape,
-    offset: Coordinates,
-    opacity: number,
   ) {
     const position = frame.project(point);
-    const x = position[0] + offset[0];
-    const y = position[1] + offset[1];
+    const [x, y] = position;
     context.save();
     const markerScale = frame.compact ? 1.53 : 1.125;
-    context.globalAlpha = frame.loopOpacity * opacity;
+    context.globalAlpha = frame.loopOpacity;
     context.translate(x, y);
     context.scale(markerScale, markerScale);
     context.translate(-x, -y);
@@ -333,8 +288,7 @@ export function createTheoryRenderer(
       });
       context.strokeStyle = color;
       context.lineWidth = (compact ? 3.8 : 2.05) + methods[name].extraWidth;
-      context.globalAlpha =
-        0.9 * frame.loopOpacity * methodOpacity(frame, name);
+      context.globalAlpha = 0.9 * frame.loopOpacity;
       const period = compact ? 28 : 16;
       if (methods[name].trajectoryStyle === 'dots') {
         // Place dots by arc length, centered in the dashed trajectory's gaps.
@@ -391,8 +345,7 @@ export function createTheoryRenderer(
     }
     drawRestartConnections(frame, completedStep);
     drawRestartLandings(frame, completedStep);
-    drawCurrentPositions(frame, completedStep);
-    drawAverageLabel(frame);
+    drawCurrentPositions(frame);
   }
 
   function drawRestartConnections(frame: FrameState, completedStep: number) {
@@ -426,8 +379,7 @@ export function createTheoryRenderer(
             ? [period * 0.5, period * 0.5]
             : [],
         );
-        context.globalAlpha =
-          0.9 * opacity * frame.loopOpacity * methodOpacity(frame, name);
+        context.globalAlpha = 0.9 * opacity * frame.loopOpacity;
         context.beginPath();
         context.moveTo(...from);
         context.lineTo(...to);
@@ -468,106 +420,18 @@ export function createTheoryRenderer(
     }
   }
 
-  function drawAverageLabel(frame: FrameState) {
-    const { compact, pixelScale, restart } = frame;
-    if (!restart?.explain) {
-      return;
-    }
-    const [x, y] = frame.project(rows[restart.step].restarted);
-    // Explain the first restart in the open space beside its trajectories.
-    // CSS-pixel offsets keep the labels readable at the website's figure size.
-    const { offsetX: dx, offsetY: dy, referenceScale } = AVERAGE_LABEL;
-    const spacing = Math.min(1, pixelScale / referenceScale);
-    const endX = x + (dx * spacing) / pixelScale;
-    const endY = y + (dy * spacing) / pixelScale;
-    const length = Math.hypot(endX - x, endY - y);
-    const gap = 3 / pixelScale;
-    context.save();
-    context.globalAlpha = frame.annotationOpacity * frame.loopOpacity;
-    context.strokeStyle = methods.restarted.color;
-    context.lineWidth = 0.9 / pixelScale;
-    context.setLineDash([]);
-    context.beginPath();
-    context.moveTo(
-      x + ((endX - x) * gap) / length,
-      y + ((endY - y) * gap) / length,
-    );
-    context.lineTo(endX, endY);
-    context.stroke();
-    if (restart.phase === 'before') {
-      markerPath(x, y, methods.restarted.marker, compact ? 4.05 : 2.34);
-      context.fillStyle = theme.surface;
-      context.fill();
-      context.stroke();
-    }
-    // Let the leader establish the destination before naming the cycle mean.
-    context.globalAlpha *= ease(
-      clamp(
-        (restart.elapsed - TIMING.averageLabelDelay) / TIMING.annotationFadeIn,
-      ),
-    );
-    drawLabel(
-      frame,
-      'Restart from average',
-      endX - 5 / pixelScale,
-      endY + 3 / pixelScale,
-      'right',
-      methods.restarted.color,
-      TYPE_SIZE.annotation,
-    );
-    context.restore();
-  }
-
-  function drawCurrentPositions(frame: FrameState, completedStep: number) {
-    const { compact, playback } = frame;
-    let separationOffset: Coordinates = [0, 0];
-    if (completedStep < firstRestart && !playback.done) {
-      const segment = segmentAt('last', playback.step);
-      const before = frame.project(
-        sample(segment, Math.max(0, playback.fraction - 0.01)),
-      );
-      const after = frame.project(
-        sample(segment, Math.min(1, playback.fraction + 0.01)),
-      );
-      const dx = after[0] - before[0];
-      const dy = after[1] - before[1];
-      const length = Math.hypot(dx, dy) || 1;
-      const shift = compact ? 8 : 5;
-      separationOffset = [(-dy / length) * shift, (dx / length) * shift];
-    }
+  function drawCurrentPositions(frame: FrameState) {
+    const { playback } = frame;
     for (const name of methodNames) {
       const point = playback.done
         ? rows[playback.step][name]
         : sample(segmentAt(name, playback.step), playback.fraction);
-      const offset = separationOffset.map(
-        (value) => value * methods[name].separation,
-      ) as Coordinates;
-      if (offset.some((v) => v !== 0)) {
-        const position = frame.project(point);
-        context.beginPath();
-        context.moveTo(...position);
-        context.lineTo(position[0] + offset[0], position[1] + offset[1]);
-        context.strokeStyle = methods[name].color;
-        context.globalAlpha =
-          0.4 * frame.loopOpacity * methodOpacity(frame, name);
-        context.lineWidth = 0.8;
-        context.stroke();
-        context.globalAlpha = 1;
-      }
-      drawMarker(
-        frame,
-        point,
-        methods[name].color,
-        methods[name].marker,
-        offset,
-        methodOpacity(frame, name),
-      );
+      drawMarker(frame, point, methods[name].color, methods[name].marker);
     }
   }
 
   function drawResidualPlot(frame: FrameState) {
-    const { compact, pixelScale, playback, restart, loopOpacity } = frame;
-    const { annotationOpacity } = frame;
+    const { compact, pixelScale, playback, loopOpacity } = frame;
     const { left, right, maxLog, logRange } = RESIDUAL_PLOT;
     const plot = compact ? RESIDUAL_PLOT.compact : RESIDUAL_PLOT.desktop;
     const top = plot.top + 12 / pixelScale;
@@ -576,25 +440,19 @@ export function createTheoryRenderer(
       left + ((right - left) * k) / KKT_STEPS;
     const residualY = (logResidual: number): number =>
       top + ((maxLog - logResidual) / logRange) * (bottom - top);
-    /**
-     * Padded jump bounds shared by the guide and its label.
-     */
-    function restartBounds(
-      name: MethodName,
-      step: number,
-    ): { top: number; bottom: number } | null {
+    /** Center the short marker in the clipped residual interval at a reset. */
+    function restartMarkerY(name: MethodName, step: number): number | null {
       const key = methods[name].preRestartKey;
       const before = key && rows[step][key];
       if (!before) {
         return null;
       }
-      const fromY = residualY(Math.log10(Math.hypot(before.x, before.y)));
-      const toY = residualY(Math.log10(rows[step][name].distance));
+      const fromY = residualY(Math.log10(kktResidual(before)));
+      const toY = residualY(Math.log10(rows[step][name].residual));
       const padding = 6 / pixelScale;
-      return {
-        top: Math.max(top, Math.min(fromY, toY) - padding),
-        bottom: Math.min(bottom, Math.max(fromY, toY) + padding),
-      };
+      const intervalTop = Math.max(top, Math.min(fromY, toY) - padding);
+      const intervalBottom = Math.min(bottom, Math.max(fromY, toY) + padding);
+      return (intervalTop + intervalBottom) / 2;
     }
     const titleY = plot.panelTop + 25 / pixelScale;
     drawLabel(
@@ -604,7 +462,7 @@ export function createTheoryRenderer(
       titleY,
       'left',
       theme.ink,
-      TYPE_SIZE.title,
+      KKT_TYPE_SIZE.title,
       theme.headingFont,
     );
     const titleWidth = context.measureText('KKT residual').width;
@@ -615,13 +473,15 @@ export function createTheoryRenderer(
       titleY,
       'left',
       theme.muted,
-      TYPE_SIZE.tick,
+      KKT_TYPE_SIZE.hint,
     );
 
     const residualTicks: Array<[number, string]> = [
       [0, '1'],
-      [-1, '10⁻¹'],
-      [-2, '10⁻²'],
+      [-2, ''],
+      [-4, '10⁻⁴'],
+      [-6, ''],
+      [-8, '10⁻⁸'],
     ];
     for (const [logResidual, label] of residualTicks) {
       const y = residualY(logResidual);
@@ -633,7 +493,7 @@ export function createTheoryRenderer(
       context.moveTo(left - 5 / pixelScale, y);
       context.lineTo(left, y);
       context.stroke();
-      if (logResidual === -2 || logResidual === -4) {
+      if (logResidual === -4) {
         context.strokeStyle = theme.line;
         context.globalAlpha = 0.8;
         context.setLineDash([1 / pixelScale, 4 / pixelScale]);
@@ -643,51 +503,47 @@ export function createTheoryRenderer(
         context.stroke();
       }
       context.restore();
+      if (!label) continue;
       drawLabel(
         frame,
         label,
-        left - 12,
-        y + 4,
+        left - 8 / pixelScale,
+        y + 4 / pixelScale,
         'right',
         theme.muted,
-        TYPE_SIZE.tick,
+        KKT_TYPE_SIZE.tick,
       );
     }
     const completedStep = playback.done ? playback.step : playback.step - 1;
-    for (let k = 0; k <= KKT_STEPS; k += 10) {
+    for (let k = 0; k <= KKT_STEPS; k += 50) {
       drawLabel(
         frame,
         String(k),
         iterationX(k),
-        bottom + 25,
+        bottom + 12 / pixelScale,
         'center',
         theme.muted,
-        TYPE_SIZE.tick,
+        KKT_TYPE_SIZE.tick,
       );
     }
     context.save();
     for (const k of restartSteps.filter((step) => step <= KKT_STEPS)) {
-      const active = restart?.step === k;
-      if (k > completedStep && !active) {
+      if (k > completedStep) {
         continue;
       }
       for (const name of restartedMethods) {
-        const bounds = restartBounds(name, k);
-        if (!bounds) {
+        const centerY = restartMarkerY(name, k);
+        if (centerY === null) {
           continue;
         }
-        context.globalAlpha =
-          loopOpacity *
-          (k <= completedStep
-            ? RESTART_GUIDE.restingOpacity +
-              (active ? RESTART_GUIDE.emphasisOpacity * annotationOpacity : 0)
-            : RESTART_GUIDE.activeOpacity * annotationOpacity);
+        context.globalAlpha = loopOpacity * RESTART_MARKER.opacity;
         context.strokeStyle = methods[name].color;
-        context.lineWidth = 0.85 / pixelScale;
-        context.setLineDash([2 / pixelScale, 3 / pixelScale]);
+        context.lineWidth = RESTART_MARKER.width / pixelScale;
+        context.setLineDash([]);
+        const halfHeight = RESTART_MARKER.height / (2 * pixelScale);
         context.beginPath();
-        context.moveTo(iterationX(k), bounds.top);
-        context.lineTo(iterationX(k), bounds.bottom);
+        context.moveTo(iterationX(k), centerY - halfHeight);
+        context.lineTo(iterationX(k), centerY + halfHeight);
         context.stroke();
       }
     }
@@ -696,16 +552,16 @@ export function createTheoryRenderer(
       frame,
       'PDHG evaluations',
       (left + right) / 2,
-      bottom + (compact ? 72 : 64),
+      bottom + (compact ? 26 : 31) / pixelScale,
       'center',
       theme.ink,
-      TYPE_SIZE.axis,
+      KKT_TYPE_SIZE.axis,
     );
     for (const name of methodNames) {
       context.beginPath();
       context.moveTo(
         iterationX(0),
-        residualY(Math.log10(rows[0][name].distance)),
+        residualY(Math.log10(rows[0][name].residual)),
       );
       const { preRestartKey } = methods[name];
       for (let j = 1; j <= playback.step; j++) {
@@ -724,19 +580,19 @@ export function createTheoryRenderer(
         if (preRestartKey && rows[j][preRestartKey] && j <= completedStep) {
           context.lineTo(
             iterationX(j),
-            residualY(Math.log10(rows[j][name].distance)),
+            residualY(Math.log10(rows[j][name].residual)),
           );
         }
       }
       context.strokeStyle = methods[name].color;
       context.lineWidth = compact ? 3.3 : 1.9;
-      context.globalAlpha = 0.8 * loopOpacity * methodOpacity(frame, name);
+      context.globalAlpha = 0.8 * loopOpacity;
       context.setLineDash(methods[name].residualDash);
       context.stroke();
       context.setLineDash([]);
       context.globalAlpha = 1;
       const position = playback.done
-        ? { residualLog: Math.log10(rows[playback.step][name].distance) }
+        ? { residualLog: Math.log10(rows[playback.step][name].residual) }
         : sample(segmentAt(name, playback.step), playback.fraction);
       const x = iterationX(
         playback.done ? playback.step : playback.step - 1 + playback.fraction,
@@ -744,66 +600,9 @@ export function createTheoryRenderer(
       const y = residualY(position.residualLog);
       markerPath(x, y, methods[name].marker, compact ? 4.95 : 2.97);
       context.fillStyle = methods[name].color;
-      context.globalAlpha = loopOpacity * methodOpacity(frame, name);
+      context.globalAlpha = loopOpacity;
       context.fill();
       context.globalAlpha = 1;
-    }
-
-    // Keep the lower event label readable after playback resumes.
-    // This does not extend the shared iteration hold or the upper jump arrow.
-    const currentIteration = playback.done
-      ? playback.step
-      : playback.step - 1 + playback.fraction;
-    const labelStep =
-      restart?.step ?? restartSteps.findLast((k) => k <= currentIteration);
-    const labelAge =
-      labelStep === undefined
-        ? Infinity
-        : (currentIteration - labelStep) * TIMING.step + frame.endHold;
-    const labelOpacity = restart
-      ? ease(clamp(restart.elapsed / TIMING.annotationFadeIn))
-      : 1 -
-        ease(
-          clamp((labelAge - TIMING.restartLabelHold) / TIMING.restartLabelFade),
-        );
-    if (labelStep !== undefined && labelOpacity > 0) {
-      context.save();
-      context.globalAlpha =
-        labelOpacity * loopOpacity * RESTART_GUIDE.activeOpacity;
-      for (const name of restartedMethods) {
-        const bounds = restartBounds(name, labelStep);
-        if (!bounds) {
-          continue;
-        }
-        const labelY =
-          methods[name].restartLabelPosition === 'above'
-            ? Math.max(bounds.top - 4 / pixelScale, titleY + 24 / pixelScale)
-            : Math.min(
-                bounds.bottom + 13 / pixelScale,
-                bottom - 6 / pixelScale,
-              );
-        // A narrow panel-colored halo separates the annotation from the trace.
-        context.font = `${TYPE_SIZE.annotation / pixelScale}px ${theme.font}`;
-        context.textAlign = 'center';
-        const halfLabel = context.measureText('Restart').width / 2;
-        const labelX = Math.max(
-          left + halfLabel + 4 / pixelScale,
-          Math.min(iterationX(labelStep), right - halfLabel - 4 / pixelScale),
-        );
-        context.strokeStyle = theme.soft;
-        context.lineWidth = 3 / pixelScale;
-        context.strokeText('Restart', labelX, labelY);
-        drawLabel(
-          frame,
-          'Restart',
-          labelX,
-          labelY,
-          'center',
-          methods[name].color,
-          TYPE_SIZE.annotation,
-        );
-      }
-      context.restore();
     }
   }
 
@@ -812,7 +611,6 @@ export function createTheoryRenderer(
     endHold,
     reduceMotion,
     pixelRatio,
-    restart = null,
   }: TimelineSample & {
     reduceMotion: boolean;
     pixelRatio: number;
@@ -841,29 +639,34 @@ export function createTheoryRenderer(
     context.clearRect(0, 0, CANVAS_WIDTH, canvasHeight);
     context.lineCap = 'round';
     context.lineJoin = 'round';
-    const originX = 500;
-    const originY = compact ? 365 : 280;
-    const scale = compact ? 270 : 200;
-    const annotationOpacity = getAnnotationOpacity(restart);
+    const originX = 95;
+    const originY = compact ? 501 : 370;
+    const scaleX = compact ? 324 : 335;
+    const scaleY = compact ? 205 : 162;
     const frame: FrameState = {
       compact,
       pixelScale: rect.width / CANVAS_WIDTH,
       project: (position) => [
-        originX + scale * position.x,
-        originY - scale * position.y,
+        originX + scaleX * position.x,
+        originY - scaleY * position.y,
       ],
-      playback: getProgress(time, restart),
-      restart,
-      endHold,
+      playback: getProgress(time),
       loopOpacity: getLoopOpacity(time, endHold, reduceMotion),
-      annotationOpacity,
-      explanationOpacity: restart?.explain ? annotationOpacity : 0,
     };
     const axisColor = theme.muted;
-    drawAxis(frame, [point(-1.45, 0), point(1.5, 0)], axisColor, 0.7, 0.45);
-    drawAxis(frame, [point(0, -1.25), point(0, 1.25)], axisColor, 0.7, 0.45);
-    const xAxisEnd = frame.project(point(1.5, 0));
-    const yAxisEnd = frame.project(point(0, 1.25));
+    const yAxisMax = compact ? 2.05 : 1.35;
+    drawAxis(frame, [point(-0.12, 0), point(2.15, 0)], axisColor, 0.7, 0.45);
+    drawAxis(
+      frame,
+      [point(0, -0.95), point(0, yAxisMax)],
+      axisColor,
+      0.7,
+      0.45,
+    );
+    const xAxisEnd = frame.project(point(2.15, 0));
+    const yAxisEnd = frame.project(point(0, yAxisMax));
+    context.save();
+    context.globalAlpha = 0.45;
     drawLabel(
       frame,
       'x',
@@ -882,7 +685,7 @@ export function createTheoryRenderer(
       theme.muted,
       TYPE_SIZE.axis,
     );
-    for (const v of [-1, 1]) {
+    for (const v of [0, 1, 2]) {
       const tickPosition = frame.project(point(v, 0));
       drawLabel(
         frame,
@@ -894,10 +697,11 @@ export function createTheoryRenderer(
         TYPE_SIZE.tick,
       );
     }
+    context.restore();
     drawTrajectories(frame);
-    const origin = frame.project(point(0, 0));
+    const solution = frame.project(point(1, 0));
     context.beginPath();
-    context.arc(...origin, 2, 0, Math.PI * 2);
+    context.arc(...solution, 2, 0, Math.PI * 2);
     context.fillStyle = theme.muted;
     context.fill();
     const start = frame.project(rows[0].last);
@@ -910,17 +714,7 @@ export function createTheoryRenderer(
       theme.muted,
       TYPE_SIZE.annotation,
     );
-    // The residual comparison ends at 55. Let the state trajectory finish
-    // two more evaluations, then fade immediately into the next cycle.
-    drawResidualPlot(
-      frame.playback.step > KKT_STEPS
-        ? {
-            ...frame,
-            playback: { step: KKT_STEPS, fraction: 1, done: true },
-            restart: null,
-          }
-        : frame,
-    );
+    drawResidualPlot(frame);
   }
   return render;
 }

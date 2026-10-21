@@ -27,27 +27,16 @@ export function initializeTheoryFigure(
     rows,
     browser.getComputedStyle(root),
   );
-  // The initialization reset at t=1 has no displacement. Explain the first
-  // nontrivial average reset instead; both plots use the same hold.
-  const timeline = createTheoryTimeline(
-    DISPLAY_STEPS,
-    TIMING,
-    rows.find(
-      (row) =>
-        row.preRestart &&
-        Math.hypot(
-          row.preRestart.x - row.restarted.x,
-          row.preRestart.y - row.restarted.y,
-        ) > 1e-12,
-    )?.k,
-  );
+  // Restart events play through without presentation holds.
+  const timeline = createTheoryTimeline(DISPLAY_STEPS, TIMING);
   const cycleDuration = timeline.duration + TIMING.endHold;
   const playback = createPlayback(
     canvas,
     browser,
     (elapsed, reduced) => {
+      const sample = timeline.sample(elapsed % cycleDuration);
       render({
-        ...timeline.sample(elapsed % cycleDuration),
+        ...sample,
         reduceMotion: reduced,
         pixelRatio: browser.devicePixelRatio || 1,
       });

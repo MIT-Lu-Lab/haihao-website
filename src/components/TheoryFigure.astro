@@ -36,7 +36,7 @@ const { descriptionId = 'comparison-description' } = Astro.props;
       height={CANVAS_HEIGHT.compact}
       role="img"
       aria-describedby={descriptionId}
-      aria-label="State trajectories and KKT residuals for three methods solving min x max y xy."
+      aria-label="State trajectories and KKT residuals for three methods solving min x greater than or equal to zero max y (x minus 1)y."
     ></canvas>
     <noscript>
       <p class="error">
@@ -137,6 +137,9 @@ const { descriptionId = 'comparison-description' } = Astro.props;
   .headline {
     margin: 0;
   }
+  .headline > span {
+    display: block;
+  }
   .plot-body {
     position: relative;
     isolation: isolate;
@@ -210,25 +213,19 @@ const { descriptionId = 'comparison-description' } = Astro.props;
     display: none !important;
   }
 
-  @container (min-width: 470px) {
+  @container (min-width: 440px) {
     .figure-heading {
       position: absolute;
-      top: 0;
+      top: -24px;
       left: 0;
       margin: 0;
       font-size: clamp(28px, 6cqw, 35px);
       line-height: 1.06;
       letter-spacing: -0.035em;
     }
-    .headline > span {
-      display: block;
-    }
-  }
-
-  @container (min-width: 540px) {
     .legend {
       position: absolute;
-      top: calc(var(--panel-compact) - 7px);
+      top: calc(var(--panel-desktop) - 7px);
       right: 12px;
       width: max-content;
       max-width: 50%;
@@ -243,17 +240,26 @@ const { descriptionId = 'comparison-description' } = Astro.props;
     .swatch {
       width: 32px;
     }
-  }
-
-  @container (min-width: 600px) {
-    .legend {
-      top: calc(var(--panel-desktop) - 7px);
-    }
     .convergence-field {
       top: var(--panel-desktop);
     }
     canvas {
       aspect-ratio: var(--canvas-desktop);
+    }
+  }
+
+  @container (min-width: 440px) and (max-width: 599px) {
+    .legend {
+      font-size: 10.5px;
+      gap: 3px;
+    }
+    .legend-item {
+      grid-template-columns: 28px minmax(0, 1fr);
+      gap: 7px;
+      min-height: 17px;
+    }
+    .swatch {
+      width: 28px;
     }
   }
 </style>

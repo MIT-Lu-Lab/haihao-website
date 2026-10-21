@@ -7,6 +7,12 @@ import {
   loadTheoryFigure,
 } from '../src/lib/research/theory-figure.ts';
 import { DISPLAY_STEPS, TIMING } from '../src/lib/research/theory-renderer.ts';
+import {
+  CANVAS_HEIGHT,
+  CANVAS_WIDTH,
+} from '../src/lib/research/theory-layout.ts';
+const canvasHeight = (width) =>
+  (width * CANVAS_HEIGHT[width < 440 ? 'compact' : 'desktop']) / CANVAS_WIDTH;
 
 test('load failure shows an error without starting playback', async () => {
   const errorMessage = { hidden: true, textContent: '' };
@@ -90,7 +96,6 @@ for (const width of [345, 712]) {
       '--muted': '#595b61',
       '--line': '#e5e3e0',
       '--surface': '#fff',
-      '--soft': '#f8f7f5',
       '--sans': 'Arial, sans-serif',
       '--serif': 'Georgia, serif',
       '--pdhg': '#377aa5',
@@ -111,7 +116,6 @@ for (const width of [345, 712]) {
       'setTransform',
       'clearRect',
       'fillText',
-      'strokeText',
     ];
     for (const method of drawingMethods) {
       context[method] = (...args) => {
@@ -130,7 +134,7 @@ for (const width of [345, 712]) {
       getContext: () => context,
       getBoundingClientRect: () => ({
         width: canvasWidth,
-        height: (canvasWidth * (canvasWidth < 600 ? 1140 : 840)) / 1000,
+        height: canvasHeight(canvasWidth),
       }),
     };
     const root = {
@@ -162,10 +166,7 @@ for (const width of [345, 712]) {
       'CSS owns the reserved aspect ratio',
     );
     assert.ok(context.font.endsWith(theme['--sans']));
-    assert.equal(
-      canvas.height,
-      Math.round(width * (width < 600 ? 1.14 : 0.84)),
-    );
+    assert.equal(canvas.height, Math.round(canvasHeight(width)));
     assert.equal(
       frames.size,
       0,
@@ -179,13 +180,7 @@ for (const width of [345, 712]) {
       1,
       'repeated notifications must not multiply loops',
     );
-    const explanationStep = data.rows.find((row) => row.preRestart)?.k;
-    const restartHolds =
-      explanationStep !== undefined && explanationStep <= DISPLAY_STEPS
-        ? TIMING.explanationBefore + TIMING.explanationAfter
-        : 0;
-    const cycleDuration =
-      DISPLAY_STEPS * TIMING.step + restartHolds + TIMING.endHold;
+    const cycleDuration = DISPLAY_STEPS * TIMING.step + TIMING.endHold;
     const frameInterval = 80;
     // The first callback establishes the clock without advancing time.
     const loopStartTick = Math.ceil(cycleDuration / frameInterval) + 1;
@@ -243,10 +238,7 @@ for (const width of [345, 712]) {
     canvasWidth = width < 600 ? 712 : 345;
     events.resize();
     assert.equal(canvas.width, canvasWidth);
-    assert.equal(
-      canvas.height,
-      Math.round(canvasWidth * (canvasWidth < 600 ? 1.14 : 0.84)),
-    );
+    assert.equal(canvas.height, Math.round(canvasHeight(canvasWidth)));
     assert.equal(
       frames.size,
       0,

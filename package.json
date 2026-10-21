@@ -11,7 +11,7 @@
     "test": "node --test",
     "format": "prettier --write",
     "format:check": "prettier --check",
-    "research:generate": "node scripts/pdhg-study.mjs && node scripts/pdhg-comparison.mjs && node scripts/online-allocation.mjs"
+    "research:generate": "node scripts/pdhg-comparison.mjs && node scripts/online-allocation.mjs"
   },
   "dependencies": {
     "astro": "^7.3.3"
