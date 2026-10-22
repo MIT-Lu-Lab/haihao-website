@@ -93,6 +93,7 @@ const ticks = [
     />
   </div>
   <svg
+    class="property-chart"
     viewBox="0 0 600 532"
     role="img"
     aria-labelledby={`${id}-title`}
@@ -111,7 +112,7 @@ const ticks = [
       iterations or a selected deployment parameter.
     </desc>
     <path class="paper title-paper" d="M0 0H282L306 24V116L282 140H0Z" />
-    <path class="paper" d="M0 211L600 290V532H0Z" />
+    <path class="paper chart-paper" d="M0 211L600 290V532H0Z" />
     <text class="headline" x="15" y="50">
       Fairer property
     </text>
@@ -357,6 +358,8 @@ const ticks = [
   }
 
   .property-poster {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
     --baseline: var(--chart-baseline);
     position: relative;
     width: 100%;
@@ -705,33 +708,87 @@ const ticks = [
     .headline {
       font-size: 48px;
     }
-    .title-paper {
-      d: path('M0 0H322L346 24V116L322 140H0Z');
+    .property-chart {
+      aspect-ratio: 600 / 590;
     }
     .location {
-      font-size: 17px;
+      font-size: 19px;
     }
     .axis-heading {
-      font-size: 22px;
+      font-size: 24px;
     }
     .tick-label,
     .axis-title,
     .reference-label {
-      font-size: 18px;
+      font-size: 22px;
     }
     .curve-key {
-      font-size: 17px;
-      translate: 12px 0;
+      font-size: 22px;
+    }
+    .curve-key:not(.active-key) {
+      transform: translate(72px, 566px);
+    }
+    .active-key {
+      transform: translate(318px, 566px);
     }
     .y-tick-label {
-      font-size: 16px;
+      font-size: 20px;
       transform: translateX(8px);
     }
     .focus-heading {
-      font-size: 20px;
+      font-size: 24px;
     }
     .focus-detail {
-      font-size: 18px;
+      font-size: 22px;
+    }
+    .focus-before,
+    .focus-after {
+      font-size: 32px;
+    }
+    .fairness-pair {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    .fairness-pair .result,
+    .accuracy-result {
+      display: grid;
+      grid-template-columns: 80px minmax(0, 1fr);
+      column-gap: 12px;
+      align-items: start;
+    }
+    .result-label {
+      flex-direction: column;
+      gap: 2px;
+      height: auto;
+      line-height: 16px;
+    }
+    .result-strip .result-values {
+      grid-column: 2;
+      grid-row: auto;
+      margin-top: 0;
+      column-gap: 4px;
+    }
+    .accuracy-result .result-heading {
+      grid-column: 1 / -1;
+      grid-row: 1;
+    }
+    .accuracy-result .result-label {
+      grid-column: 1;
+      grid-row: 2;
+    }
+    .accuracy-result .result-values {
+      grid-column: 2;
+      grid-row: 2;
+    }
+    .current-caption {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    svg.metric-trend {
+      position: static;
+      flex: none;
+      margin: 0;
     }
   }
 </style>
@@ -749,5 +806,27 @@ const ticks = [
       }
       const data: PropertyData = JSON.parse(serialized);
       initializePropertyFigure(root, data, window);
+      const chart = root.querySelector<SVGSVGElement>('.property-chart');
+      const titlePaper = root.querySelector<SVGPathElement>('.title-paper');
+      const chartPaper = root.querySelector<SVGPathElement>('.chart-paper');
+      const referenceLabel =
+        root.querySelector<SVGTextElement>('.reference-label');
+      const referenceY = referenceLabel?.getAttribute('y') ?? '';
+      const resize = new ResizeObserver(([entry]) => {
+        const compact = entry.contentRect.width <= 420;
+        chart?.setAttribute('viewBox', compact ? '0 0 600 590' : '0 0 600 532');
+        referenceLabel?.setAttribute('y', compact ? '276' : referenceY);
+        chartPaper?.setAttribute(
+          'd',
+          compact ? 'M0 211L600 260V590H0Z' : 'M0 211L600 290V532H0Z',
+        );
+        titlePaper?.setAttribute(
+          'd',
+          compact
+            ? 'M0 0H322L346 24V116L322 140H0Z'
+            : 'M0 0H282L306 24V116L282 140H0Z',
+        );
+      });
+      resize.observe(root);
     });
 </script>

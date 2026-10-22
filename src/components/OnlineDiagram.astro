@@ -61,7 +61,7 @@ const finalState = finalRound.after;
           refY="3"
           orient="auto"
         >
-          <path d="M0 0 6 3 0 6 Z" fill="context-stroke" />
+          <path d="M0 0 6 3 0 6 Z" fill="var(--muted)" />
         </marker>
       </defs>
 
@@ -406,13 +406,15 @@ const finalState = finalRound.after;
 
       <!-- The result has room to breathe, alongside rather than inside the loop. -->
       <g class="utility-chart">
-        <text
-          transform={`translate(16 ${plot.bottom - plot.height / 2}) rotate(-90)`}
-          text-anchor="middle"
-          class="small utility-axis-title"
-        >
-          Cumulative net utility
-        </text>
+        <g class="utility-axis-label">
+          <text
+            transform={`translate(16 ${plot.bottom - plot.height / 2}) rotate(-90)`}
+            text-anchor="middle"
+            class="small utility-axis-title"
+          >
+            Cumulative net utility
+          </text>
+        </g>
         <path
           d={`M${plot.left} ${plotTop} V${plot.bottom} H${plotRight}`}
           class="plot-axis"
@@ -648,14 +650,21 @@ const finalState = finalRound.after;
   @container (max-width: 420px) {
     svg {
       width: 95%;
-      aspect-ratio: 384 / 778;
+      aspect-ratio: 384 / 768;
       margin-inline: auto;
+    }
+    .module-title {
+      font-size: 18px;
+    }
+    .label {
+      font-size: 16px;
     }
     .formula,
     .bid-amount-label,
     .auction-readout,
+    .auction-readout[data-part='price-label'],
     .small {
-      font-size: 15px;
+      font-size: 16px;
     }
     .dial-scale {
       font-size: 13px;
@@ -669,23 +678,14 @@ const finalState = finalRound.after;
     .payment-link {
       transform: translate(-256px, 172px);
     }
-    .payment-link > path {
-      d: path('M508 178 V190');
-    }
-    .auction-link > path {
-      d: path('M252 178 V190');
-    }
-    .return-link > path {
-      d: path('M132 508 H86 Q76 508 76 498 V180 Q76 170 86 170 H188');
-    }
     .return-label {
-      transform: translate(-230px, 80px);
+      transform: translate(-286px, 40px);
     }
     .utility-chart {
-      transform: translate(-18px, 329px) scale(1.2, 1.1);
+      transform: translate(0px, 320px) scale(1.08);
     }
-    .utility-axis-title {
-      translate: 12px 0;
+    .utility-axis-label {
+      transform: translateX(-4px);
     }
   }
 </style>
@@ -695,11 +695,28 @@ const finalState = finalRound.after;
     '.online-diagram',
   )) {
     const svg = root.querySelector('svg');
+    // Set SVG geometry directly so mobile connectors do not depend on CSS `d` support.
+    const connectors = [
+      { selector: '.auction-link > path', mobile: 'M252 178 V190' },
+      { selector: '.payment-link > path', mobile: 'M508 178 V190' },
+      {
+        selector: '.return-link > path',
+        mobile:
+          'M132 496 H82 Q70 496 70 484 V188 Q70 178 80 178 H170 Q180 178 180 168 V156 Q180 150 186 150 H188',
+      },
+    ].flatMap(({ selector, mobile }) =>
+      Array.from(root.querySelectorAll<SVGPathElement>(selector), (path) => ({
+        path,
+        mobile,
+        desktop: path.getAttribute('d') ?? '',
+      })),
+    );
     const resize = new ResizeObserver(([entry]) => {
-      svg?.setAttribute(
-        'viewBox',
-        entry.contentRect.width <= 420 ? '0 0 384 778' : '0 0 640 420',
-      );
+      const compact = entry.contentRect.width <= 420;
+      svg?.setAttribute('viewBox', compact ? '0 0 384 768' : '0 0 640 420');
+      for (const { path, mobile, desktop } of connectors) {
+        path.setAttribute('d', compact ? mobile : desktop);
+      }
     });
     resize.observe(root);
   }
