@@ -29,7 +29,7 @@ import PropertyFigure from '../components/PropertyFigure.astro';
       </div>
       <figure slot="figure" class="research-figure gpu-figure">
         <GpuFigure />
-        <figcaption>GPU-accelerated first-order methods rely on sparse matrix–vector products. The animation shows Ax and Aᵀy on rail4284, a railway set-covering problem. The highlights illustrate the two multiplication directions.<span class="theory-sources gpu-sources">
+        <figcaption>GPU-accelerated first-order methods rely on sparse matrix–vector products. The animation shows Ax and Aᵀy on rail4284, a railway set-covering problem.<span class="theory-sources gpu-sources">
           <span>Matrix: <ExternalLink href="https://sparse.tamu.edu/Mittelmann/rail4284" mark={false}>SuiteSparse</ExternalLink></span>
           <span>Photo: <ExternalLink href="https://commons.wikimedia.org/wiki/File:Aerial_view_of_West_Oakland_rail_yards,_December_2022.JPG" mark={false}>Pi.1415926535</ExternalLink> / <ExternalLink href="https://creativecommons.org/licenses/by-sa/4.0/" mark={false}>CC BY-SA 4.0</ExternalLink>; cropped and color-adjusted.</span>
         </span></figcaption>
@@ -56,11 +56,9 @@ import PropertyFigure from '../components/PropertyFigure.astro';
         <TheoryFigure />
         <figcaption id="comparison-description">
           Adaptive restarting accelerates convergence in this constrained
-          bilinear example. Dark gray follows the current epoch average of PDHG,
-          while burgundy follows reflected Halpern PDHG. Each averaged-PDHG
-          restart begins a new epoch from the displayed average. The
-          trajectories and KKT residuals follow the same 220 PDHG evaluations,
-          including the Halpern reset steps.
+          bilinear example. Dark gray shows restarted averaged PDHG, and
+          burgundy shows restarted reflected Halpern PDHG. All three methods
+          use the same budget of PDHG evaluations.
           <span class="theory-sources">Based on <ExternalLink href="https://arxiv.org/abs/2105.12715" mark={false}>Applegate et al.</ExternalLink> and <ExternalLink href="https://arxiv.org/abs/2407.16144" mark={false}>Lu &amp; Yang</ExternalLink>.</span></figcaption>
       </figure>
     </ResearchSection>
