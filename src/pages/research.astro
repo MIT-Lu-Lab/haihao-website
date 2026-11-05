@@ -115,6 +115,10 @@ import PropertyFigure from '../components/PropertyFigure.astro';
         <li>Y. Jiang, H. Lu, Z. Peng, and J. Yang (2026). <ExternalLink href="https://arxiv.org/abs/2604.22625" mark={false}>FlashFolio: A GPU-Accelerated Solver for Portfolio Optimization</ExternalLink>. Working paper.</li>
       </ol>
     </ResearchSection>
+    <section id="acknowledgments" class="content-section research-acknowledgments" aria-labelledby="acknowledgments-heading">
+      <h2 id="acknowledgments-heading">Acknowledgments</h2>
+      <p>I am grateful to GE Vernova, eBay, the Air Force Office of Scientific Research (AFOSR), the Office of Naval Research (ONR), and MIT for supporting my research.</p>
+    </section>
   </div>
 </Layout>
 
@@ -135,6 +139,10 @@ import PropertyFigure from '../components/PropertyFigure.astro';
 <style>
   .research-page {
     padding-bottom: var(--space-page);
+  }
+  .research-acknowledgments p {
+    max-width: var(--measure-reading);
+    margin-bottom: 0;
   }
   .research-figure {
     margin: 0;

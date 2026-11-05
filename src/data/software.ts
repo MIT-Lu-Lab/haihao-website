@@ -15,6 +15,11 @@ export const software = [
     repo: 'https://github.com/jinwen-yang/PDQP.jl',
   },
   {
+    name: 'PDFP',
+    description: 'A GPU-accelerated feasibility pump for mixed-integer linear programming, built on PDHG.',
+    repo: 'https://github.com/MIT-Lu-Lab/PDFP',
+  },
+  {
     name: 'PDOT.jl',
     description: 'A GPU-based solver for large-scale optimal transport, built on a primal-dual algorithm that reaches high-accuracy solutions.',
     repo: 'https://github.com/MIT-Lu-Lab/PDOT.jl',
